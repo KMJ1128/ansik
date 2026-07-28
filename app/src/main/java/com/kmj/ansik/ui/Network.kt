@@ -21,7 +21,7 @@ interface KakaoSearchApi {
     @GET("v2/local/search/keyword.json")
     suspend fun searchPlace(
         // 🚀 TODO: 나중에 "여기에_키_입력" 부분을 본인의 카카오 REST API 키로 바꿔야 합니다!
-        @Header("Authorization") apiKey: String = "7a4ce9cf18bcb59b25bda5495b554471",
+        @Header("Authorization") apiKey: String = "KakaoAK ea731a9e930f5151c7ccc30d50d0996e",
         @Query("query") query: String
     ): KakaoSearchResponse
 }

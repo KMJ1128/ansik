@@ -38,7 +38,7 @@ class MainViewModel : ViewModel() {
     // 사용자가 타이핑을 너무 빨리할 때 서버 폭주를 막기 위한 타이머 변수
     private var searchJob: Job? = null
 
-    // 🚀 실시간 검색 API 호출 함수
+    // 🚀 실시간 검색 API 호출 함수 (디버깅용 로그 추가)
     fun searchPlacesRealtime(query: String) {
         searchQuery.value = query
         isSearchActive.value = query.isNotEmpty()
@@ -48,31 +48,32 @@ class MainViewModel : ViewModel() {
             return
         }
 
-        // Debounce: 사용자가 타이핑을 멈추고 0.5초가 지나면 API를 호출합니다.
         searchJob?.cancel()
         searchJob = viewModelScope.launch {
             delay(500)
             try {
-                // Network.kt에 만든 카카오 API 호출
-                val response = RetrofitClient.api.searchPlace(query = query)
-                recommendedPlaces.clear()
+                android.util.Log.d("KakaoSearch", "서버로 검색 요청 날아감: $query")
 
-                // 받아온 결과를 우리 앱 형식(PlaceInfo)에 맞게 변환해서 리스트에 넣음
+                val response = RetrofitClient.api.searchPlace(query = query)
+
+                android.util.Log.d("KakaoSearch", "검색 성공! 찾은 개수: ${response.documents.size}개")
+
+                recommendedPlaces.clear()
                 recommendedPlaces.addAll(
                     response.documents.map {
                         PlaceInfo(
                             name = it.place_name,
                             address = it.road_address_name.ifEmpty { "주소 없음" },
                             tag = it.category_group_name.ifEmpty { "장소" },
-                            // 카카오 API는 이미지를 제공하지 않아 임시 이미지 적용
                             imageUrl = "https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=400",
-                            latitude = it.y.toDouble(),
-                            longitude = it.x.toDouble()
+                            latitude = it.y.toDoubleOrNull() ?: 0.0,
+                            longitude = it.x.toDoubleOrNull() ?: 0.0
                         )
                     }
                 )
             } catch (e: Exception) {
-                e.printStackTrace() // 에러 발생 시 무시
+                // 🚨 검색이 안 되는 진짜 이유를 로그캣에 빨간색으로 출력!
+                android.util.Log.e("KakaoSearch", "검색 통신 💥대실패💥 원인: ${e.message}")
             }
         }
     }
