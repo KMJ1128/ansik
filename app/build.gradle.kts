@@ -71,8 +71,7 @@ dependencies {
     // 🖼️ 웹 이미지 로딩 라이브러리 (장소 썸네일용 - 중복 제거됨)
     implementation("io.coil-kt:coil-compose:2.6.0")
 
-    // 🚀 수정된 부분: 그룹명 오타 수정 (composereorderable)
-    implementation("org.burnoutcrew.composereorderable:reorderable:0.9.6")
+    implementation("sh.calvin.reorderable:reorderable:2.4.3")
 
     // Activity & ViewModel for Compose
     implementation("androidx.activity:activity-compose:1.8.2")

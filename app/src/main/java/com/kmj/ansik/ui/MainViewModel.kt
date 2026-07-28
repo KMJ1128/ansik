@@ -5,6 +5,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.UUID
@@ -24,8 +27,6 @@ class MainViewModel : ViewModel() {
         private set
 
     val travelRoute = mutableStateListOf<PlaceInfo>()
-
-    // 더미 데이터 대신 빈 리스트로 시작 (API로 채울 예정)
     var recommendedPlaces = mutableStateListOf<PlaceInfo>()
 
     var nights = mutableStateOf(3)
@@ -35,10 +36,9 @@ class MainViewModel : ViewModel() {
     var isSearchActive = mutableStateOf(false)
     var selectedPlace = mutableStateOf<PlaceInfo?>(null)
 
-    // 사용자가 타이핑을 너무 빨리할 때 서버 폭주를 막기 위한 타이머 변수
     private var searchJob: Job? = null
 
-    // 🚀 실시간 검색 API 호출 함수 (디버깅용 로그 추가)
+    // 검색창에서 실시간 타이핑으로 검색
     fun searchPlacesRealtime(query: String) {
         searchQuery.value = query
         isSearchActive.value = query.isNotEmpty()
@@ -52,28 +52,71 @@ class MainViewModel : ViewModel() {
         searchJob = viewModelScope.launch {
             delay(500)
             try {
-                android.util.Log.d("KakaoSearch", "서버로 검색 요청 날아감: $query")
-
                 val response = RetrofitClient.api.searchPlace(query = query)
 
-                android.util.Log.d("KakaoSearch", "검색 성공! 찾은 개수: ${response.documents.size}개")
+                val placesWithImages = coroutineScope {
+                    response.documents.map { place ->
+                        async {
+                            val imageUrl = try {
+                                val imageRes = RetrofitClient.api.searchImage(query = place.place_name)
+                                imageRes.documents.firstOrNull()?.image_url ?: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=400"
+                            } catch (e: Exception) {
+                                "https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=400"
+                            }
+
+                            val shortTag = place.category_group_name.split(">").last().trim()
+
+                            PlaceInfo(
+                                name = place.place_name,
+                                address = place.road_address_name.ifEmpty { "주소 없음" },
+                                tag = shortTag.ifEmpty { "장소" },
+                                imageUrl = imageUrl,
+                                latitude = place.y.toDoubleOrNull() ?: 0.0,
+                                longitude = place.x.toDoubleOrNull() ?: 0.0
+                            )
+                        }
+                    }.awaitAll()
+                }
 
                 recommendedPlaces.clear()
-                recommendedPlaces.addAll(
-                    response.documents.map {
-                        PlaceInfo(
-                            name = it.place_name,
-                            address = it.road_address_name.ifEmpty { "주소 없음" },
-                            tag = it.category_group_name.ifEmpty { "장소" },
-                            imageUrl = "https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=400",
-                            latitude = it.y.toDoubleOrNull() ?: 0.0,
-                            longitude = it.x.toDoubleOrNull() ?: 0.0
-                        )
-                    }
-                )
+                recommendedPlaces.addAll(placesWithImages)
+
             } catch (e: Exception) {
-                // 🚨 검색이 안 되는 진짜 이유를 로그캣에 빨간색으로 출력!
-                android.util.Log.e("KakaoSearch", "검색 통신 💥대실패💥 원인: ${e.message}")
+                android.util.Log.e("KakaoSearch", "검색 통신 실패 원인: ${e.message}")
+            }
+        }
+    }
+
+    // 🚀 네이버 지도에서 건물/지역을 직접 클릭했을 때의 로직
+    fun selectLocationFromMap(name: String, lat: Double, lng: Double) {
+        viewModelScope.launch {
+            try {
+                // 1. 클릭한 건물의 이름으로 카카오 장소 검색을 돌려 상세 주소와 태그 획득
+                val searchRes = RetrofitClient.api.searchPlace(query = name)
+                val matchedPlace = searchRes.documents.firstOrNull()
+
+                // 2. 카카오 이미지 검색으로 건물의 실제 사진 획득
+                val imageRes = RetrofitClient.api.searchImage(query = name)
+                val imageUrl = imageRes.documents.firstOrNull()?.image_url
+                    ?: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=400"
+
+                val shortTag = matchedPlace?.category_group_name?.split(">")?.last()?.trim() ?: "관심 위치"
+                val address = matchedPlace?.road_address_name?.ifEmpty { "주소 없음" } ?: "지도에서 선택한 장소"
+
+                // 3. UI(바텀 시트) 자동 팝업
+                selectedPlace.value = PlaceInfo(
+                    name = name,
+                    address = address,
+                    tag = shortTag,
+                    imageUrl = imageUrl,
+                    latitude = lat,
+                    longitude = lng
+                )
+
+                isSearchActive.value = false
+                searchQuery.value = ""
+            } catch (e: Exception) {
+                android.util.Log.e("MapClick", "지도 심볼 통신 실패: ${e.message}")
             }
         }
     }

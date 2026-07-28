@@ -6,7 +6,7 @@ import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.Query
 
-// 카카오 API가 주는 응답 데이터 구조
+// 1. 카카오 장소 검색 응답 구조
 data class KakaoSearchResponse(val documents: List<KakaoPlace>)
 data class KakaoPlace(
     val place_name: String,
@@ -16,14 +16,25 @@ data class KakaoPlace(
     val y: String  // 위도(latitude)
 )
 
-// 서버에 요청하는 명세서
+// 2. 카카오 이미지 검색 응답 구조
+data class KakaoImageResponse(val documents: List<KakaoImageDocument>)
+data class KakaoImageDocument(val image_url: String)
+
+// 3. 서버 요청 명세서
 interface KakaoSearchApi {
     @GET("v2/local/search/keyword.json")
     suspend fun searchPlace(
-        // 🚀 TODO: 나중에 "여기에_키_입력" 부분을 본인의 카카오 REST API 키로 바꿔야 합니다!
         @Header("Authorization") apiKey: String = "KakaoAK ea731a9e930f5151c7ccc30d50d0996e",
         @Query("query") query: String
     ): KakaoSearchResponse
+
+    // 해당 장소의 사진을 가져오는 API
+    @GET("v2/search/image")
+    suspend fun searchImage(
+        @Header("Authorization") apiKey: String = "KakaoAK ea731a9e930f5151c7ccc30d50d0996e",
+        @Query("query") query: String,
+        @Query("size") size: Int = 1
+    ): KakaoImageResponse
 }
 
 // 통신 객체 생성

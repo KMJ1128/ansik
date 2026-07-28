@@ -9,6 +9,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -24,6 +25,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -36,7 +38,10 @@ import com.naver.maps.map.compose.Marker
 import com.naver.maps.map.compose.MarkerState
 import com.naver.maps.map.compose.NaverMap
 import com.naver.maps.map.compose.rememberCameraPositionState
-import org.burnoutcrew.reorderable.*
+// 🚀 변경: 유지보수가 끊긴 org.burnoutcrew.reorderable 대신
+//    sh.calvin.reorderable 라이브러리로 교체 (일정 추가 시 크래시 원인)
+import sh.calvin.reorderable.ReorderableItem
+import sh.calvin.reorderable.rememberReorderableLazyListState
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalNaverMapApi::class)
 @Composable
@@ -48,10 +53,9 @@ fun MapScreen(viewModel: MainViewModel) {
     val selectedPlace by viewModel.selectedPlace
     val travelRoute = viewModel.travelRoute
 
-    // 🚀 네이버 지도 카메라 상태 관리 객체 추가
     val cameraPositionState = rememberCameraPositionState()
+    val keyboardController = LocalSoftwareKeyboardController.current
 
-    // 🚀 선택된 장소가 바뀔 때마다 카메라를 해당 좌표로 부드럽게 이동시킴
     LaunchedEffect(selectedPlace) {
         selectedPlace?.let { place ->
             val targetLocation = LatLng(place.latitude, place.longitude)
@@ -77,24 +81,26 @@ fun MapScreen(viewModel: MainViewModel) {
                 ) {
                     Text("내 여행 일정", fontSize = 20.sp, fontWeight = FontWeight.Bold)
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        IconButton(onClick = { if(viewModel.nights.value > 0) { viewModel.nights.value--; viewModel.days.value-- } }) { Text("−", fontSize = 24.sp) }
+                        IconButton(onClick = { if (viewModel.nights.value > 0) { viewModel.nights.value--; viewModel.days.value-- } }) { Text("−", fontSize = 24.sp) }
                         Text("${viewModel.nights.value}박 ${viewModel.days.value}일", fontWeight = FontWeight.Bold, color = Color(0xFF2E7D32))
                         IconButton(onClick = { viewModel.nights.value++; viewModel.days.value++ }) { Text("+", fontSize = 24.sp) }
                     }
                 }
                 Spacer(modifier = Modifier.height(16.dp))
 
-                val state = rememberReorderableLazyListState(onMove = { from, to ->
+                // 🚀 변경: 이 라이브러리는 LazyListState를 직접 만들어서 넘겨줘야 함 (.listState 프로퍼티 없음)
+                val lazyListState = rememberLazyListState()
+                val reorderableState = rememberReorderableLazyListState(lazyListState) { from, to ->
                     viewModel.movePlace(from.index, to.index)
-                })
+                }
 
                 LazyColumn(
-                    state = state.listState,
-                    modifier = Modifier.reorderable(state),
+                    state = lazyListState,
+                    modifier = Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     items(items = travelRoute, key = { it.id }) { place ->
-                        ReorderableItem(state, key = place.id) { isDragging ->
+                        ReorderableItem(reorderableState, key = place.id) { isDragging ->
                             val elevation = if (isDragging) 8.dp else 0.dp
                             Card(
                                 modifier = Modifier
@@ -111,23 +117,22 @@ fun MapScreen(viewModel: MainViewModel) {
                                         imageVector = Icons.Default.Menu,
                                         contentDescription = "순서 변경",
                                         tint = Color.LightGray,
-                                        modifier = Modifier.detectReorder(state).padding(end = 12.dp)
+                                        // 🚀 변경: detectReorder(state) 대신 draggableHandle() 사용
+                                        modifier = Modifier
+                                            .draggableHandle()
+                                            .padding(end = 12.dp)
                                     )
-
                                     AsyncImage(
                                         model = place.imageUrl,
                                         contentDescription = null,
                                         contentScale = ContentScale.Crop,
                                         modifier = Modifier.size(50.dp).clip(RoundedCornerShape(8.dp))
                                     )
-
                                     Spacer(modifier = Modifier.width(12.dp))
-
                                     Column(modifier = Modifier.weight(1f)) {
                                         Text(place.name, fontWeight = FontWeight.Bold, fontSize = 15.sp)
                                         Text(place.tag, color = Color(0xFF2E7D32), fontSize = 12.sp)
                                     }
-
                                     IconButton(onClick = { viewModel.removePlace(place) }) {
                                         Icon(Icons.Default.Delete, contentDescription = "삭제", tint = Color(0xFFFF5252))
                                     }
@@ -145,29 +150,40 @@ fun MapScreen(viewModel: MainViewModel) {
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            // 🗺️ 네이버 지도 (카메라 상태 연결)
             NaverMap(
                 modifier = Modifier.fillMaxSize(),
-                cameraPositionState = cameraPositionState // 🚀 추가된 카메라 뷰포트 상태
+                cameraPositionState = cameraPositionState,
+                // 🚀 네이버 지도처럼 특정 건물/상점/지역을 클릭했을 때의 이벤트
+                onSymbolClick = { symbol ->
+                    viewModel.selectLocationFromMap(symbol.caption, symbol.position.latitude, symbol.position.longitude)
+                    keyboardController?.hide()
+                    true // true 반환 시 클릭 이벤트 소비
+                },
+                // 🚀 지도 상의 빈 공간(도로 등)을 클릭했을 때 정보창 닫기
+                onMapClick = { _, _ ->
+                    viewModel.selectedPlace.value = null
+                    keyboardController?.hide()
+                }
             ) {
-                // 📍 현재 선택된 장소에 마커 띄우기
                 selectedPlace?.let { place ->
-                    Marker(
-                        state = MarkerState(position = LatLng(place.latitude, place.longitude)),
-                        captionText = place.name
-                    )
+                    key("selected_${place.id}") {
+                        Marker(
+                            state = MarkerState(position = LatLng(place.latitude, place.longitude))
+                            // 🚀 captionText 삭제로 텍스트 라벨 미노출
+                        )
+                    }
                 }
 
-                // 📍 (선택사항) 바텀시트 일정에 추가된 장소들도 마커로 표시
                 travelRoute.forEach { place ->
-                    Marker(
-                        state = MarkerState(position = LatLng(place.latitude, place.longitude)),
-                        captionText = place.name
-                    )
+                    key("route_${place.id}") {
+                        Marker(
+                            state = MarkerState(position = LatLng(place.latitude, place.longitude))
+                            // 🚀 여기도 캡션 제거 완료
+                        )
+                    }
                 }
             }
 
-            // 🔍 상단 검색바 및 추천 검색어
             Column(
                 modifier = Modifier
                     .align(Alignment.TopCenter)
@@ -177,7 +193,7 @@ fun MapScreen(viewModel: MainViewModel) {
                 OutlinedTextField(
                     value = searchQuery,
                     onValueChange = {
-                        viewModel.searchPlacesRealtime(it) // 실시간 통신 함수 호출
+                        viewModel.searchPlacesRealtime(it)
                     },
                     placeholder = { Text("장소, 식당, 카페 검색") },
                     leadingIcon = { Icon(Icons.Default.Search, contentDescription = "검색") },
@@ -188,25 +204,18 @@ fun MapScreen(viewModel: MainViewModel) {
                             }
                         }
                     },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .shadow(8.dp, RoundedCornerShape(24.dp)),
+                    modifier = Modifier.fillMaxWidth().shadow(8.dp, RoundedCornerShape(24.dp)),
                     shape = RoundedCornerShape(24.dp),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = Color.White,
-                        unfocusedContainerColor = Color.White,
-                        focusedBorderColor = Color.Transparent,
-                        unfocusedBorderColor = Color.Transparent
+                        focusedContainerColor = Color.White, unfocusedContainerColor = Color.White,
+                        focusedBorderColor = Color.Transparent, unfocusedBorderColor = Color.Transparent
                     ),
                     singleLine = true
                 )
 
                 AnimatedVisibility(visible = isSearchActive) {
                     Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 8.dp)
-                            .shadow(8.dp, RoundedCornerShape(16.dp)),
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp).shadow(8.dp, RoundedCornerShape(16.dp)),
                         colors = CardDefaults.cardColors(containerColor = Color.White)
                     ) {
                         Column {
@@ -222,24 +231,33 @@ fun MapScreen(viewModel: MainViewModel) {
                                             onClick = {
                                                 viewModel.selectedPlace.value = place
                                                 viewModel.isSearchActive.value = false
+                                                keyboardController?.hide()
                                             }
                                         )
                                         .background(Color.White)
-                                        .padding(16.dp),
+                                        .padding(horizontal = 16.dp, vertical = 12.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Icon(Icons.Default.Search, tint = Color.Gray, contentDescription = null)
+                                    Icon(Icons.Default.Search, tint = Color.LightGray, contentDescription = null, modifier = Modifier.size(20.dp))
                                     Spacer(modifier = Modifier.width(12.dp))
-                                    Text(place.name, fontSize = 16.sp)
+
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Text(place.name, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                                            Spacer(modifier = Modifier.width(6.dp))
+                                            Text(place.tag, fontSize = 12.sp, color = Color.Gray)
+                                        }
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Text(place.address, fontSize = 13.sp, color = Color.DarkGray)
+                                    }
                                 }
-                                HorizontalDivider(color = Color(0xFFEEEEEE))
+                                HorizontalDivider(color = Color(0xFFF0F0F0))
                             }
                         }
                     }
                 }
             }
 
-            // 💳 선택된 장소 상세 정보 카드
             AnimatedVisibility(
                 visible = selectedPlace != null,
                 enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
@@ -250,9 +268,7 @@ fun MapScreen(viewModel: MainViewModel) {
             ) {
                 selectedPlace?.let { place ->
                     Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .shadow(12.dp, RoundedCornerShape(16.dp)),
+                        modifier = Modifier.fillMaxWidth().shadow(12.dp, RoundedCornerShape(16.dp)),
                         colors = CardDefaults.cardColors(containerColor = Color.White)
                     ) {
                         Row(modifier = Modifier.padding(16.dp)) {
