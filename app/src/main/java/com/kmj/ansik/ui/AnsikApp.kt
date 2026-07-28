@@ -6,8 +6,10 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 
+
 @Composable
 fun AnsikApp() {
+
     val navController = rememberNavController()
     // 앱 전체에서 단 하나만 존재하며 상태를 공유하는 ViewModel 생성
     val viewModel: MainViewModel = viewModel()

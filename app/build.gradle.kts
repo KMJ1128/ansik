@@ -59,6 +59,11 @@ dependencies {
     implementation("androidx.compose.material3:material3")
 
 
+    // 서버 통신용 Retrofit & JSON 파싱
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+
+
     implementation("com.naver.maps:map-sdk:3.23.3")
     // 🗺️ 네이버 지도 Compose SDK
     implementation("io.github.fornewid:naver-map-compose:1.5.7")

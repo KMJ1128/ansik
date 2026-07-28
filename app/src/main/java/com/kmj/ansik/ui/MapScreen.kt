@@ -28,8 +28,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.naver.maps.geometry.LatLng
+import com.naver.maps.map.CameraUpdate
+import com.naver.maps.map.compose.CameraPositionState
 import com.naver.maps.map.compose.ExperimentalNaverMapApi
+import com.naver.maps.map.compose.Marker
+import com.naver.maps.map.compose.MarkerState
 import com.naver.maps.map.compose.NaverMap
+import com.naver.maps.map.compose.rememberCameraPositionState
 import org.burnoutcrew.reorderable.*
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalNaverMapApi::class)
@@ -42,21 +48,28 @@ fun MapScreen(viewModel: MainViewModel) {
     val selectedPlace by viewModel.selectedPlace
     val travelRoute = viewModel.travelRoute
 
+    // 🚀 네이버 지도 카메라 상태 관리 객체 추가
+    val cameraPositionState = rememberCameraPositionState()
+
+    // 🚀 선택된 장소가 바뀔 때마다 카메라를 해당 좌표로 부드럽게 이동시킴
+    LaunchedEffect(selectedPlace) {
+        selectedPlace?.let { place ->
+            val targetLocation = LatLng(place.latitude, place.longitude)
+            cameraPositionState.animate(CameraUpdate.scrollTo(targetLocation))
+        }
+    }
+
     BottomSheetScaffold(
         scaffoldState = scaffoldState,
-        sheetPeekHeight = 280.dp, // 바텀시트 기본 노출 높이
+        sheetPeekHeight = 280.dp,
         sheetContainerColor = Color.White,
         sheetContent = {
-            // ==========================================
-            // 1. 바텀시트 영역: 일정 설정 및 리스트 (드래그 앤 드롭)
-            // ==========================================
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 20.dp, vertical = 12.dp)
                     .heightIn(min = 300.dp, max = 700.dp)
             ) {
-                // 일정 조율기 (몇 박 몇 일)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -71,7 +84,6 @@ fun MapScreen(viewModel: MainViewModel) {
                 }
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // 🚀 드래그 앤 드롭 리스트 설정
                 val state = rememberReorderableLazyListState(onMove = { from, to ->
                     viewModel.movePlace(from.index, to.index)
                 })
@@ -81,7 +93,6 @@ fun MapScreen(viewModel: MainViewModel) {
                     modifier = Modifier.reorderable(state),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    // 🚀 key 파라미터를 명시적으로 선언하여 컴파일 오류 방지
                     items(items = travelRoute, key = { it.id }) { place ->
                         ReorderableItem(state, key = place.id) { isDragging ->
                             val elevation = if (isDragging) 8.dp else 0.dp
@@ -96,7 +107,6 @@ fun MapScreen(viewModel: MainViewModel) {
                                     modifier = Modifier.padding(12.dp).fillMaxWidth(),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    // 드래그 핸들 아이콘 (이 부분을 잡고 끌어올림)
                                     Icon(
                                         imageVector = Icons.Default.Menu,
                                         contentDescription = "순서 변경",
@@ -104,7 +114,6 @@ fun MapScreen(viewModel: MainViewModel) {
                                         modifier = Modifier.detectReorder(state).padding(end = 12.dp)
                                     )
 
-                                    // 썸네일 이미지
                                     AsyncImage(
                                         model = place.imageUrl,
                                         contentDescription = null,
@@ -131,16 +140,32 @@ fun MapScreen(viewModel: MainViewModel) {
             }
         }
     ) { innerPadding ->
-        // ==========================================
-        // 2. 메인 화면: 네이버 지도 + 상단 검색창 + 상세 카드
-        // ==========================================
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            // 🗺️ 네이버 지도 컴포넌트 (가장 아래에 깔림)
-            NaverMap(modifier = Modifier.fillMaxSize())
+            // 🗺️ 네이버 지도 (카메라 상태 연결)
+            NaverMap(
+                modifier = Modifier.fillMaxSize(),
+                cameraPositionState = cameraPositionState // 🚀 추가된 카메라 뷰포트 상태
+            ) {
+                // 📍 현재 선택된 장소에 마커 띄우기
+                selectedPlace?.let { place ->
+                    Marker(
+                        state = MarkerState(position = LatLng(place.latitude, place.longitude)),
+                        captionText = place.name
+                    )
+                }
+
+                // 📍 (선택사항) 바텀시트 일정에 추가된 장소들도 마커로 표시
+                travelRoute.forEach { place ->
+                    Marker(
+                        state = MarkerState(position = LatLng(place.latitude, place.longitude)),
+                        captionText = place.name
+                    )
+                }
+            }
 
             // 🔍 상단 검색바 및 추천 검색어
             Column(
@@ -152,8 +177,7 @@ fun MapScreen(viewModel: MainViewModel) {
                 OutlinedTextField(
                     value = searchQuery,
                     onValueChange = {
-                        viewModel.searchQuery.value = it
-                        viewModel.isSearchActive.value = it.isNotEmpty()
+                        viewModel.searchPlacesRealtime(it) // 실시간 통신 함수 호출
                     },
                     placeholder = { Text("장소, 식당, 카페 검색") },
                     leadingIcon = { Icon(Icons.Default.Search, contentDescription = "검색") },
@@ -177,7 +201,6 @@ fun MapScreen(viewModel: MainViewModel) {
                     singleLine = true
                 )
 
-                // 추천 검색어 드롭다운
                 AnimatedVisibility(visible = isSearchActive) {
                     Card(
                         modifier = Modifier
@@ -187,9 +210,7 @@ fun MapScreen(viewModel: MainViewModel) {
                         colors = CardDefaults.cardColors(containerColor = Color.White)
                     ) {
                         Column {
-                            viewModel.recommendedPlaces.filter { it.name.contains(searchQuery) }.forEach { place ->
-
-                                // 🚀 에러 픽스: 검색 추천어 클릭 시 튕김 방지를 위한 InteractionSource 설정
+                            viewModel.recommendedPlaces.forEach { place ->
                                 val interactionSource = remember { MutableInteractionSource() }
 
                                 Row(
@@ -199,7 +220,7 @@ fun MapScreen(viewModel: MainViewModel) {
                                             interactionSource = interactionSource,
                                             indication = LocalIndication.current,
                                             onClick = {
-                                                viewModel.selectedPlace.value = place // 카드 띄우기
+                                                viewModel.selectedPlace.value = place
                                                 viewModel.isSearchActive.value = false
                                             }
                                         )
@@ -218,14 +239,14 @@ fun MapScreen(viewModel: MainViewModel) {
                 }
             }
 
-            // 💳 선택된 장소 상세 정보 카드 (바텀시트 바로 위쪽에 플로팅)
+            // 💳 선택된 장소 상세 정보 카드
             AnimatedVisibility(
                 visible = selectedPlace != null,
                 enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
                 exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
-                    .padding(bottom = 16.dp, start = 16.dp, end = 16.dp) // 바텀시트 위에 뜨도록 패딩 설정
+                    .padding(bottom = 16.dp, start = 16.dp, end = 16.dp)
             ) {
                 selectedPlace?.let { place ->
                     Card(
@@ -235,7 +256,6 @@ fun MapScreen(viewModel: MainViewModel) {
                         colors = CardDefaults.cardColors(containerColor = Color.White)
                     ) {
                         Row(modifier = Modifier.padding(16.dp)) {
-                            // 썸네일 이미지
                             AsyncImage(
                                 model = place.imageUrl,
                                 contentDescription = "장소 이미지",
@@ -244,7 +264,6 @@ fun MapScreen(viewModel: MainViewModel) {
                             )
                             Spacer(modifier = Modifier.width(16.dp))
 
-                            // 정보 및 추가 버튼
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(place.name, fontSize = 18.sp, fontWeight = FontWeight.Bold)
                                 Spacer(modifier = Modifier.height(4.dp))
