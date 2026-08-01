@@ -5,6 +5,7 @@ import androidx.compose.animation.core.*
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
@@ -19,6 +20,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -26,7 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 // =========================================================================
-// 데이터 소스 (하드코딩 방지를 위한 리스트화)
+// 데이터 소스
 // =========================================================================
 val basicConditions = listOf(
     "당뇨 관리 (저당)", "고혈압 (저나트륨)", "통풍 (저퓨린)", "고지혈증 (저콜레스테롤)",
@@ -57,6 +59,7 @@ val religionItems = listOf(
 @Composable
 fun ProfileScreen(viewModel: MainViewModel, onNavigateToMap: () -> Unit) {
     val selectedConditions by viewModel.selectedConditions
+    val handleToggle = remember { { condition: String -> viewModel.toggleCondition(condition) } }
 
     Scaffold(
         topBar = {
@@ -80,7 +83,6 @@ fun ProfileScreen(viewModel: MainViewModel, onNavigateToMap: () -> Unit) {
                 Text("다중 선택이 가능합니다. 맞춤형 🔴🟡🟢 가이드를 제공해 드려요.", color = Color.Gray, fontSize = 13.sp)
             }
 
-            // 1. 기본 만성 질환 섹션
             item {
                 Text("기본 질환 관리", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF2E7D32))
                 Spacer(modifier = Modifier.height(12.dp))
@@ -93,43 +95,39 @@ fun ProfileScreen(viewModel: MainViewModel, onNavigateToMap: () -> Unit) {
                         AnimatedChip(
                             label = condition,
                             isSelected = selectedConditions.contains(condition),
-                            onClick = { viewModel.toggleCondition(condition) }
+                            onToggle = handleToggle
                         )
                     }
                 }
             }
 
-            // 2. 알레르기 섹션
             item {
                 ExpandableCategorySection(
                     title = "⚠️ 알레르기 유발 물질",
                     items = allergyItems,
                     selectedItems = selectedConditions,
-                    onToggle = { viewModel.toggleCondition(it) }
+                    onToggle = handleToggle
                 )
             }
 
-            // 3. 헬스/식단 섹션
             item {
                 ExpandableCategorySection(
                     title = "🥗 헬스 및 다이어트 식단",
                     items = dietItems,
                     selectedItems = selectedConditions,
-                    onToggle = { viewModel.toggleCondition(it) }
+                    onToggle = handleToggle
                 )
             }
 
-            // 4. 종교/신념 섹션
             item {
                 ExpandableCategorySection(
                     title = "🙏 종교 및 신념 기반 식단",
                     items = religionItems,
                     selectedItems = selectedConditions,
-                    onToggle = { viewModel.toggleCondition(it) }
+                    onToggle = handleToggle
                 )
             }
 
-            // 하단 여백 및 제출 버튼
             item {
                 Spacer(modifier = Modifier.height(24.dp))
                 Button(
@@ -149,41 +147,48 @@ fun ProfileScreen(viewModel: MainViewModel, onNavigateToMap: () -> Unit) {
 }
 
 // =========================================================================
-// 컴포넌트 1: 모던 애니메이션 칩 (Active State 적용)
+// 컴포넌트 1: 렌더링을 극대화한 가벼운 칩
 // =========================================================================
 @Composable
-fun AnimatedChip(label: String, isSelected: Boolean, onClick: () -> Unit) {
+fun AnimatedChip(
+    label: String,
+    isSelected: Boolean,
+    onToggle: (String) -> Unit
+) {
     val backgroundColor by animateColorAsState(
         targetValue = if (isSelected) Color(0xFF2E7D32) else Color.White,
-        animationSpec = tween(durationMillis = 300), label = "bgColor"
+        animationSpec = tween(durationMillis = 200), label = "bgColor"
     )
     val textColor by animateColorAsState(
         targetValue = if (isSelected) Color.White else Color.DarkGray,
-        animationSpec = tween(durationMillis = 300), label = "textColor"
+        animationSpec = tween(durationMillis = 200), label = "textColor"
     )
     val scale by animateFloatAsState(
         targetValue = if (isSelected) 1.05f else 1f,
-        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow),
-        label = "scale"
+        animationSpec = tween(durationMillis = 150), label = "scale"
     )
 
-    Surface(
+    Box(
         modifier = Modifier
             .scale(scale)
+            .shadow(if (isSelected) 4.dp else 0.dp, RoundedCornerShape(20.dp))
+            .background(backgroundColor, RoundedCornerShape(20.dp))
+            .border(
+                width = if (isSelected) 0.dp else 1.dp,
+                color = if (isSelected) Color.Transparent else Color(0xFFE0E0E0),
+                shape = RoundedCornerShape(20.dp)
+            )
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
-                indication = null, // 여기는 애니메이션을 직접 주므로 기본 물결 끄기 (안전함)
-                onClick = onClick
-            ),
-        shape = RoundedCornerShape(20.dp),
-        color = backgroundColor,
-        border = if (!isSelected) BorderStroke(1.dp, Color(0xFFE0E0E0)) else null,
-        shadowElevation = if (isSelected) 4.dp else 0.dp
+                indication = null,
+                onClick = { onToggle(label) }
+            )
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+        contentAlignment = Alignment.Center
     ) {
         Text(
             text = label,
             color = textColor,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
             fontSize = 14.sp,
             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
         )
@@ -191,7 +196,7 @@ fun AnimatedChip(label: String, isSelected: Boolean, onClick: () -> Unit) {
 }
 
 // =========================================================================
-// 컴포넌트 2: 확장형(아코디언) 카테고리 + 직접 입력 뷰
+// 컴포넌트 2: 마법의 최적화가 적용된 아코디언 메뉴
 // =========================================================================
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -202,10 +207,7 @@ fun ExpandableCategorySection(
     onToggle: (String) -> Unit
 ) {
     var isExpanded by remember { mutableStateOf(false) }
-    var customInput by remember { mutableStateOf("") }
     val customItems = remember { mutableStateListOf<String>() }
-
-    // 🚀 에러 픽스 핵심 부분: Compose 1.7.0 크래시 방지용 InteractionSource 설정
     val interactionSource = remember { MutableInteractionSource() }
 
     Card(
@@ -213,14 +215,20 @@ fun ExpandableCategorySection(
             .fillMaxWidth()
             .clickable(
                 interactionSource = interactionSource,
-                indication = LocalIndication.current, // 🚀 구글 권장 방식 명시적 선언
+                indication = LocalIndication.current,
                 onClick = { isExpanded = !isExpanded }
             ),
         colors = CardDefaults.cardColors(containerColor = Color(0xFFF9F9F9)),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         border = BorderStroke(1.dp, Color(0xFFEEEEEE))
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .animateContentSize(animationSpec = tween(durationMillis = 250, easing = LinearOutSlowInEasing))
+                // 🚀 내부 패딩을 16dp -> 20dp로 살짝 넓혀 텍스트 잘림을 예방
+                .padding(20.dp)
+        ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -234,11 +242,7 @@ fun ExpandableCategorySection(
                 )
             }
 
-            AnimatedVisibility(
-                visible = isExpanded,
-                enter = expandVertically() + fadeIn(),
-                exit = shrinkVertically() + fadeOut()
-            ) {
+            if (isExpanded) {
                 Column(modifier = Modifier.padding(top = 16.dp)) {
                     FlowRow(
                         modifier = Modifier.fillMaxWidth(),
@@ -249,52 +253,70 @@ fun ExpandableCategorySection(
                             AnimatedChip(
                                 label = item,
                                 isSelected = selectedItems.contains(item),
-                                onClick = { onToggle(item) }
+                                onToggle = onToggle
                             )
                         }
                         customItems.forEach { customItem ->
                             AnimatedChip(
                                 label = customItem,
                                 isSelected = selectedItems.contains(customItem),
-                                onClick = { onToggle(customItem) }
+                                onToggle = onToggle
                             )
                         }
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        OutlinedTextField(
-                            value = customInput,
-                            onValueChange = { customInput = it },
-                            placeholder = { Text("기타 직접 입력", fontSize = 14.sp) },
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(50.dp),
-                            singleLine = true,
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = Color(0xFF2E7D32),
-                                unfocusedBorderColor = Color(0xFFE0E0E0)
-                            )
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        IconButton(
-                            onClick = {
-                                if (customInput.isNotBlank() && !customItems.contains(customInput)) {
-                                    customItems.add(customInput)
-                                    onToggle(customInput)
-                                    customInput = ""
-                                }
-                            },
-                            modifier = Modifier
-                                .size(50.dp)
-                                .background(Color(0xFFE8F5E9), RoundedCornerShape(8.dp))
-                        ) {
-                            Icon(Icons.Default.Add, contentDescription = "추가", tint = Color(0xFF2E7D32))
+                    CustomInputRow(
+                        onAddCustomItem = { newCustom ->
+                            if (!customItems.contains(newCustom)) {
+                                customItems.add(newCustom)
+                                onToggle(newCustom)
+                            }
                         }
-                    }
+                    )
                 }
             }
+        }
+    }
+}
+
+// =========================================================================
+// 컴포넌트 3: 기타 직접 입력 전용 영역
+// =========================================================================
+@Composable
+fun CustomInputRow(onAddCustomItem: (String) -> Unit) {
+    var customInput by remember { mutableStateOf("") }
+
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        OutlinedTextField(
+            value = customInput,
+            onValueChange = { customInput = it },
+            placeholder = { Text("기타 직접 입력", fontSize = 14.sp) },
+            modifier = Modifier
+                .weight(1f)
+                // 🚀 [수정]: 50.dp -> 56.dp (Material 3 표준 높이)로 변경하여 글자 잘림 완벽 해결!
+                .height(56.dp),
+            singleLine = true,
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = Color(0xFF2E7D32),
+                unfocusedBorderColor = Color(0xFFE0E0E0)
+            )
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        IconButton(
+            onClick = {
+                if (customInput.isNotBlank()) {
+                    onAddCustomItem(customInput)
+                    customInput = ""
+                }
+            },
+            modifier = Modifier
+                // 🚀 [수정]: 버튼 높이도 텍스트 필드에 맞춰 56.dp로 동일하게 변경
+                .size(56.dp)
+                .background(Color(0xFFE8F5E9), RoundedCornerShape(8.dp))
+        ) {
+            Icon(Icons.Default.Add, contentDescription = "추가", tint = Color(0xFF2E7D32))
         }
     }
 }

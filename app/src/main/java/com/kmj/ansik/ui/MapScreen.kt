@@ -1,11 +1,15 @@
 package com.kmj.ansik.ui
 
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.Typeface
 import android.net.Uri
 import androidx.compose.animation.*
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -30,6 +34,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -41,13 +46,14 @@ import coil.compose.AsyncImage
 import com.naver.maps.geometry.LatLng
 import com.naver.maps.map.CameraUpdate
 import com.naver.maps.map.compose.*
+import com.naver.maps.map.overlay.OverlayImage
 import com.naver.maps.map.util.MarkerIcons
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
 
-// 🚀 무지개 순서 Day 색상 팔레트
+// 무지개 순서 Day 색상 팔레트
 val DayColorPalette = listOf(
     Color(0xFFE53935), // 1일차: 빨강
     Color(0xFFFF7043), // 2일차: 주황
@@ -65,6 +71,46 @@ fun getDayColor(day: Int): Color {
     if (day < 1) return Color.Gray
     val index = (day - 1) % DayColorPalette.size
     return DayColorPalette[index]
+}
+
+// 번호가 박힌 커스텀 원형 핀 이미지를 생성하는 함수
+@Composable
+fun rememberNumberedMarker(number: Int, composeColor: Color): OverlayImage {
+    return remember(number, composeColor) {
+        val size = 90 // 마커 크기
+        val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+
+        // 핀 배경색 (Day 컬러)
+        val paint = Paint().apply {
+            isAntiAlias = true
+            color = composeColor.toArgb()
+        }
+        canvas.drawCircle(size / 2f, size / 2f, size / 2f, paint)
+
+        // 하얀색 테두리
+        val borderPaint = Paint().apply {
+            isAntiAlias = true
+            color = android.graphics.Color.WHITE
+            style = Paint.Style.STROKE
+            strokeWidth = 6f
+        }
+        canvas.drawCircle(size / 2f, size / 2f, (size / 2f) - 3f, borderPaint)
+
+        // 가운데 번호 텍스트
+        val textPaint = Paint().apply {
+            isAntiAlias = true
+            color = android.graphics.Color.WHITE
+            textSize = 45f
+            typeface = Typeface.DEFAULT_BOLD
+            textAlign = Paint.Align.CENTER
+        }
+        val fontMetrics = textPaint.fontMetrics
+        val textY = (size / 2f) - (fontMetrics.ascent + fontMetrics.descent) / 2f
+        canvas.drawText(number.toString(), size / 2f, textY, textPaint)
+
+        OverlayImage.fromBitmap(bitmap)
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalNaverMapApi::class)
@@ -90,20 +136,17 @@ fun MapScreen(viewModel: MainViewModel) {
     val coroutineScope = rememberCoroutineScope()
     val lazyListState = rememberLazyListState()
 
-    // 🚀 지도 핀 클릭 시 해당 카드를 하이라이트하기 위한 ID 상태
     var highlightedPlaceId by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(selectedPlace) {
         selectedPlace?.let { place ->
             val targetLocation = LatLng(place.latitude, place.longitude)
             cameraPositionState.animate(CameraUpdate.scrollTo(targetLocation))
-            viewModel.searchNearbyRecommendations(place.latitude, place.longitude)
         }
     }
 
     BottomSheetScaffold(
         scaffoldState = scaffoldState,
-        // 🚀 카드 1장 크기가 온전히 보이는 240.dp
         sheetPeekHeight = 240.dp,
         sheetContainerColor = Color.White,
         sheetContent = {
@@ -173,11 +216,10 @@ fun MapScreen(viewModel: MainViewModel) {
                             val elevation = if (isDragging) 8.dp else 0.dp
                             val dayColor = getDayColor(place.day)
 
-                            // 🚀 클릭한 핀에 해당하는 카드일 경우 연한 노란색으로 반짝 효과 부여
                             val isHighlighted = (place.id == highlightedPlaceId)
                             val cardBgColor = when {
                                 isDragging -> Color(0xFFE8F5E9)
-                                isHighlighted -> Color(0xFFFFF9C4) // 노란색 하이라이트
+                                isHighlighted -> Color(0xFFFFF9C4)
                                 else -> Color(0xFFF9F9F9)
                             }
 
@@ -250,7 +292,8 @@ fun MapScreen(viewModel: MainViewModel) {
                             }
                         }
                     }
-                    item { Spacer(modifier = Modifier.height(80.dp)) }
+                    // 🚀 [해결 핵심]: 1000.dp로 늘려 마지막 최신 일정도 무조건 바텀시트 상단으로 스크롤 가능하게 확보
+                    item { Spacer(modifier = Modifier.height(1000.dp)) }
                 }
             }
         }
@@ -273,7 +316,6 @@ fun MapScreen(viewModel: MainViewModel) {
                     keyboardController?.hide()
                 }
             ) {
-                // 날짜별 경로 선(PathOverlay)
                 for (d in 1..viewModel.days.value) {
                     val coords = viewModel.getRouteCoordsForDay(d)
                     if (coords.size >= 2) {
@@ -287,7 +329,6 @@ fun MapScreen(viewModel: MainViewModel) {
                     }
                 }
 
-                // 검색 선택 장소 마커
                 selectedPlace?.let { place ->
                     key("selected_${place.id}") {
                         Marker(
@@ -298,21 +339,24 @@ fun MapScreen(viewModel: MainViewModel) {
                     }
                 }
 
-                // 🚀 일정 등록 장소 마커 (클릭 시 최대화 없이 해당 카드를 리스트 맨 위로 끌어올려 즉시 보여줌!)
                 travelRoute.forEach { place ->
+                    val dayColor = getDayColor(place.day)
+                    val dayIndex = travelRoute.filter { it.day == place.day }.indexOf(place) + 1
+
+                    val customMarkerIcon = rememberNumberedMarker(number = dayIndex, composeColor = dayColor)
+
                     key("route_${place.id}") {
                         Marker(
                             state = MarkerState(position = LatLng(place.latitude, place.longitude)),
-                            icon = MarkerIcons.BLACK,
-                            iconTintColor = getDayColor(place.day),
+                            icon = customMarkerIcon,
                             onClick = {
                                 coroutineScope.launch {
-                                    // 1) 바텀시트는 최대화하지 않고 기존 높이 유지
-                                    // 2) 클릭한 카드를 바텀시트 맨 위(첫 번째) 순서로 끌어올려 카드 1개 시점에서도 무조건 보이게 처리
-                                    viewModel.movePlaceToTop(place)
-                                    lazyListState.scrollToItem(0)
+                                    // 🚀 클릭하는 즉시 실시간 인덱스를 다시 추적해서 최신 항목도 완벽하게 잡아냄
+                                    val freshIndex = viewModel.travelRoute.indexOfFirst { it.id == place.id }
+                                    if (freshIndex != -1) {
+                                        lazyListState.animateScrollToItem(freshIndex)
+                                    }
 
-                                    // 3) 0.8초간 해당 카드 배경색을 반짝 하이라이트
                                     highlightedPlaceId = place.id
                                     delay(800)
                                     if (highlightedPlaceId == place.id) {
