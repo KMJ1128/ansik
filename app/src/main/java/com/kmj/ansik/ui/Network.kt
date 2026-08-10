@@ -6,45 +6,180 @@ import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.Query
 
-// 1. 카카오 장소 검색 응답 구조
-data class KakaoSearchResponse(val documents: List<KakaoPlace>)
-data class KakaoPlace(
-    val place_name: String,
-    val road_address_name: String,
-    val category_group_name: String,
-    val x: String, // 경도(longitude)
-    val y: String  // 위도(latitude)
-)
+interface ApiService {
 
-// 2. 카카오 이미지 검색 응답 구조
-data class KakaoImageResponse(val documents: List<KakaoImageDocument>)
-data class KakaoImageDocument(val image_url: String)
+    // ========================================================
+    // Kakao Local API
+    // ========================================================
 
-// 3. 서버 요청 명세서
-interface KakaoSearchApi {
     @GET("v2/local/search/keyword.json")
     suspend fun searchPlace(
-        @Header("Authorization") apiKey: String = "KakaoAK ea731a9e930f5151c7ccc30d50d0996e",
-        @Query("query") query: String
+
+        @Header("Authorization")
+        apiKey: String =
+            "KakaoAK ea731a9e930f5151c7ccc30d50d0996e",
+
+        @Query("query")
+        query: String
+
     ): KakaoSearchResponse
 
-    // 해당 장소의 사진을 가져오는 API
+
+    // ========================================================
+    // Kakao Image API
+    // ========================================================
+
     @GET("v2/search/image")
     suspend fun searchImage(
-        @Header("Authorization") apiKey: String = "KakaoAK ea731a9e930f5151c7ccc30d50d0996e",
-        @Query("query") query: String,
-        @Query("size") size: Int = 1
+
+        @Header("Authorization")
+        apiKey: String =
+            "KakaoAK ea731a9e930f5151c7ccc30d50d0996e",
+
+        @Query("query")
+        query: String,
+
+        @Query("size")
+        size: Int = 1
+
     ): KakaoImageResponse
+
+
+    // ========================================================
+    // TourAPI
+    // 위치 기반 관광정보
+    //
+    // 음식점:
+    // contentTypeId = 39
+    // ========================================================
+
+    @GET(
+        "https://apis.data.go.kr/B551011/KorService2/locationBasedList2"
+    )
+    suspend fun getNearbyRestaurants(
+
+        @Query(
+            "serviceKey",
+            encoded = true
+        )
+        serviceKey: String =
+            "ecb776bfdd4b1760b36175140757e31841453b0c1aa8c5ac261dcf182a6ab4bf",
+
+        @Query("MobileOS")
+        mobileOS: String =
+            "AND",
+
+        @Query("MobileApp")
+        mobileApp: String =
+            "Ansik",
+
+        @Query("_type")
+        type: String =
+            "json",
+
+        @Query("mapX")
+        lng: Double,
+
+        @Query("mapY")
+        lat: Double,
+
+        @Query("radius")
+        radius: Int =
+            5000,
+
+        @Query("contentTypeId")
+        contentTypeId: Int =
+            39,
+
+        @Query("numOfRows")
+        numOfRows: Int =
+            20,
+
+        @Query("pageNo")
+        pageNo: Int =
+            1,
+
+        @Query("arrange")
+        arrange: String =
+            "E"
+
+    ): TourLocationResponse
+
+
+    // ========================================================
+    // TourAPI
+    // 음식점 상세정보
+    //
+    // 중요:
+    // detailIntro1 ❌
+    // detailIntro2 ✅
+    // ========================================================
+
+    @GET(
+        "https://apis.data.go.kr/B551011/KorService2/detailIntro2"
+    )
+    suspend fun getRestaurantDetails(
+
+        @Query(
+            "serviceKey",
+            encoded = true
+        )
+        serviceKey: String =
+            "ecb776bfdd4b1760b36175140757e31841453b0c1aa8c5ac261dcf182a6ab4bf",
+
+        @Query("MobileOS")
+        mobileOS: String =
+            "AND",
+
+        @Query("MobileApp")
+        mobileApp: String =
+            "Ansik",
+
+        @Query("_type")
+        type: String =
+            "json",
+
+        @Query("contentId")
+        contentId: String,
+
+        @Query("contentTypeId")
+        contentTypeId: Int =
+            39,
+
+        @Query("numOfRows")
+        numOfRows: Int =
+            1,
+
+        @Query("pageNo")
+        pageNo: Int =
+            1
+
+    ): TourDetailIntroResponse
 }
 
-// 통신 객체 생성
+
+// ============================================================
+// Retrofit
+// ============================================================
+
 object RetrofitClient {
-    val api: KakaoSearchApi by lazy {
+
+    val api: ApiService by lazy {
+
         Retrofit.Builder()
-            .baseUrl("https://dapi.kakao.com/")
-            .addConverterFactory(GsonConverterFactory.create())
+
+            .baseUrl(
+                "https://dapi.kakao.com/"
+            )
+
+            .addConverterFactory(
+                GsonConverterFactory.create()
+            )
+
             .build()
-            .create(KakaoSearchApi::class.java)
+
+            .create(
+                ApiService::class.java
+            )
     }
 }
-
