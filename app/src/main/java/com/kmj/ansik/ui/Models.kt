@@ -25,3 +25,6 @@ data class PlaceInfo(
     val longitude: Double,
     var day: Int = 1 // 🚀 몇 째날 일정인지 구분 (기본값 1일차)
 )
+
+
+

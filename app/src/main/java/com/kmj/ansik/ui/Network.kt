@@ -47,3 +47,4 @@ object RetrofitClient {
             .create(KakaoSearchApi::class.java)
     }
 }
+
