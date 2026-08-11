@@ -1,3 +1,94 @@
 <resources>
-    <string name="app_name">Ansik</string>
+    <string name="app_name">안식 (An-Sik)</string>
+    <string name="app_title">안식 (An-Sik)</string>
+    <string name="health_management_title">🩺 어떤 건강 관리가 필요하신가요?</string>
+    <string name="health_management_desc">다중 선택이 가능합니다. 맞춤형 🔴🟡🟢 가이드를 제공해 드려요.</string>
+    <string name="basic_disease_care">기본 질환 관리</string>
+    <string name="allergy_triggers">⚠️ 알레르기 유발 물질</string>
+    <string name="health_diet">🥗 헬스 및 다이어트 식단</string>
+    <string name="religion_belief_diet">🙏 종교 및 신념 기반 식단</string>
+    <string name="go_to_travel_route">여행 동선 짜러 가기 🗺️</string>
+    <string name="expand">확장</string>
+    <string name="enter_custom_other">기타 직접 입력</string>
+    <string name="add">추가</string>
+
+    <!-- 뷰모델용 문자열 -->
+    <string name="no_address">주소 없음</string>
+    <string name="place">장소</string>
+    <string name="poi">관심 위치</string>
+    <string name="selected_from_map">지도에서 선택한 장소</string>
+
+
+
+    <!-- MapScreen & MainViewModel 용 -->
+    <string name="my_travel_schedule">내 여행 일정</string>
+    <string name="nights_days">%1$d박 %2$d일</string>
+    <string name="change_order">순서 변경</string>
+    <string name="delete">삭제</string>
+    <string name="day_format">Day %1$d</string>
+    <string name="search_placeholder">어디로 떠나시나요?</string>
+    <string name="search">검색</string>
+    <string name="clear">지우기</string>
+    <string name="place_image">장소 이미지</string>
+    <string name="directions_roadview">길찾기 / 로드뷰</string>
+    <string name="add_to_schedule_desc">일정에 추가</string>
+    <string name="add_schedule">일정 추가</string>
+    <string name="find_restaurant">식당 찾기</string>
+    <string name="loading_public_data">공공데이터 불러오는 중...</string>
+    <string name="find_nearby_safe_restaurants">주변 5km 안심 식당 찾기 (TourAPI)</string>
+    <string name="settings">설정</string>
+
+
+    <string-array name="basic_conditions">
+        <item>당뇨 관리 (저당)</item>
+        <item>고혈압 (저나트륨)</item>
+        <item>통풍 (저퓨린)</item>
+        <item>고지혈증 (저콜레스테롤)</item>
+        <item>만성 신부전 (저칼륨)</item>
+        <item>위장 장애 (저자극)</item>
+        <item>심혈관 질환</item>
+        <item>비만/체중 관리</item>
+        <item>임산부/수유부</item>
+    </string-array>
+
+    <string-array name="allergy_items">
+        <item>갑각류</item>
+        <item>견과류</item>
+        <item>우유/유제품</item>
+        <item>대두(콩)</item>
+        <item>밀(글루텐)</item>
+        <item>계란</item>
+        <item>생선</item>
+        <item>조개류</item>
+        <item>복숭아</item>
+        <item>토마토</item>
+        <item>돼지고기</item>
+        <item>아황산류(와인 등)</item>
+    </string-array>
+
+    <string-array name="diet_items">
+        <item>비건 (엄격한 채식)</item>
+        <item>락토오보 (우유/계란 허용)</item>
+        <item>페스카테리안 (해산물 허용)</item>
+        <item>키토제닉 (저탄고지)</item>
+        <item>고단백/벌크업</item>
+        <item>무글루텐 (Gluten-Free)</item>
+        <item>간헐적 단식</item>
+        <item>저지방 식단</item>
+        <item>지중해식 식단</item>
+        <item>당질 제한식</item>
+    </string-array>
+
+    <string-array name="religion_items">
+        <item>할랄 (이슬람교)</item>
+        <item>코셔 (유대교)</item>
+        <item>소고기 금지 (힌두교)</item>
+        <item>돼지고기 금지</item>
+        <item>오신채 금지 (불교)</item>
+        <item>육식 금지 (제칠일안식일예수재림교)</item>
+        <item>뿌리채소 금지 (자이나교)</item>
+        <item>유기농 선호</item>
+        <item>동물권 보호식</item>
+        <item>공정무역 식재료</item>
+    </string-array>
 </resources>

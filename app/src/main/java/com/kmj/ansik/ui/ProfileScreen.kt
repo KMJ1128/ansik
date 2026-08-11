@@ -17,6 +17,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -24,66 +25,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringArrayResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-
-val basicConditions =
-    listOf(
-        "당뇨 관리 (저당)",
-        "고혈압 (저나트륨)",
-        "통풍 (저퓨린)",
-        "고지혈증 (저콜레스테롤)",
-        "만성 신부전 (저칼륨)",
-        "위장 장애 (저자극)",
-        "심혈관 질환",
-        "비만/체중 관리",
-        "임산부/수유부"
-    )
-
-val allergyItems =
-    listOf(
-        "갑각류",
-        "견과류",
-        "우유/유제품",
-        "대두(콩)",
-        "밀(글루텐)",
-        "계란",
-        "생선",
-        "조개류",
-        "복숭아",
-        "토마토",
-        "돼지고기",
-        "아황산류(와인 등)"
-    )
-
-val dietItems =
-    listOf(
-        "비건 (엄격한 채식)",
-        "락토오보 (우유/계란 허용)",
-        "페스카테리안 (해산물 허용)",
-        "키토제닉 (저탄고지)",
-        "고단백/벌크업",
-        "무글루텐 (Gluten-Free)",
-        "간헐적 단식",
-        "저지방 식단",
-        "지중해식 식단",
-        "당질 제한식"
-    )
-
-val religionItems =
-    listOf(
-        "할랄 (이슬람교)",
-        "코셔 (유대교)",
-        "소고기 금지 (힌두교)",
-        "돼지고기 금지",
-        "오신채 금지 (불교)",
-        "육식 금지 (제칠일안식일예수재림교)",
-        "뿌리채소 금지 (자이나교)",
-        "유기농 선호",
-        "동물권 보호식",
-        "공정무역 식재료"
-    )
+import com.kmj.ansik.R
 
 @OptIn(
     ExperimentalMaterial3Api::class,
@@ -92,234 +39,148 @@ val religionItems =
 @Composable
 fun ProfileScreen(
     viewModel: MainViewModel,
-    onNavigateToMap: () -> Unit
+    onNavigateToMap: () -> Unit,
+    onNavigateToSettings: () -> Unit // 톱니바퀴 클릭 시 이동할 콜백 추가
 ) {
+    val selectedConditions by viewModel.selectedConditions
 
-    val selectedConditions by
-    viewModel.selectedConditions
-
-    val handleToggle =
-        remember {
-            {
-                    condition: String ->
-                viewModel.toggleCondition(
-                    condition
-                )
-            }
+    val handleToggle = remember {
+        { condition: String ->
+            viewModel.toggleCondition(condition)
         }
+    }
+
+    // strings.xml에서 다국어 배열 리소스 불러오기
+    val basicConditions = stringArrayResource(id = R.array.basic_conditions).toList()
+    val allergyItems = stringArrayResource(id = R.array.allergy_items).toList()
+    val dietItems = stringArrayResource(id = R.array.diet_items).toList()
+    val religionItems = stringArrayResource(id = R.array.religion_items).toList()
 
     Scaffold(
-
         topBar = {
-
             TopAppBar(
-
                 title = {
-
                     Text(
-                        "안식 (An-Sik)",
-                        fontWeight =
-                            FontWeight.Bold,
-                        color =
-                            Color(0xFF1B5E20)
+                        text = stringResource(id = R.string.app_title),
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF1B5E20)
                     )
                 },
-
-                colors =
-                    TopAppBarDefaults
-                        .topAppBarColors(
-                            containerColor =
-                                Color(0xFFE8F5E9)
+                actions = {
+                    // 상단 우측에 설정(언어 변경 등) 아이콘 추가
+                    IconButton(onClick = onNavigateToSettings) {
+                        Icon(
+                            imageVector = Icons.Default.Settings,
+                            contentDescription = stringResource(id = R.string.settings), // strings.xml에 추가 필요
+                            tint = Color(0xFF1B5E20)
                         )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color(0xFFE8F5E9)
+                )
             )
         }
-
     ) { paddingValues ->
 
         LazyColumn(
-
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues)
-                    .padding(
-                        horizontal = 24.dp
-                    ),
-
-            verticalArrangement =
-                Arrangement.spacedBy(
-                    24.dp
-                )
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .padding(horizontal = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
-
             item {
-
-                Spacer(
-                    modifier =
-                        Modifier.height(24.dp)
-                )
+                Spacer(modifier = Modifier.height(24.dp))
 
                 Text(
-                    "🩺 어떤 건강 관리가 필요하신가요?",
-                    fontSize =
-                        22.sp,
-                    fontWeight =
-                        FontWeight.Bold
+                    text = stringResource(id = R.string.health_management_title),
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Bold
                 )
 
-                Spacer(
-                    modifier =
-                        Modifier.height(8.dp)
-                )
+                Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    "다중 선택이 가능합니다. 맞춤형 🔴🟡🟢 가이드를 제공해 드려요.",
-                    color =
-                        Color.Gray,
-                    fontSize =
-                        13.sp
+                    text = stringResource(id = R.string.health_management_desc),
+                    color = Color.Gray,
+                    fontSize = 13.sp
                 )
             }
 
             item {
-
                 Text(
-                    "기본 질환 관리",
-                    fontWeight =
-                        FontWeight.Bold,
-                    fontSize =
-                        16.sp,
-                    color =
-                        Color(0xFF2E7D32)
+                    text = stringResource(id = R.string.basic_disease_care),
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp,
+                    color = Color(0xFF2E7D32)
                 )
 
-                Spacer(
-                    modifier =
-                        Modifier.height(12.dp)
-                )
+                Spacer(modifier = Modifier.height(12.dp))
 
                 FlowRow(
-
-                    modifier =
-                        Modifier.fillMaxWidth(),
-
-                    horizontalArrangement =
-                        Arrangement.spacedBy(
-                            8.dp
-                        ),
-
-                    verticalArrangement =
-                        Arrangement.spacedBy(
-                            12.dp
-                        )
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-
-                    basicConditions.forEach {
-                            condition ->
-
+                    basicConditions.forEach { condition ->
                         AnimatedChip(
-
-                            label =
-                                condition,
-
-                            isSelected =
-                                selectedConditions
-                                    .contains(
-                                        condition
-                                    ),
-
-                            onToggle =
-                                handleToggle
+                            label = condition,
+                            isSelected = selectedConditions.contains(condition),
+                            onToggle = handleToggle
                         )
                     }
                 }
             }
 
             item {
-
                 ExpandableCategorySection(
-                    title =
-                        "⚠️ 알레르기 유발 물질",
-                    items =
-                        allergyItems,
-                    selectedItems =
-                        selectedConditions,
-                    onToggle =
-                        handleToggle
+                    title = stringResource(id = R.string.allergy_triggers),
+                    items = allergyItems,
+                    selectedItems = selectedConditions,
+                    onToggle = handleToggle
                 )
             }
 
             item {
-
                 ExpandableCategorySection(
-                    title =
-                        "🥗 헬스 및 다이어트 식단",
-                    items =
-                        dietItems,
-                    selectedItems =
-                        selectedConditions,
-                    onToggle =
-                        handleToggle
+                    title = stringResource(id = R.string.health_diet),
+                    items = dietItems,
+                    selectedItems = selectedConditions,
+                    onToggle = handleToggle
                 )
             }
 
             item {
-
                 ExpandableCategorySection(
-                    title =
-                        "🙏 종교 및 신념 기반 식단",
-                    items =
-                        religionItems,
-                    selectedItems =
-                        selectedConditions,
-                    onToggle =
-                        handleToggle
+                    title = stringResource(id = R.string.religion_belief_diet),
+                    items = religionItems,
+                    selectedItems = selectedConditions,
+                    onToggle = handleToggle
                 )
             }
 
             item {
-
-                Spacer(
-                    modifier =
-                        Modifier.height(24.dp)
-                )
+                Spacer(modifier = Modifier.height(24.dp))
 
                 Button(
-
-                    onClick =
-                        onNavigateToMap,
-
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .height(56.dp),
-
-                    shape =
-                        RoundedCornerShape(
-                            12.dp
-                        ),
-
-                    colors =
-                        ButtonDefaults
-                            .buttonColors(
-                                containerColor =
-                                    Color(0xFF2E7D32)
-                            )
+                    onClick = onNavigateToMap,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF2E7D32)
+                    )
                 ) {
-
                     Text(
-                        "여행 동선 짜러 가기 🗺️",
-                        fontSize =
-                            16.sp,
-                        fontWeight =
-                            FontWeight.Bold
+                        text = stringResource(id = R.string.go_to_travel_route),
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold
                     )
                 }
 
-                Spacer(
-                    modifier =
-                        Modifier.height(48.dp)
-                )
+                Spacer(modifier = Modifier.height(48.dp))
             }
         }
     }
@@ -331,139 +192,54 @@ fun AnimatedChip(
     isSelected: Boolean,
     onToggle: (String) -> Unit
 ) {
-
-    val backgroundColor by
-    animateColorAsState(
-
-        targetValue =
-            if (isSelected)
-                Color(0xFF2E7D32)
-            else
-                Color.White,
-
-        animationSpec =
-            tween(
-                durationMillis = 200
-            ),
-
-        label =
-            "bgColor"
+    val backgroundColor by animateColorAsState(
+        targetValue = if (isSelected) Color(0xFF2E7D32) else Color.White,
+        animationSpec = tween(durationMillis = 200),
+        label = "bgColor"
     )
 
-    val textColor by
-    animateColorAsState(
-
-        targetValue =
-            if (isSelected)
-                Color.White
-            else
-                Color.DarkGray,
-
-        animationSpec =
-            tween(
-                durationMillis = 200
-            ),
-
-        label =
-            "textColor"
+    val textColor by animateColorAsState(
+        targetValue = if (isSelected) Color.White else Color.DarkGray,
+        animationSpec = tween(durationMillis = 200),
+        label = "textColor"
     )
 
-    val scale by
-    animateFloatAsState(
-
-        targetValue =
-            if (isSelected)
-                1.05f
-            else
-                1f,
-
-        animationSpec =
-            tween(
-                durationMillis = 150
-            ),
-
-        label =
-            "scale"
+    val scale by animateFloatAsState(
+        targetValue = if (isSelected) 1.05f else 1f,
+        animationSpec = tween(durationMillis = 150),
+        label = "scale"
     )
 
     Box(
-
-        modifier =
-            Modifier
-                .scale(scale)
-                .shadow(
-                    if (isSelected)
-                        4.dp
-                    else
-                        0.dp,
-
-                    RoundedCornerShape(
-                        20.dp
-                    )
-                )
-                .background(
-                    backgroundColor,
-                    RoundedCornerShape(
-                        20.dp
-                    )
-                )
-                .border(
-
-                    width =
-                        if (isSelected)
-                            0.dp
-                        else
-                            1.dp,
-
-                    color =
-                        if (isSelected)
-                            Color.Transparent
-                        else
-                            Color(0xFFE0E0E0),
-
-                    shape =
-                        RoundedCornerShape(
-                            20.dp
-                        )
-                )
-                .clickable(
-
-                    interactionSource =
-                        remember {
-                            MutableInteractionSource()
-                        },
-
-                    indication =
-                        null
-
-                ) {
-                    onToggle(label)
-                }
-
-                .padding(
-                    horizontal = 16.dp,
-                    vertical = 10.dp
-                ),
-
-        contentAlignment =
-            Alignment.Center
+        modifier = Modifier
+            .scale(scale)
+            .shadow(
+                if (isSelected) 4.dp else 0.dp,
+                RoundedCornerShape(20.dp)
+            )
+            .background(
+                backgroundColor,
+                RoundedCornerShape(20.dp)
+            )
+            .border(
+                width = if (isSelected) 0.dp else 1.dp,
+                color = if (isSelected) Color.Transparent else Color(0xFFE0E0E0),
+                shape = RoundedCornerShape(20.dp)
+            )
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null
+            ) {
+                onToggle(label)
+            }
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+        contentAlignment = Alignment.Center
     ) {
-
         Text(
-            text =
-                label,
-
-            color =
-                textColor,
-
-            fontSize =
-                14.sp,
-
-            fontWeight =
-                if (isSelected)
-                    FontWeight.Bold
-                else
-                    FontWeight.Normal
+            text = label,
+            color = textColor,
+            fontSize = 14.sp,
+            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
         )
     }
 }
@@ -476,196 +252,88 @@ fun ExpandableCategorySection(
     selectedItems: Set<String>,
     onToggle: (String) -> Unit
 ) {
-
-    var isExpanded by
-    remember {
-        mutableStateOf(false)
-    }
-
-    val customItems =
-        remember {
-            mutableStateListOf<String>()
-        }
+    var isExpanded by remember { mutableStateOf(false) }
+    val customItems = remember { mutableStateListOf<String>() }
 
     Card(
-
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .clickable(
-
-                    interactionSource =
-                        remember {
-                            MutableInteractionSource()
-                        },
-
-                    indication =
-                        null
-
-                ) {
-                    isExpanded =
-                        !isExpanded
-                },
-
-        colors =
-            CardDefaults.cardColors(
-                containerColor =
-                    Color(0xFFF9F9F9)
-            ),
-
-        elevation =
-            CardDefaults.cardElevation(
-                defaultElevation = 0.dp
-            ),
-
-        border =
-            BorderStroke(
-                1.dp,
-                Color(0xFFEEEEEE)
-            )
-    ) {
-
-        Column(
-
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .animateContentSize(
-                        animationSpec =
-                            tween(
-                                durationMillis =
-                                    250,
-                                easing =
-                                    LinearOutSlowInEasing
-                            )
-                    )
-                    .padding(20.dp)
-        ) {
-
-            Row(
-
-                modifier =
-                    Modifier.fillMaxWidth(),
-
-                horizontalArrangement =
-                    Arrangement.SpaceBetween,
-
-                verticalAlignment =
-                    Alignment.CenterVertically
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null
             ) {
-
+                isExpanded = !isExpanded
+            },
+        colors = CardDefaults.cardColors(
+            containerColor = Color(0xFFF9F9F9)
+        ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 0.dp
+        ),
+        border = BorderStroke(1.dp, Color(0xFFEEEEEE))
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .animateContentSize(
+                    animationSpec = tween(
+                        durationMillis = 250,
+                        easing = LinearOutSlowInEasing
+                    )
+                )
+                .padding(20.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Text(
-                    title,
-                    fontWeight =
-                        FontWeight.Bold,
-                    fontSize =
-                        16.sp
+                    text = title,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp
                 )
 
                 Icon(
-
-                    imageVector =
-                        if (isExpanded)
-                            Icons.Default.KeyboardArrowUp
-                        else
-                            Icons.Default.KeyboardArrowDown,
-
-                    contentDescription =
-                        "확장",
-
-                    tint =
-                        Color.Gray
+                    imageVector = if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                    contentDescription = stringResource(id = R.string.expand),
+                    tint = Color.Gray
                 )
             }
 
             if (isExpanded) {
-
                 Column(
-                    modifier =
-                        Modifier.padding(
-                            top = 16.dp
-                        )
+                    modifier = Modifier.padding(top = 16.dp)
                 ) {
-
                     FlowRow(
-
-                        modifier =
-                            Modifier.fillMaxWidth(),
-
-                        horizontalArrangement =
-                            Arrangement.spacedBy(
-                                8.dp
-                            ),
-
-                        verticalArrangement =
-                            Arrangement.spacedBy(
-                                12.dp
-                            )
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-
                         items.forEach { item ->
-
                             AnimatedChip(
-
-                                label =
-                                    item,
-
-                                isSelected =
-                                    selectedItems
-                                        .contains(
-                                            item
-                                        ),
-
-                                onToggle =
-                                    onToggle
+                                label = item,
+                                isSelected = selectedItems.contains(item),
+                                onToggle = onToggle
                             )
                         }
 
-                        customItems.forEach {
-                                customItem ->
-
+                        customItems.forEach { customItem ->
                             AnimatedChip(
-
-                                label =
-                                    customItem,
-
-                                isSelected =
-                                    selectedItems
-                                        .contains(
-                                            customItem
-                                        ),
-
-                                onToggle =
-                                    onToggle
+                                label = customItem,
+                                isSelected = selectedItems.contains(customItem),
+                                onToggle = onToggle
                             )
                         }
                     }
 
-                    Spacer(
-                        modifier =
-                            Modifier.height(
-                                16.dp
-                            )
-                    )
+                    Spacer(modifier = Modifier.height(16.dp))
 
                     CustomInputRow(
-
-                        onAddCustomItem = {
-                                newCustom ->
-
-                            if (
-                                !customItems.contains(
-                                    newCustom
-                                )
-                            ) {
-
-                                customItems.add(
-                                    newCustom
-                                )
-
-                                onToggle(
-                                    newCustom
-                                )
+                        onAddCustomItem = { newCustom ->
+                            if (!customItems.contains(newCustom)) {
+                                customItems.add(newCustom)
+                                onToggle(newCustom)
                             }
                         }
                     )
@@ -679,89 +347,50 @@ fun ExpandableCategorySection(
 fun CustomInputRow(
     onAddCustomItem: (String) -> Unit
 ) {
-
-    var customInput by
-    remember {
-        mutableStateOf("")
-    }
+    var customInput by remember { mutableStateOf("") }
 
     Row(
-        verticalAlignment =
-            Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically
     ) {
-
         OutlinedTextField(
-
-            value =
-                customInput,
-
-            onValueChange = {
-                customInput = it
-            },
-
+            value = customInput,
+            onValueChange = { customInput = it },
             placeholder = {
                 Text(
-                    "기타 직접 입력",
-                    fontSize =
-                        14.sp
+                    text = stringResource(id = R.string.enter_custom_other),
+                    fontSize = 14.sp
                 )
             },
-
-            modifier =
-                Modifier
-                    .weight(1f)
-                    .height(56.dp),
-
+            modifier = Modifier
+                .weight(1f)
+                .height(56.dp),
             singleLine = true,
-
-            colors =
-                OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor =
-                        Color(0xFF2E7D32),
-
-                    unfocusedBorderColor =
-                        Color(0xFFE0E0E0)
-                )
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = Color(0xFF2E7D32),
+                unfocusedBorderColor = Color(0xFFE0E0E0)
+            )
         )
 
-        Spacer(
-            modifier =
-                Modifier.width(8.dp)
-        )
+        Spacer(modifier = Modifier.width(8.dp))
 
         IconButton(
-
             onClick = {
-
-                if (
-                    customInput.isNotBlank()
-                ) {
-
-                    onAddCustomItem(
-                        customInput.trim()
-                    )
-
+                if (customInput.isNotBlank()) {
+                    onAddCustomItem(customInput.trim())
                     customInput = ""
                 }
             },
-
-            modifier =
-                Modifier
-                    .size(56.dp)
-                    .background(
-                        Color(0xFFE8F5E9),
-                        RoundedCornerShape(
-                            8.dp
-                        )
-                    )
+            modifier = Modifier
+                .size(56.dp)
+                .background(
+                    Color(0xFFE8F5E9),
+                    RoundedCornerShape(8.dp)
+                )
         ) {
-
             Icon(
                 Icons.Default.Add,
-                contentDescription =
-                    "추가",
-                tint =
-                    Color(0xFF2E7D32)
+                contentDescription = stringResource(id = R.string.add),
+                tint = Color(0xFF2E7D32)
             )
         }
     }

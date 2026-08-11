@@ -1,9 +1,11 @@
 package com.kmj.ansik.ui
 
+import android.app.Application
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.kmj.ansik.R
 import com.naver.maps.geometry.LatLng
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -14,70 +16,84 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-class MainViewModel : ViewModel() {
+class MainViewModel(
+    application: Application
+) : AndroidViewModel(application) {
+
+    private val context =
+        application.applicationContext
+
 
     // ========================================================
     // 사용자 건강 / 식단 조건
     // ========================================================
 
-    var selectedConditions = mutableStateOf<Set<String>>(emptySet())
+    var selectedConditions =
+        mutableStateOf<Set<String>>(emptySet())
         private set
+
 
     // ========================================================
     // 여행 일정
     // ========================================================
 
-    val travelRoute = mutableStateListOf<PlaceInfo>()
+    val travelRoute =
+        mutableStateListOf<PlaceInfo>()
 
-    val recommendedPlaces = mutableStateListOf<PlaceInfo>()
+    val recommendedPlaces =
+        mutableStateListOf<PlaceInfo>()
 
-    var nights = mutableStateOf(3)
+    var nights =
+        mutableStateOf(3)
 
-    var days = mutableStateOf(4)
+    var days =
+        mutableStateOf(4)
 
-    var currentSelectedDay = mutableStateOf(1)
+    var currentSelectedDay =
+        mutableStateOf(1)
+
 
     // ========================================================
     // 장소 검색
     // ========================================================
 
-    var searchQuery = mutableStateOf("")
+    var searchQuery =
+        mutableStateOf("")
 
-    var isSearchActive = mutableStateOf(false)
+    var isSearchActive =
+        mutableStateOf(false)
 
-    var selectedPlace = mutableStateOf<PlaceInfo?>(null)
+    var selectedPlace =
+        mutableStateOf<PlaceInfo?>(null)
 
-    private var searchJob: Job? = null
+    private var searchJob:
+            Job? = null
+
 
     // ========================================================
     // TourAPI
     // ========================================================
 
-    /**
-     * 지도에 표시할 주변 식당 목록
-     */
     val nearbyRestaurants =
         mutableStateListOf<TourRestaurant>()
 
     var isFetchingRestaurants =
         mutableStateOf(false)
 
-    /**
-     * 현재 선택된 식당 상세정보
-     *
-     * 현재 UI에서는 별도 팝업을 띄우지 않고
-     * 로그 확인 / 추후 상세 UI 확장용으로 유지합니다.
-     */
     var selectedRestaurantDetail =
         mutableStateOf<TourRestaurantDetail?>(null)
+
 
     // ========================================================
     // Kakao 장소 검색
     // ========================================================
 
-    fun searchPlacesRealtime(query: String) {
+    fun searchPlacesRealtime(
+        query: String
+    ) {
 
-        searchQuery.value = query
+        searchQuery.value =
+            query
 
         isSearchActive.value =
             query.isNotEmpty()
@@ -99,12 +115,15 @@ class MainViewModel : ViewModel() {
                 try {
 
                     val placesWithImages =
-                        withContext(Dispatchers.IO) {
+                        withContext(
+                            Dispatchers.IO
+                        ) {
 
                             val response =
-                                RetrofitClient.api.searchPlace(
-                                    query = query
-                                )
+                                RetrofitClient.api
+                                    .searchPlace(
+                                        query = query
+                                    )
 
                             coroutineScope {
 
@@ -117,9 +136,12 @@ class MainViewModel : ViewModel() {
                                                 try {
 
                                                     val imageResponse =
-                                                        RetrofitClient.api.searchImage(
-                                                            query = place.place_name
-                                                        )
+                                                        RetrofitClient
+                                                            .api
+                                                            .searchImage(
+                                                                query =
+                                                                    place.place_name
+                                                            )
 
                                                     imageResponse
                                                         .documents
@@ -134,12 +156,16 @@ class MainViewModel : ViewModel() {
                                                     DEFAULT_IMAGE_URL
                                                 }
 
+
                                             val shortTag =
-                                                place.category_group_name
+                                                place
+                                                    .category_group_name
                                                     .split(">")
+
                                                     .lastOrNull()
                                                     ?.trim()
                                                     .orEmpty()
+
 
                                             PlaceInfo(
 
@@ -147,14 +173,19 @@ class MainViewModel : ViewModel() {
                                                     place.place_name,
 
                                                 address =
-                                                    place.road_address_name
+                                                    place
+                                                        .road_address_name
                                                         .ifEmpty {
-                                                            "주소 없음"
+                                                            context.getString(
+                                                                R.string.no_address
+                                                            )
                                                         },
 
                                                 tag =
                                                     shortTag.ifEmpty {
-                                                        "장소"
+                                                        context.getString(
+                                                            R.string.place
+                                                        )
                                                     },
 
                                                 imageUrl =
@@ -171,7 +202,8 @@ class MainViewModel : ViewModel() {
                                                         ?: 0.0,
 
                                                 day =
-                                                    currentSelectedDay.value
+                                                    currentSelectedDay
+                                                        .value
                                             )
                                         }
                                     }
@@ -179,13 +211,16 @@ class MainViewModel : ViewModel() {
                             }
                         }
 
+
                     recommendedPlaces.clear()
 
                     recommendedPlaces.addAll(
                         placesWithImages
                     )
 
-                } catch (e: Exception) {
+                } catch (
+                    e: Exception
+                ) {
 
                     android.util.Log.e(
                         "KakaoSearch",
@@ -195,6 +230,7 @@ class MainViewModel : ViewModel() {
                 }
             }
     }
+
 
     // ========================================================
     // 지도에서 장소 선택
@@ -211,21 +247,27 @@ class MainViewModel : ViewModel() {
             try {
 
                 val newPlace =
-                    withContext(Dispatchers.IO) {
+                    withContext(
+                        Dispatchers.IO
+                    ) {
 
                         val searchRes =
-                            RetrofitClient.api.searchPlace(
-                                query = name
-                            )
+                            RetrofitClient.api
+                                .searchPlace(
+                                    query = name
+                                )
 
                         val matchedPlace =
-                            searchRes.documents
+                            searchRes
+                                .documents
                                 .firstOrNull()
 
+
                         val imageRes =
-                            RetrofitClient.api.searchImage(
-                                query = name
-                            )
+                            RetrofitClient.api
+                                .searchImage(
+                                    query = name
+                                )
 
                         val imageUrl =
                             imageRes
@@ -234,21 +276,30 @@ class MainViewModel : ViewModel() {
                                 ?.image_url
                                 ?: DEFAULT_IMAGE_URL
 
+
                         val shortTag =
                             matchedPlace
                                 ?.category_group_name
                                 ?.split(">")
                                 ?.lastOrNull()
                                 ?.trim()
-                                ?: "관심 위치"
+                                ?: context.getString(
+                                    R.string.poi
+                                )
+
 
                         val address =
                             matchedPlace
                                 ?.road_address_name
                                 ?.ifEmpty {
-                                    "주소 없음"
+                                    context.getString(
+                                        R.string.no_address
+                                    )
                                 }
-                                ?: "지도에서 선택한 장소"
+                                ?: context.getString(
+                                    R.string.selected_from_map
+                                )
+
 
                         PlaceInfo(
 
@@ -269,6 +320,7 @@ class MainViewModel : ViewModel() {
                         )
                     }
 
+
                 selectedPlace.value =
                     newPlace
 
@@ -283,7 +335,9 @@ class MainViewModel : ViewModel() {
                 selectedRestaurantDetail.value =
                     null
 
-            } catch (e: Exception) {
+            } catch (
+                e: Exception
+            ) {
 
                 android.util.Log.e(
                     "MapClick",
@@ -294,8 +348,8 @@ class MainViewModel : ViewModel() {
         }
     }
 
+
     // ========================================================
-    // TourAPI
     // 주변 음식점 검색
     // ========================================================
 
@@ -314,23 +368,10 @@ class MainViewModel : ViewModel() {
 
             try {
 
-                android.util.Log.d(
-                    "TourAPI",
-                    "==============================="
-                )
-
-                android.util.Log.d(
-                    "TourAPI",
-                    "주변 식당 검색 시작"
-                )
-
-                android.util.Log.d(
-                    "TourAPI",
-                    "lat = $lat, lng = $lng"
-                )
-
                 val response =
-                    withContext(Dispatchers.IO) {
+                    withContext(
+                        Dispatchers.IO
+                    ) {
 
                         RetrofitClient.api
                             .getNearbyRestaurants(
@@ -338,6 +379,7 @@ class MainViewModel : ViewModel() {
                                 lat = lat
                             )
                     }
+
 
                 val items =
                     response
@@ -347,30 +389,16 @@ class MainViewModel : ViewModel() {
                         ?.item
                         ?: emptyList()
 
-                android.util.Log.d(
-                    "TourAPI",
-                    "검색 결과 = ${items.size}건"
-                )
 
-                // 기존 식당 핀 제거
                 nearbyRestaurants.clear()
 
-                // 새 식당 목록 저장
                 nearbyRestaurants.addAll(
                     items
                 )
 
-                // ====================================================
-                // 중요
-                // ====================================================
-                //
-                // 기존에 선택되어 있던 장소 팝업을 닫습니다.
-                //
-                // 따라서 "주변 식당 찾기"를 누르면
-                // 하단 장소 카드가 사라지고
-                // 지도만 보이게 됩니다.
-                //
-                selectedPlace.value = null
+
+                selectedPlace.value =
+                    null
 
                 isSearchActive.value =
                     false
@@ -378,34 +406,18 @@ class MainViewModel : ViewModel() {
                 searchQuery.value =
                     ""
 
-                android.util.Log.d(
-                    "TourAPI",
-                    "식당 지도 핀 표시 준비 완료"
-                )
-
-                android.util.Log.d(
-                    "TourAPI",
-                    "==============================="
-
-                )
-
-            } catch (e: retrofit2.HttpException) {
+            } catch (
+                e: retrofit2.HttpException
+            ) {
 
                 android.util.Log.e(
                     "TourAPI",
                     "HTTP 오류 코드 = ${e.code()}"
                 )
 
-                android.util.Log.e(
-                    "TourAPI",
-                    "HTTP 오류 응답 = ${
-                        e.response()
-                            ?.errorBody()
-                            ?.string()
-                    }"
-                )
-
-            } catch (e: Exception) {
+            } catch (
+                e: Exception
+            ) {
 
                 android.util.Log.e(
                     "TourAPI",
@@ -421,8 +433,8 @@ class MainViewModel : ViewModel() {
         }
     }
 
+
     // ========================================================
-    // TourAPI
     // 식당 상세정보
     // ========================================================
 
@@ -434,34 +446,18 @@ class MainViewModel : ViewModel() {
 
             try {
 
-                android.util.Log.d(
-                    "TourAPI_DETAIL",
-                    "================================"
-                )
-
-                android.util.Log.d(
-                    "TourAPI_DETAIL",
-                    "식당 상세정보 요청"
-                )
-
-                android.util.Log.d(
-                    "TourAPI_DETAIL",
-                    "contentId = $contentId"
-                )
-
                 val response =
-                    withContext(Dispatchers.IO) {
+                    withContext(
+                        Dispatchers.IO
+                    ) {
 
                         RetrofitClient.api
                             .getRestaurantDetails(
-                                contentId = contentId
+                                contentId =
+                                    contentId
                             )
                     }
 
-                android.util.Log.d(
-                    "TourAPI_DETAIL",
-                    "TourAPI 응답 수신"
-                )
 
                 val items =
                     response
@@ -470,76 +466,26 @@ class MainViewModel : ViewModel() {
                         ?.items
                         ?.item
 
-                android.util.Log.d(
-                    "TourAPI_DETAIL",
-                    "응답 item 개수 = ${
-                        items?.size ?: 0
-                    }"
-                )
 
-                val detail =
+                selectedRestaurantDetail.value =
                     items?.firstOrNull()
 
-                if (detail != null) {
-
-                    android.util.Log.d(
-                        "TourAPI_DETAIL",
-                        "firstmenu = ${detail.firstmenu}"
-                    )
-
-                    android.util.Log.d(
-                        "TourAPI_DETAIL",
-                        "treatmenu = ${detail.treatmenu}"
-                    )
-
-                    android.util.Log.d(
-                        "TourAPI_DETAIL",
-                        "kidsfacility = ${detail.kidsfacility}"
-                    )
-
-                    android.util.Log.d(
-                        "TourAPI_DETAIL",
-                        "parkingfood = ${detail.parkingfood}"
-                    )
-
-                    selectedRestaurantDetail.value =
-                        detail
-
-                } else {
-
-                    android.util.Log.w(
-                        "TourAPI_DETAIL",
-                        "상세정보 item이 없습니다."
-                    )
-
-                    selectedRestaurantDetail.value =
-                        null
-                }
-
-                android.util.Log.d(
-                    "TourAPI_DETAIL",
-                    "================================"
-                )
-
-            } catch (e: retrofit2.HttpException) {
+            } catch (
+                e: retrofit2.HttpException
+            ) {
 
                 android.util.Log.e(
                     "TourAPI_DETAIL",
-                    "HTTP 오류 코드 = ${e.code()}"
+                    "HTTP 오류 코드 = ${e.code()}",
+                    e
                 )
-
-                android.util.Log.e(
-                    "TourAPI_DETAIL",
-                    "HTTP 오류 응답 = ${
-                        e.response()
-                            ?.errorBody()
-                            ?.string()
-                    }")
 
                 selectedRestaurantDetail.value =
                     null
 
-            } catch (e: Exception) {
+            } catch (
+                e: Exception
+            ) {
 
                 android.util.Log.e(
                     "TourAPI_DETAIL",
@@ -552,6 +498,7 @@ class MainViewModel : ViewModel() {
             }
         }
     }
+
 
     // ========================================================
     // 일정 Day 변경
@@ -583,6 +530,7 @@ class MainViewModel : ViewModel() {
         }
     }
 
+
     // ========================================================
     // 특정 Day 좌표
     // ========================================================
@@ -596,13 +544,13 @@ class MainViewModel : ViewModel() {
                 it.day == day
             }
             .map {
-
                 LatLng(
                     it.latitude,
                     it.longitude
                 )
             }
     }
+
 
     // ========================================================
     // 건강 조건 선택
@@ -627,6 +575,7 @@ class MainViewModel : ViewModel() {
                 current + condition
             }
     }
+
 
     // ========================================================
     // 여행 일정에 장소 추가
@@ -654,6 +603,7 @@ class MainViewModel : ViewModel() {
             }
         }
 
+
         selectedPlace.value =
             null
 
@@ -669,6 +619,7 @@ class MainViewModel : ViewModel() {
             null
     }
 
+
     // ========================================================
     // 장소 삭제
     // ========================================================
@@ -682,8 +633,9 @@ class MainViewModel : ViewModel() {
         )
     }
 
+
     // ========================================================
-    // 장소 순서 변경
+    // 일정 순서 변경
     // ========================================================
 
     fun movePlace(
@@ -695,7 +647,6 @@ class MainViewModel : ViewModel() {
             fromIndex !in travelRoute.indices ||
             toIndex !in travelRoute.indices
         ) {
-
             return
         }
 
@@ -710,9 +661,11 @@ class MainViewModel : ViewModel() {
         )
     }
 
+
     companion object {
 
-        private const val DEFAULT_IMAGE_URL =
+        private const val
+                DEFAULT_IMAGE_URL =
             "https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=400"
     }
 }

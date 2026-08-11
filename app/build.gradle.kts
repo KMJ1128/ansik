@@ -79,4 +79,6 @@ dependencies {
 
     // Tooling Preview용
     debugImplementation("androidx.compose.ui:ui-tooling")
+
+    implementation("androidx.appcompat:appcompat:1.7.1")
 }

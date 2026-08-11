@@ -1,0 +1,92 @@
+<resources>
+    <string name="app_name">Ansik</string>
+    <string name="app_title">An-Sik</string>
+    <string name="health_management_title">🩺 What kind of health management do you need?</string>
+    <string name="health_management_desc">Multiple selections are possible. We provide a customized 🔴🟡🟢 guide.</string>
+    <string name="basic_disease_care">Basic Disease Management</string>
+    <string name="allergy_triggers">⚠️ Allergy Triggers</string>
+    <string name="health_diet">🥗 Fitness and Diet Menu</string>
+    <string name="religion_belief_diet">🙏 Religion and Belief Based Menu</string>
+    <string name="go_to_travel_route">Plan Travel Route 🗺️</string>
+    <string name="expand">Expand</string>
+    <string name="enter_custom_other">Enter other manually</string>
+    <string name="add">Add</string>
+
+    <!-- 뷰모델용 문자열 -->
+    <string name="no_address">No address</string>
+    <string name="place">Place</string>
+    <string name="poi">POI</string>
+    <string name="selected_from_map">Selected from map</string>
+
+
+    <!-- MapScreen & MainViewModel 용 -->
+    <string name="my_travel_schedule">My Travel Schedule</string>
+    <string name="nights_days">%1$d Nights %2$d Days</string>
+    <string name="change_order">Change order</string>
+    <string name="delete">Delete</string>
+    <string name="day_format">Day %1$d</string>
+    <string name="search_placeholder">Where are you going?</string>
+    <string name="search">Search</string>
+    <string name="clear">Clear</string>
+    <string name="place_image">Place image</string>
+    <string name="directions_roadview">Directions / Street View</string>
+    <string name="add_to_schedule_desc">Add to schedule</string>
+    <string name="add_schedule">Add Schedule</string>
+    <string name="find_restaurant">Find restaurant</string>
+    <string name="loading_public_data">Loading public data...</string>
+    <string name="find_nearby_safe_restaurants">Find Safe Restaurants within 5km (TourAPI)</string>
+    <string name="settings">Settings</string>
+
+    <string-array name="basic_conditions">
+        <item>Diabetes Management (Low Sugar)</item>
+        <item>Hypertension (Low Sodium)</item>
+        <item>Gout (Low Purine)</item>
+        <item>Hyperlipidemia (Low Cholesterol)</item>
+        <item>Chronic Renal Failure (Low Potassium)</item>
+        <item>Gastrointestinal Disorders (Low Irritation)</item>
+        <item>Cardiovascular Disease</item>
+        <item>Obesity/Weight Management</item>
+        <item>Pregnant/Lactating Women</item>
+    </string-array>
+
+    <string-array name="allergy_items">
+        <item>Crustaceans</item>
+        <item>Nuts</item>
+        <item>Milk/Dairy</item>
+        <item>Soybeans</item>
+        <item>Wheat (Gluten)</item>
+        <item>Eggs</item>
+        <item>Fish</item>
+        <item>Shellfish</item>
+        <item>Peach</item>
+        <item>Tomato</item>
+        <item>Pork</item>
+        <item>Sulfites (Wine, etc.)</item>
+    </string-array>
+
+    <string-array name="diet_items">
+        <item>Vegan</item>
+        <item>Lacto-ovo</item>
+        <item>Pescatarian</item>
+        <item>Ketogenic (LCHF)</item>
+        <item>High Protein/Bulk-up</item>
+        <item>Gluten-Free</item>
+        <item>Intermittent Fasting</item>
+        <item>Low Fat Diet</item>
+        <item>Mediterranean Diet</item>
+        <item>Low Carb Diet</item>
+    </string-array>
+
+    <string-array name="religion_items">
+        <item>Halal (Islam)</item>
+        <item>Kosher (Judaism)</item>
+        <item>No Beef (Hinduism)</item>
+        <item>No Pork</item>
+        <item>No Pungent Roots (Buddhism)</item>
+        <item>Vegetarian (SDA)</item>
+        <item>No Root Veggies (Jainism)</item>
+        <item>Organic Preferred</item>
+        <item>Animal Rights Diet</item>
+        <item>Fair Trade Ingredients</item>
+    </string-array>
+</resources>
