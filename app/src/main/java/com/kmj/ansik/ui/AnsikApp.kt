@@ -2,51 +2,53 @@ package com.kmj.ansik.ui
 
 import android.content.Context
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-
+import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Map
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.os.LocaleListCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.Surface
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+
 @Composable
 fun AnsikApp() {
 
     val context = LocalContext.current
-    val navController = rememberNavController()
+    val rootNavController = rememberNavController()
     val viewModel: MainViewModel = viewModel()
 
     val sharedPref = context.getSharedPreferences(
@@ -60,7 +62,7 @@ fun AnsikApp() {
     )
 
     NavHost(
-        navController = navController,
+        navController = rootNavController,
         startDestination = if (isFirstLaunch) {
             "language"
         } else {
@@ -73,7 +75,6 @@ fun AnsikApp() {
         // ====================================================
 
         composable("language") {
-
             LanguageScreen(
                 onLanguageSelected = { languageTag ->
 
@@ -88,7 +89,7 @@ fun AnsikApp() {
                         localeList
                     )
 
-                    navController.navigate("main") {
+                    rootNavController.navigate("main") {
                         popUpTo("language") {
                             inclusive = true
                         }
@@ -99,13 +100,15 @@ fun AnsikApp() {
 
         // ====================================================
         // 메인 화면
-        // 하단 네비게이션 포함
         // ====================================================
 
         composable("main") {
-
             MainTabScreen(
-                viewModel = viewModel
+                viewModel = viewModel,
+                onNavigateToLanguage = {
+                    // 내부 네비게이터가 아닌 최상위(root) 네비게이터에서 이동 처리
+                    rootNavController.navigate("language")
+                }
             )
         }
     }
@@ -118,17 +121,15 @@ fun AnsikApp() {
 
 @Composable
 private fun MainTabScreen(
-    viewModel: MainViewModel
+    viewModel: MainViewModel,
+    onNavigateToLanguage: () -> Unit // 콜백 추가
 ) {
 
     val navController = rememberNavController()
 
-    val navBackStackEntry by
-    navController.currentBackStackEntryAsState()
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
 
-    val currentRoute =
-        navBackStackEntry?.destination?.route
-            ?: "map"
+    val currentRoute = navBackStackEntry?.destination?.route ?: "map"
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -140,7 +141,6 @@ private fun MainTabScreen(
                 // ------------------------------------------------
                 // 지도
                 // ------------------------------------------------
-
                 NavigationBarItem(
                     selected = currentRoute == "map",
                     onClick = {
@@ -165,7 +165,6 @@ private fun MainTabScreen(
                 // ------------------------------------------------
                 // AI 추천 코스
                 // ------------------------------------------------
-
                 NavigationBarItem(
                     selected = currentRoute == "ai",
                     onClick = {
@@ -185,9 +184,29 @@ private fun MainTabScreen(
                 )
 
                 // ------------------------------------------------
+                // 내 정보 (ProfileScreen)
+                // ------------------------------------------------
+                NavigationBarItem(
+                    selected = currentRoute == "profile",
+                    onClick = {
+                        navController.navigate("profile") {
+                            launchSingleTop = true
+                        }
+                    },
+                    icon = {
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = "내 정보"
+                        )
+                    },
+                    label = {
+                        Text("내 정보")
+                    }
+                )
+
+                // ------------------------------------------------
                 // 설정
                 // ------------------------------------------------
-
                 NavigationBarItem(
                     selected = currentRoute == "settings",
                     onClick = {
@@ -210,7 +229,9 @@ private fun MainTabScreen(
     ) { paddingValues ->
 
         Box(
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
         ) {
 
             NavHost(
@@ -221,9 +242,7 @@ private fun MainTabScreen(
                 // ====================================================
                 // 지도
                 // ====================================================
-
                 composable("map") {
-
                     MapScreen(
                         viewModel = viewModel
                     )
@@ -232,31 +251,41 @@ private fun MainTabScreen(
                 // ====================================================
                 // AI 추천 코스
                 // ====================================================
-
                 composable("ai") {
-
                     AiRecommendationScreen(
                         viewModel = viewModel
                     )
                 }
 
                 // ====================================================
-                // 설정
+                // 프로필 (설정으로 가는 콜백 제거됨)
                 // ====================================================
-
-                composable("settings") {
-
-                    SettingsScreen(
-                        onNavigateBack = {
+                composable("profile") {
+                    ProfileScreen(
+                        viewModel = viewModel,
+                        onNavigateToMap = {
                             navController.navigate("map") {
                                 popUpTo("map") {
                                     inclusive = false
                                 }
                                 launchSingleTop = true
                             }
+                        }
+                    )
+                }
+
+                // ====================================================
+                // 설정
+                // ====================================================
+                composable("settings") {
+                    SettingsScreen(
+                        onNavigateBack = {
+                            // 명시적으로 이전 화면으로 돌아가기
+                            navController.popBackStack()
                         },
                         onNavigateToLanguage = {
-                            navController.navigate("language")
+                            // 최상단 콜백 호출로 오류 해결
+                            onNavigateToLanguage()
                         }
                     )
                 }
@@ -275,7 +304,7 @@ private fun AiRecommendationScreen(
     viewModel: MainViewModel
 ) {
 
-    androidx.compose.foundation.layout.Column(
+    Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(

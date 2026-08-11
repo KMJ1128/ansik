@@ -17,7 +17,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -32,15 +31,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kmj.ansik.R
 
-@OptIn(
-    ExperimentalMaterial3Api::class,
-    ExperimentalLayoutApi::class
-)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun ProfileScreen(
     viewModel: MainViewModel,
-    onNavigateToMap: () -> Unit,
-    onNavigateToSettings: () -> Unit // 톱니바퀴 클릭 시 이동할 콜백 추가
+    onNavigateToMap: () -> Unit
 ) {
     val selectedConditions by viewModel.selectedConditions
 
@@ -50,7 +45,6 @@ fun ProfileScreen(
         }
     }
 
-    // strings.xml에서 다국어 배열 리소스 불러오기
     val basicConditions = stringArrayResource(id = R.array.basic_conditions).toList()
     val allergyItems = stringArrayResource(id = R.array.allergy_items).toList()
     val dietItems = stringArrayResource(id = R.array.diet_items).toList()
@@ -66,16 +60,7 @@ fun ProfileScreen(
                         color = Color(0xFF1B5E20)
                     )
                 },
-                actions = {
-                    // 상단 우측에 설정(언어 변경 등) 아이콘 추가
-                    IconButton(onClick = onNavigateToSettings) {
-                        Icon(
-                            imageVector = Icons.Default.Settings,
-                            contentDescription = stringResource(id = R.string.settings), // strings.xml에 추가 필요
-                            tint = Color(0xFF1B5E20)
-                        )
-                    }
-                },
+                // 설정 아이콘 삭제됨
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = Color(0xFFE8F5E9)
                 )

@@ -1,16 +1,16 @@
 package com.kmj.ansik
 
 import android.os.Bundle
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.appcompat.app.AppCompatActivity // ✅ ComponentActivity 대신 추가
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
-// 만들어둔 AnsikApp 임포트 (패키지에 맞게 조정)
 import com.kmj.ansik.ui.AnsikApp
 
-class MainActivity : ComponentActivity() {
+// ✅ AppCompatActivity 상속으로 변경
+class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
