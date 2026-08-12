@@ -2,6 +2,7 @@ package com.kmj.ansik.ui
 
 import android.app.Application
 import android.content.Context
+import android.util.Log
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -24,15 +25,9 @@ class MainViewModel(
 
     private val context = application.applicationContext
 
-    // ========================================================
-    // 사용자 건강 / 식단 조건
-    // ========================================================
     var selectedConditions = mutableStateOf<Set<String>>(emptySet())
         private set
 
-    // ========================================================
-    // 여행 일정
-    // ========================================================
     val travelRoute = mutableStateListOf<PlaceInfo>()
     val recommendedPlaces = mutableStateListOf<PlaceInfo>()
 
@@ -40,24 +35,16 @@ class MainViewModel(
     var days = mutableStateOf(4)
     var currentSelectedDay = mutableStateOf(1)
 
-    // ========================================================
-    // 식당 검색 반경 (SharedPreferences 저장 연동)
-    // ========================================================
     private val sharedPreferences = context.getSharedPreferences("AnsikPrefs", Context.MODE_PRIVATE)
 
-    // 기본값 2000(2km), 저장된 값이 있다면 불러오기
     var searchRadius = mutableIntStateOf(sharedPreferences.getInt("searchRadius", 2000))
         private set
 
-    // 반경 업데이트 및 저장 함수
     fun updateSearchRadius(radius: Int) {
         searchRadius.intValue = radius
         sharedPreferences.edit().putInt("searchRadius", radius).apply()
     }
 
-    // ========================================================
-    // 여행 일정 늘리기 / 줄이기
-    // ========================================================
     fun increaseDays() {
         if (days.value < 14) {
             days.value += 1
@@ -82,23 +69,17 @@ class MainViewModel(
         }
     }
 
-    // ========================================================
-    // 장소 검색
-    // ========================================================
     var searchQuery = mutableStateOf("")
     var isSearchActive = mutableStateOf(false)
     var selectedPlace = mutableStateOf<PlaceInfo?>(null)
     private var searchJob: Job? = null
 
-    // ========================================================
-    // TourAPI
-    // ========================================================
     val nearbyRestaurants = mutableStateListOf<TourRestaurant>()
     var isFetchingRestaurants = mutableStateOf(false)
     var selectedRestaurantDetail = mutableStateOf<TourRestaurantDetail?>(null)
 
     // ========================================================
-    // Kakao 장소 검색
+    // Kakao 장소 검색 + NCP NAVER API HUB 이미지 보정
     // ========================================================
     fun searchPlacesRealtime(query: String) {
         searchQuery.value = query
@@ -119,9 +100,10 @@ class MainViewModel(
                         response.documents.map { place ->
                             async {
                                 val imageUrl = try {
-                                    val imageResponse = RetrofitClient.api.searchImage(query = place.place_name)
-                                    imageResponse.documents.firstOrNull()?.image_url ?: DEFAULT_IMAGE_URL
+                                    val imageResponse = RetrofitClient.api.searchImageNaver(query = place.place_name)
+                                    imageResponse.items.firstOrNull()?.thumbnail ?: DEFAULT_IMAGE_URL
                                 } catch (e: Exception) {
+                                    Log.e("NaverImageSearch", "[장소검색] 실패: ${place.place_name}", e)
                                     DEFAULT_IMAGE_URL
                                 }
 
@@ -144,14 +126,11 @@ class MainViewModel(
                 recommendedPlaces.clear()
                 recommendedPlaces.addAll(placesWithImages)
             } catch (e: Exception) {
-                android.util.Log.e("KakaoSearch", "검색 통신 실패", e)
+                Log.e("Search", "검색 통신 실패", e)
             }
         }
     }
 
-    // ========================================================
-    // 지도에서 장소 선택
-    // ========================================================
     fun selectLocationFromMap(name: String, lat: Double, lng: Double) {
         viewModelScope.launch {
             try {
@@ -159,8 +138,13 @@ class MainViewModel(
                     val searchRes = RetrofitClient.api.searchPlace(query = name)
                     val matchedPlace = searchRes.documents.firstOrNull()
 
-                    val imageRes = RetrofitClient.api.searchImage(query = name)
-                    val imageUrl = imageRes.documents.firstOrNull()?.image_url ?: DEFAULT_IMAGE_URL
+                    val imageUrl = try {
+                        val imageRes = RetrofitClient.api.searchImageNaver(query = name)
+                        imageRes.items.firstOrNull()?.thumbnail ?: DEFAULT_IMAGE_URL
+                    } catch (e: Exception) {
+                        Log.e("NaverImageSearch", "[지도클릭] 실패: $name", e)
+                        DEFAULT_IMAGE_URL
+                    }
 
                     val shortTag = matchedPlace?.category_group_name?.split(">")?.lastOrNull()?.trim() ?: context.getString(R.string.poi)
                     val address = matchedPlace?.road_address_name?.ifEmpty { context.getString(R.string.no_address) } ?: context.getString(R.string.selected_from_map)
@@ -183,14 +167,11 @@ class MainViewModel(
                 selectedRestaurantDetail.value = null
 
             } catch (e: Exception) {
-                android.util.Log.e("MapClick", "지도 심볼 통신 실패", e)
+                Log.e("MapClick", "지도 심볼 통신 실패", e)
             }
         }
     }
 
-    // ========================================================
-    // 주변 음식점 검색 (반경 적용)
-    // ========================================================
     fun searchNearbyRestaurants(lat: Double, lng: Double) {
         viewModelScope.launch {
             isFetchingRestaurants.value = true
@@ -200,30 +181,52 @@ class MainViewModel(
                     RetrofitClient.api.getNearbyRestaurants(
                         lng = lng,
                         lat = lat,
-                        radius = searchRadius.intValue // 저장된 반경 적용
+                        radius = searchRadius.intValue
                     )
                 }
                 val items = response.response?.body?.items?.item ?: emptyList()
 
+                val updatedItems = withContext(Dispatchers.IO) {
+                    coroutineScope {
+                        items.map { restaurant ->
+                            async {
+                                if (restaurant.firstimage.isBlank() && restaurant.firstimage2.isBlank()) {
+                                    val fallbackImage = try {
+                                        val exactQuery = "${restaurant.title} 식당"
+                                        val imgRes = RetrofitClient.api.searchImageNaver(query = exactQuery)
+                                        imgRes.items.firstOrNull()?.thumbnail ?: ""
+                                    } catch (e: retrofit2.HttpException) {
+                                        Log.e("NaverImageSearch", "[식당검색] HTTP 에러 코드: ${e.code()}", e)
+                                        ""
+                                    } catch (e: Exception) {
+                                        Log.e("NaverImageSearch", "[식당검색] 실패: ${restaurant.title}", e)
+                                        ""
+                                    }
+                                    restaurant.copy(firstimage = fallbackImage)
+                                } else {
+                                    restaurant
+                                }
+                            }
+                        }.awaitAll()
+                    }
+                }
+
                 nearbyRestaurants.clear()
-                nearbyRestaurants.addAll(items)
+                nearbyRestaurants.addAll(updatedItems)
 
                 selectedPlace.value = null
                 isSearchActive.value = false
                 searchQuery.value = ""
             } catch (e: retrofit2.HttpException) {
-                android.util.Log.e("TourAPI", "HTTP 오류 코드 = ${e.code()}")
+                Log.e("TourAPI", "HTTP 오류 코드 = ${e.code()}")
             } catch (e: Exception) {
-                android.util.Log.e("TourAPI", "주변 식당 검색 실패", e)
+                Log.e("TourAPI", "주변 식당 검색 실패", e)
             } finally {
                 isFetchingRestaurants.value = false
             }
         }
     }
 
-    // ========================================================
-    // 식당 상세정보
-    // ========================================================
     fun fetchRestaurantDetail(contentId: String) {
         viewModelScope.launch {
             try {
@@ -233,10 +236,10 @@ class MainViewModel(
                 val items = response.response?.body?.items?.item
                 selectedRestaurantDetail.value = items?.firstOrNull()
             } catch (e: retrofit2.HttpException) {
-                android.util.Log.e("TourAPI_DETAIL", "HTTP 오류 코드 = ${e.code()}", e)
+                Log.e("TourAPI_DETAIL", "HTTP 오류 코드 = ${e.code()}", e)
                 selectedRestaurantDetail.value = null
             } catch (e: Exception) {
-                android.util.Log.e("TourAPI_DETAIL", "식당 상세 검색 실패", e)
+                Log.e("TourAPI_DETAIL", "식당 상세 검색 실패", e)
                 selectedRestaurantDetail.value = null
             }
         }

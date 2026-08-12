@@ -63,7 +63,7 @@ data class KakaoPlace(
 )
 
 // ============================================================
-// Kakao Image API
+// Kakao Image API (이제 사용 안함 - 참고용 유지)
 // ============================================================
 
 data class KakaoImageResponse(
@@ -76,6 +76,25 @@ data class KakaoImageResponse(
 data class KakaoImageDocument(
 
     val image_url: String = ""
+)
+
+// ============================================================
+// Naver Image API
+// ============================================================
+
+data class NaverImageResponse(
+
+    val items:
+    List<NaverImageItem> =
+        emptyList()
+)
+
+data class NaverImageItem(
+
+    val link: String = "",
+
+    // 💡 차단되지 않는 썸네일 이미지 주소 추가
+    val thumbnail: String = ""
 )
 
 // ============================================================
