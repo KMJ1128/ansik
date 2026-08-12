@@ -34,7 +34,7 @@
     <string name="add_schedule">Add Schedule</string>
     <string name="find_restaurant">Find restaurant</string>
     <string name="loading_public_data">Loading public data...</string>
-    <string name="find_nearby_safe_restaurants">Find Safe Restaurants within 5km (TourAPI)</string>
+    <string name="find_nearby_safe_restaurants">Find Safe Restaurants Nearby</string>
     <string name="settings">Settings</string>
 
     <string-array name="basic_conditions">
@@ -105,7 +105,8 @@
 
     <string name="my_schedule_short">My\nPlan</string>
     <string name="restaurant_list_title">Restaurant List</string>
-    <string name="restaurant_list_desc">Safe restaurants within 5km of current location</string>
+    <string name="restaurant_list_desc">Safe restaurants within %1$s</string>
+    <string name="search_radius">Search Radius</string>
     <string name="no_restaurants_found">No restaurants found nearby.</string>
     <string name="restaurant_main_menu">Main Menu</string>
     <string name="restaurant_treat_menu">Menu Items</string>
@@ -120,4 +121,7 @@
 
     <string name="go_back">Go Back</string>
     <string name="language_settings">Language Settings</string>
+
+    <string name="radius_settings_title">Search Radius Settings</string>
+    <string name="confirm">OK</string>
 </resources>
