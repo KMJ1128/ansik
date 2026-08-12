@@ -8,8 +8,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
+import com.kmj.ansik.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -21,13 +23,13 @@ fun SettingsScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Text("설정", fontWeight = FontWeight.Bold)
+                    Text(stringResource(id = R.string.settings), fontWeight = FontWeight.Bold)
                 },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "뒤로 가기"
+                            contentDescription = stringResource(id = R.string.go_back)
                         )
                     }
                 },
@@ -46,7 +48,7 @@ fun SettingsScreen(
             // 언어 설정 메뉴 (아이콘 제거됨)
             ListItem(
                 headlineContent = {
-                    Text("언어 설정 (Language)", fontSize = 16.sp)
+                    Text(stringResource(id = R.string.language_settings), fontSize = 16.sp)
                 },
                 modifier = Modifier.clickable { onNavigateToLanguage() },
                 colors = ListItemDefaults.colors(

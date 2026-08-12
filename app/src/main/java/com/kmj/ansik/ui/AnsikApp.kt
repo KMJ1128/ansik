@@ -34,6 +34,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -43,6 +44,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.kmj.ansik.R
 
 @Composable
 fun AnsikApp() {
@@ -69,26 +71,14 @@ fun AnsikApp() {
             "main"
         }
     ) {
-
-        // ====================================================
-        // 언어 선택
-        // ====================================================
-
         composable("language") {
             LanguageScreen(
                 onLanguageSelected = { languageTag ->
-
                     sharedPref.edit()
                         .putBoolean("isFirstLaunch", false)
                         .apply()
-
-                    val localeList =
-                        LocaleListCompat.forLanguageTags(languageTag)
-
-                    AppCompatDelegate.setApplicationLocales(
-                        localeList
-                    )
-
+                    val localeList = LocaleListCompat.forLanguageTags(languageTag)
+                    AppCompatDelegate.setApplicationLocales(localeList)
                     rootNavController.navigate("main") {
                         popUpTo("language") {
                             inclusive = true
@@ -97,16 +87,10 @@ fun AnsikApp() {
                 }
             )
         }
-
-        // ====================================================
-        // 메인 화면
-        // ====================================================
-
         composable("main") {
             MainTabScreen(
                 viewModel = viewModel,
                 onNavigateToLanguage = {
-                    // 내부 네비게이터가 아닌 최상위(root) 네비게이터에서 이동 처리
                     rootNavController.navigate("language")
                 }
             )
@@ -114,179 +98,87 @@ fun AnsikApp() {
     }
 }
 
-
-// ============================================================
-// 메인 하단 탭 화면
-// ============================================================
-
 @Composable
 private fun MainTabScreen(
     viewModel: MainViewModel,
-    onNavigateToLanguage: () -> Unit // 콜백 추가
+    onNavigateToLanguage: () -> Unit
 ) {
 
     val navController = rememberNavController()
-
     val navBackStackEntry by navController.currentBackStackEntryAsState()
-
     val currentRoute = navBackStackEntry?.destination?.route ?: "map"
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
-
         bottomBar = {
-
             NavigationBar {
-
-                // ------------------------------------------------
-                // 지도
-                // ------------------------------------------------
                 NavigationBarItem(
                     selected = currentRoute == "map",
                     onClick = {
                         navController.navigate("map") {
-                            popUpTo("map") {
-                                inclusive = false
-                            }
+                            popUpTo("map") { inclusive = false }
                             launchSingleTop = true
                         }
                     },
-                    icon = {
-                        Icon(
-                            imageVector = Icons.Default.Map,
-                            contentDescription = "지도"
-                        )
-                    },
-                    label = {
-                        Text("지도")
-                    }
+                    icon = { Icon(Icons.Default.Map, contentDescription = stringResource(id = R.string.tab_map)) },
+                    label = { Text(stringResource(id = R.string.tab_map)) }
                 )
 
-                // ------------------------------------------------
-                // AI 추천 코스
-                // ------------------------------------------------
                 NavigationBarItem(
                     selected = currentRoute == "ai",
                     onClick = {
-                        navController.navigate("ai") {
-                            launchSingleTop = true
-                        }
+                        navController.navigate("ai") { launchSingleTop = true }
                     },
-                    icon = {
-                        Icon(
-                            imageVector = Icons.Default.AutoAwesome,
-                            contentDescription = "AI 추천 코스"
-                        )
-                    },
-                    label = {
-                        Text("AI 추천 코스")
-                    }
+                    icon = { Icon(Icons.Default.AutoAwesome, contentDescription = stringResource(id = R.string.tab_ai_course)) },
+                    label = { Text(stringResource(id = R.string.tab_ai_course)) }
                 )
 
-                // ------------------------------------------------
-                // 내 정보 (ProfileScreen)
-                // ------------------------------------------------
                 NavigationBarItem(
                     selected = currentRoute == "profile",
                     onClick = {
-                        navController.navigate("profile") {
-                            launchSingleTop = true
-                        }
+                        navController.navigate("profile") { launchSingleTop = true }
                     },
-                    icon = {
-                        Icon(
-                            imageVector = Icons.Default.Person,
-                            contentDescription = "내 정보"
-                        )
-                    },
-                    label = {
-                        Text("내 정보")
-                    }
+                    icon = { Icon(Icons.Default.Person, contentDescription = stringResource(id = R.string.tab_profile)) },
+                    label = { Text(stringResource(id = R.string.tab_profile)) }
                 )
 
-                // ------------------------------------------------
-                // 설정
-                // ------------------------------------------------
                 NavigationBarItem(
                     selected = currentRoute == "settings",
                     onClick = {
-                        navController.navigate("settings") {
-                            launchSingleTop = true
-                        }
+                        navController.navigate("settings") { launchSingleTop = true }
                     },
-                    icon = {
-                        Icon(
-                            imageVector = Icons.Default.Settings,
-                            contentDescription = "설정"
-                        )
-                    },
-                    label = {
-                        Text("설정")
-                    }
+                    icon = { Icon(Icons.Default.Settings, contentDescription = stringResource(id = R.string.settings)) },
+                    label = { Text(stringResource(id = R.string.settings)) }
                 )
             }
         }
     ) { paddingValues ->
-
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-
             NavHost(
                 navController = navController,
                 startDestination = "map"
             ) {
-
-                // ====================================================
-                // 지도
-                // ====================================================
-                composable("map") {
-                    MapScreen(
-                        viewModel = viewModel
-                    )
-                }
-
-                // ====================================================
-                // AI 추천 코스
-                // ====================================================
-                composable("ai") {
-                    AiRecommendationScreen(
-                        viewModel = viewModel
-                    )
-                }
-
-                // ====================================================
-                // 프로필 (설정으로 가는 콜백 제거됨)
-                // ====================================================
+                composable("map") { MapScreen(viewModel = viewModel) }
+                composable("ai") { AiRecommendationScreen(viewModel = viewModel) }
                 composable("profile") {
                     ProfileScreen(
                         viewModel = viewModel,
                         onNavigateToMap = {
                             navController.navigate("map") {
-                                popUpTo("map") {
-                                    inclusive = false
-                                }
+                                popUpTo("map") { inclusive = false }
                                 launchSingleTop = true
                             }
                         }
                     )
                 }
-
-                // ====================================================
-                // 설정
-                // ====================================================
                 composable("settings") {
                     SettingsScreen(
-                        onNavigateBack = {
-                            // 명시적으로 이전 화면으로 돌아가기
-                            navController.popBackStack()
-                        },
-                        onNavigateToLanguage = {
-                            // 최상단 콜백 호출로 오류 해결
-                            onNavigateToLanguage()
-                        }
+                        onNavigateBack = { navController.popBackStack() },
+                        onNavigateToLanguage = { onNavigateToLanguage() }
                     )
                 }
             }
@@ -294,142 +186,85 @@ private fun MainTabScreen(
     }
 }
 
-
-// ============================================================
-// AI 추천 코스 화면
-// ============================================================
-
 @Composable
-private fun AiRecommendationScreen(
-    viewModel: MainViewModel
-) {
-
+private fun AiRecommendationScreen(viewModel: MainViewModel) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(
-                top = 24.dp,
-                start = 20.dp,
-                end = 20.dp
-            )
+            .padding(top = 24.dp, start = 20.dp, end = 20.dp)
     ) {
-
         Text(
-            text = "AI 추천 코스",
+            text = stringResource(id = R.string.ai_course_title),
             fontSize = 28.sp,
             fontWeight = FontWeight.ExtraBold
         )
 
-        Spacer(
-            modifier = Modifier.height(8.dp)
-        )
+        Spacer(modifier = Modifier.height(8.dp))
 
         Text(
-            text = "건강 조건과 여행 정보를 기반으로\n맞춤 여행 코스를 추천해드려요.",
+            text = stringResource(id = R.string.ai_course_desc),
             fontSize = 15.sp,
             color = Color(0xFF757575)
         )
 
-        Spacer(
-            modifier = Modifier.height(32.dp)
-        )
+        Spacer(modifier = Modifier.height(32.dp))
 
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(20.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = Color(0xFFE8F5E9)
-            )
+            colors = CardDefaults.cardColors(containerColor = Color(0xFFE8F5E9))
         ) {
-
-            Column(
-                modifier = Modifier.padding(20.dp)
-            ) {
-
+            Column(modifier = Modifier.padding(20.dp)) {
                 Text(
-                    text = "✨ AI 여행 코스 추천",
+                    text = stringResource(id = R.string.ai_course_card_title),
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFF2E7D32)
                 )
 
-                Spacer(
-                    modifier = Modifier.height(8.dp)
-                )
+                Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    text = "선택하신 건강·식단 조건과\n여행 일정을 분석하여 최적의 코스를 추천합니다.",
+                    text = stringResource(id = R.string.ai_course_card_desc),
                     fontSize = 14.sp,
                     color = Color(0xFF555555)
                 )
 
-                Spacer(
-                    modifier = Modifier.height(20.dp)
-                )
+                Spacer(modifier = Modifier.height(20.dp))
 
                 Button(
-                    onClick = {
-                        // 추후 AI 추천 기능 연결
-                    },
+                    onClick = { /* 추후 기능 연결 */ },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(14.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF2E7D32)
-                    )
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32))
                 ) {
-
-                    Icon(
-                        imageVector = Icons.Default.AutoAwesome,
-                        contentDescription = null
-                    )
-
-                    Spacer(
-                        modifier = Modifier.width(8.dp)
-                    )
-
-                    Text(
-                        text = "AI 추천 코스 만들기",
-                        fontWeight = FontWeight.Bold
-                    )
+                    Icon(Icons.Default.AutoAwesome, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(text = stringResource(id = R.string.ai_course_button), fontWeight = FontWeight.Bold)
                 }
             }
         }
 
-        Spacer(
-            modifier = Modifier.height(24.dp)
-        )
+        Spacer(modifier = Modifier.height(24.dp))
 
         if (viewModel.selectedConditions.value.isNotEmpty()) {
-
             Text(
-                text = "현재 선택된 조건",
+                text = stringResource(id = R.string.current_selected_conditions),
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold
             )
 
-            Spacer(
-                modifier = Modifier.height(12.dp)
-            )
+            Spacer(modifier = Modifier.height(12.dp))
 
-            LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-
-                items(
-                    viewModel.selectedConditions.value.toList()
-                ) { condition ->
-
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                items(viewModel.selectedConditions.value.toList()) { condition ->
                     Surface(
                         color = Color(0xFFF1F8E9),
                         shape = RoundedCornerShape(50)
                     ) {
-
                         Text(
                             text = condition,
-                            modifier = Modifier.padding(
-                                horizontal = 14.dp,
-                                vertical = 8.dp
-                            ),
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
                             fontSize = 13.sp,
                             color = Color(0xFF2E7D32)
                         )

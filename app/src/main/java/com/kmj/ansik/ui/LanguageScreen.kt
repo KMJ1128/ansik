@@ -8,10 +8,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.kmj.ansik.R
 
 @Composable
 fun LanguageScreen(
@@ -29,7 +31,7 @@ fun LanguageScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "언어를 선택해주세요\nSelect your language",
+                text = stringResource(id = R.string.select_language_title),
                 fontSize = 22.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color(0xFF1B5E20),
@@ -44,14 +46,14 @@ fun LanguageScreen(
                 // 한국어 카드
                 LanguageCard(
                     flag = "🇰🇷",
-                    languageName = "한국어",
+                    languageName = stringResource(id = R.string.lang_korean),
                     onClick = { onLanguageSelected("ko") }
                 )
 
                 // 영어 카드
                 LanguageCard(
                     flag = "🇺🇸",
-                    languageName = "English",
+                    languageName = stringResource(id = R.string.lang_english),
                     onClick = { onLanguageSelected("en") }
                 )
             }

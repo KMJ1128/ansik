@@ -89,4 +89,35 @@
         <item>Animal Rights Diet</item>
         <item>Fair Trade Ingredients</item>
     </string-array>
+
+
+    <!-- Added Strings -->
+    <string name="tab_map">Map</string>
+    <string name="tab_ai_course">AI Course</string>
+    <string name="tab_profile">Profile</string>
+
+    <string name="ai_course_title">AI Recommended Course</string>
+    <string name="ai_course_desc">We recommend a customized travel course\nbased on your health and travel info.</string>
+    <string name="ai_course_card_title">✨ AI Course Recommendation</string>
+    <string name="ai_course_card_desc">Analyzes your selected diet/health conditions\nand schedule to recommend the best course.</string>
+    <string name="ai_course_button">Create AI Course</string>
+    <string name="current_selected_conditions">Currently Selected</string>
+
+    <string name="my_schedule_short">My\nPlan</string>
+    <string name="restaurant_list_title">Restaurant List</string>
+    <string name="restaurant_list_desc">Safe restaurants within 5km of current location</string>
+    <string name="no_restaurants_found">No restaurants found nearby.</string>
+    <string name="restaurant_main_menu">Main Menu</string>
+    <string name="restaurant_treat_menu">Menu Items</string>
+    <string name="restaurant_open_time">Opening Hours</string>
+    <string name="restaurant_parking">Parking</string>
+    <string name="restaurant_packing">Takeout</string>
+    <string name="tap_to_view_details">Tap to view details</string>
+
+    <string name="select_language_title">언어를 선택해주세요\nSelect your language</string>
+    <string name="lang_korean">한국어</string>
+    <string name="lang_english">English</string>
+
+    <string name="go_back">Go Back</string>
+    <string name="language_settings">Language Settings</string>
 </resources>
