@@ -18,6 +18,8 @@ import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -33,6 +35,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -60,6 +64,8 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -76,17 +82,20 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import coil.compose.AsyncImage
 import com.kmj.ansik.R
 import com.naver.maps.geometry.LatLng
@@ -103,6 +112,57 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
+
+// ============================================================
+// 전체화면 이미지 스와이퍼 (다이얼로그)
+// ============================================================
+@Composable
+fun FullScreenImageViewer(imageUrls: List<String>, onDismiss: () -> Unit) {
+    if (imageUrls.isEmpty()) return
+
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
+            val pagerState = rememberPagerState(pageCount = { imageUrls.size })
+
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier.fillMaxSize()
+            ) { page ->
+                AsyncImage(
+                    model = imageUrls[page],
+                    contentDescription = null,
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+
+            IconButton(
+                onClick = onDismiss,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(top = 40.dp, end = 16.dp)
+                    .background(Color.Black.copy(alpha = 0.5f), CircleShape)
+            ) {
+                Icon(Icons.Default.Close, contentDescription = "닫기", tint = Color.White)
+            }
+
+            Text(
+                text = "${pagerState.currentPage + 1} / ${imageUrls.size}",
+                color = Color.White,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 32.dp)
+                    .background(Color.Black.copy(alpha = 0.6f), RoundedCornerShape(16.dp))
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+            )
+        }
+    }
+}
 
 // ============================================================
 // Day 색상
@@ -158,12 +218,43 @@ private fun rememberNumberedMarker(number: Int, composeColor: Color): OverlayIma
 }
 
 // ============================================================
-// 식당 Marker
+// 축소된 관광지 Marker
+// ============================================================
+@Composable
+private fun rememberTouristMarker(): OverlayImage {
+    return remember {
+        val size = 50
+        val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        val outerPaint = Paint().apply {
+            isAntiAlias = true
+            color = android.graphics.Color.rgb(46, 125, 50)
+        }
+        canvas.drawCircle(size / 2f, size / 2f, size / 2f, outerPaint)
+
+        val innerPaint = Paint().apply {
+            isAntiAlias = true
+            color = android.graphics.Color.WHITE
+        }
+        canvas.drawCircle(size / 2f, size / 2f, (size / 2f) - 5f, innerPaint)
+
+        val centerPaint = Paint().apply {
+            isAntiAlias = true
+            color = android.graphics.Color.rgb(46, 125, 50)
+        }
+        canvas.drawCircle(size / 2f, size / 2f, 10f, centerPaint)
+
+        OverlayImage.fromBitmap(bitmap)
+    }
+}
+
+// ============================================================
+// 축소된 식당 Marker
 // ============================================================
 @Composable
 private fun rememberRestaurantMarker(): OverlayImage {
     return remember {
-        val size = 80
+        val size = 50
         val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
         val outerPaint = Paint().apply {
@@ -176,7 +267,7 @@ private fun rememberRestaurantMarker(): OverlayImage {
             isAntiAlias = true
             color = android.graphics.Color.WHITE
         }
-        canvas.drawCircle(size / 2f, size / 2f, 27f, innerPaint)
+        canvas.drawCircle(size / 2f, size / 2f, (size / 2f) - 5f, innerPaint)
 
         val centerPaint = Paint().apply {
             isAntiAlias = true
@@ -191,7 +282,7 @@ private fun rememberRestaurantMarker(): OverlayImage {
 // ============================================================
 // MapScreen
 // ============================================================
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalNaverMapApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalNaverMapApi::class, ExperimentalLayoutApi::class)
 @Composable
 fun MapScreen(viewModel: MainViewModel) {
     val searchQuery by viewModel.searchQuery
@@ -205,16 +296,31 @@ fun MapScreen(viewModel: MainViewModel) {
 
     val cameraPositionState = rememberCameraPositionState()
     val keyboardController = LocalSoftwareKeyboardController.current
+    val focusManager = LocalFocusManager.current
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     val lazyListState = rememberLazyListState()
     val restaurantMarker = rememberRestaurantMarker()
+    val touristMarker = rememberTouristMarker()
 
     var highlightedPlaceId by remember { mutableStateOf<String?>(null) }
     var isScheduleExpanded by remember { mutableStateOf(false) }
     var showRestaurantSheet by remember { mutableStateOf(false) }
     var showRadiusDialog by remember { mutableStateOf(false) }
+    var showHotPlaceFilterDialog by remember { mutableStateOf(false) }
+    var isSearchFocused by remember { mutableStateOf(false) }
+
+    // 💡 이미지 뷰어 띄울 URL 리스트를 보관하는 상태 변수
+    var viewerImages by remember { mutableStateOf<List<String>?>(null) }
+
     val restaurantSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
+
+    viewerImages?.let { urls ->
+        FullScreenImageViewer(
+            imageUrls = urls,
+            onDismiss = { viewerImages = null }
+        )
+    }
 
     LaunchedEffect(selectedPlace) {
         selectedPlace?.let { place ->
@@ -223,9 +329,95 @@ fun MapScreen(viewModel: MainViewModel) {
         }
     }
 
-    // =========================================
-    // 반경 설정 다이얼로그 (팝업)
-    // =========================================
+    LaunchedEffect(cameraPositionState.isMoving) {
+        if (!cameraPositionState.isMoving) {
+            val zoom = cameraPositionState.position.zoom
+            if (zoom >= 11.0) {
+                val target = cameraPositionState.position.target
+                viewModel.fetchPopularDataDynamic(target.latitude, target.longitude)
+            }
+        }
+    }
+
+    if (showHotPlaceFilterDialog) {
+        AlertDialog(
+            onDismissRequest = { showHotPlaceFilterDialog = false },
+            title = {
+                Text("인기 핫플 표시 설정", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+            },
+            text = {
+                Column {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("인기 관광지 표시", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                        Switch(
+                            checked = viewModel.showPopularPlaces.value,
+                            onCheckedChange = { viewModel.showPopularPlaces.value = it },
+                            colors = SwitchDefaults.colors(checkedThumbColor = Color.White, checkedTrackColor = Color(0xFF2E7D32))
+                        )
+                    }
+                    if (viewModel.showPopularPlaces.value) {
+                        Text("최대 개수: ${viewModel.maxPopularPlaces.floatValue.toInt()}개", fontSize = 13.sp, color = Color.Gray)
+                        Slider(
+                            value = viewModel.maxPopularPlaces.floatValue,
+                            onValueChange = { viewModel.maxPopularPlaces.floatValue = it },
+                            valueRange = 1f..10f,
+                            steps = 8,
+                            colors = SliderDefaults.colors(thumbColor = Color(0xFF2E7D32), activeTrackColor = Color(0xFF2E7D32))
+                        )
+                    }
+
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("인기 맛집 표시", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                        Switch(
+                            checked = viewModel.showPopularRestaurants.value,
+                            onCheckedChange = { viewModel.showPopularRestaurants.value = it },
+                            colors = SwitchDefaults.colors(checkedThumbColor = Color.White, checkedTrackColor = Color(0xFF1976D2))
+                        )
+                    }
+                    if (viewModel.showPopularRestaurants.value) {
+                        Text("최대 개수: ${viewModel.maxPopularRestaurants.floatValue.toInt()}개", fontSize = 13.sp, color = Color.Gray)
+                        Slider(
+                            value = viewModel.maxPopularRestaurants.floatValue,
+                            onValueChange = { viewModel.maxPopularRestaurants.floatValue = it },
+                            valueRange = 1f..10f,
+                            steps = 8,
+                            colors = SliderDefaults.colors(thumbColor = Color(0xFF1976D2), activeTrackColor = Color(0xFF1976D2))
+                        )
+                    }
+
+                    Surface(
+                        color = Color(0xFFF5F5F5),
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.fillMaxWidth().padding(top = 16.dp)
+                    ) {
+                        Text(
+                            "💡 선별 기준\n현위치 반경 5km 내의 장소 중, 네이버 블로그 리뷰 수가 가장 많은 순서대로 엄선하여 보여줍니다.",
+                            fontSize = 11.sp,
+                            color = Color.DarkGray,
+                            modifier = Modifier.padding(12.dp)
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showHotPlaceFilterDialog = false }) {
+                    Text("확인", color = Color(0xFF2E7D32), fontWeight = FontWeight.Bold)
+                }
+            },
+            containerColor = Color.White
+        )
+    }
+
     if (showRadiusDialog) {
         AlertDialog(
             onDismissRequest = { showRadiusDialog = false },
@@ -238,10 +430,7 @@ fun MapScreen(viewModel: MainViewModel) {
             },
             text = {
                 Column {
-                    // 슬라이더 조작 시 임시로 보여줄 상태
                     var tempRadius by remember { mutableFloatStateOf(viewModel.searchRadius.intValue.toFloat()) }
-
-                    // 100m 단위로 보정된 값
                     val snappedRadius = (tempRadius / 100).toInt() * 100
 
                     val radiusText = if (snappedRadius >= 1000) {
@@ -261,12 +450,10 @@ fun MapScreen(viewModel: MainViewModel) {
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // 점(steps) 제거된 부드러운 슬라이더
                     Slider(
                         value = tempRadius,
                         onValueChange = { tempRadius = it },
                         onValueChangeFinished = {
-                            // 드래그 종료 시 ViewModel(및 SharedPreferences) 업데이트
                             viewModel.updateSearchRadius(snappedRadius)
                         },
                         valueRange = 100f..3000f,
@@ -293,17 +480,18 @@ fun MapScreen(viewModel: MainViewModel) {
 
     Box(modifier = Modifier.fillMaxSize()) {
 
-        // 1. 지도
         NaverMap(
             modifier = Modifier.fillMaxSize(),
             cameraPositionState = cameraPositionState,
             onSymbolClick = { symbol ->
                 viewModel.selectLocationFromMap(symbol.caption, symbol.position.latitude, symbol.position.longitude)
+                focusManager.clearFocus()
                 keyboardController?.hide()
                 true
             },
             onMapClick = { _, _ ->
                 viewModel.selectedPlace.value = null
+                focusManager.clearFocus()
                 keyboardController?.hide()
             }
         ) {
@@ -355,6 +543,50 @@ fun MapScreen(viewModel: MainViewModel) {
                 }
             }
 
+            if (viewModel.showPopularPlaces.value) {
+                viewModel.popularPlaces.take(viewModel.maxPopularPlaces.floatValue.toInt()).forEach { place ->
+                    val lng = place.mapx.toDoubleOrNull()
+                    val lat = place.mapy.toDoubleOrNull()
+                    if (lat != null && lng != null && lat != 0.0 && lng != 0.0) {
+                        key("popular_place_${place.contentid}") {
+                            Marker(
+                                state = MarkerState(position = LatLng(lat, lng)),
+                                icon = touristMarker,
+                                captionText = place.title,
+                                onClick = {
+                                    viewModel.selectLocationFromMap(place.title, lat, lng)
+                                    true
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+
+            if (viewModel.showPopularRestaurants.value) {
+                viewModel.popularRestaurants.take(viewModel.maxPopularRestaurants.floatValue.toInt()).forEachIndexed { index, restaurant ->
+                    val rank = index + 1
+                    val lng = restaurant.mapx.toDoubleOrNull()
+                    val lat = restaurant.mapy.toDoubleOrNull()
+                    if (lat != null && lng != null && lat != 0.0 && lng != 0.0) {
+                        key("popular_restaurant_${restaurant.contentid}") {
+                            Marker(
+                                state = MarkerState(position = LatLng(lat, lng)),
+                                icon = restaurantMarker,
+                                captionText = "${rank}위 ${restaurant.title}",
+                                onClick = {
+                                    viewModel.nearbyRestaurants.clear()
+                                    viewModel.nearbyRestaurants.add(restaurant)
+                                    viewModel.fetchRestaurantDetail(restaurant.contentid)
+                                    showRestaurantSheet = true
+                                    true
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+
             nearbyRestaurants.forEach { restaurant ->
                 val lng = restaurant.mapx.toDoubleOrNull()
                 val lat = restaurant.mapy.toDoubleOrNull()
@@ -374,7 +606,6 @@ fun MapScreen(viewModel: MainViewModel) {
             }
         }
 
-        // 2. 우측 상단 '내 일정' 패널
         Box(
             modifier = Modifier
                 .align(Alignment.TopEnd)
@@ -581,7 +812,6 @@ fun MapScreen(viewModel: MainViewModel) {
             }
         }
 
-        // 3. 하단 장소 상세 카드
         AnimatedVisibility(
             visible = selectedPlace != null,
             enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
@@ -602,7 +832,13 @@ fun MapScreen(viewModel: MainViewModel) {
                                 model = place.imageUrl,
                                 contentDescription = stringResource(id = R.string.place_image),
                                 contentScale = ContentScale.Crop,
-                                modifier = Modifier.size(82.dp).clip(RoundedCornerShape(14.dp))
+                                modifier = Modifier
+                                    .size(82.dp)
+                                    .clip(RoundedCornerShape(14.dp))
+                                    // 💡 이미지 클릭 시 뷰어 실행 로직 추가
+                                    .clickable {
+                                        viewerImages = place.imageUrls.ifEmpty { listOf(place.imageUrl) }
+                                    }
                             )
                             Spacer(modifier = Modifier.width(14.dp))
                             Column(modifier = Modifier.weight(1f)) {
@@ -659,9 +895,6 @@ fun MapScreen(viewModel: MainViewModel) {
 
                         Spacer(modifier = Modifier.height(12.dp))
 
-                        // =========================================
-                        // 식당 찾기 버튼 + 설정(필터) 아이콘 배치
-                        // =========================================
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             Button(
                                 onClick = {
@@ -687,7 +920,6 @@ fun MapScreen(viewModel: MainViewModel) {
                                 }
                             }
 
-                            // 팝업을 여는 설정(필터) 아이콘 버튼
                             OutlinedButton(
                                 onClick = { showRadiusDialog = true },
                                 modifier = Modifier.size(46.dp),
@@ -706,7 +938,7 @@ fun MapScreen(viewModel: MainViewModel) {
             }
         }
 
-        // 4. 검색창 (가장 마지막에 그려서 자동완성 목록이 일정 패널 위로 오게 함)
+        // 4. 검색창, 핫플 필터 및 추천 검색어
         Column(
             modifier = Modifier
                 .align(Alignment.TopCenter)
@@ -745,6 +977,9 @@ fun MapScreen(viewModel: MainViewModel) {
                 },
                 modifier = Modifier
                     .fillMaxWidth()
+                    .onFocusChanged { focusState ->
+                        isSearchFocused = focusState.isFocused
+                    }
                     .shadow(12.dp, RoundedCornerShape(50), spotColor = Color(0x26000000)),
                 shape = RoundedCornerShape(50),
                 colors = OutlinedTextFieldDefaults.colors(
@@ -755,6 +990,75 @@ fun MapScreen(viewModel: MainViewModel) {
                 ),
                 singleLine = true
             )
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp),
+                horizontalArrangement = Arrangement.Start
+            ) {
+                Surface(
+                    shape = RoundedCornerShape(50),
+                    color = Color.White.copy(alpha = 0.95f),
+                    shadowElevation = 2.dp,
+                    modifier = Modifier.clickable { showHotPlaceFilterDialog = true }
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Default.Tune, contentDescription = null, modifier = Modifier.size(16.dp), tint = Color(0xFF2E7D32))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("핫플 표시 설정", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF2E7D32))
+                    }
+                }
+            }
+
+            AnimatedVisibility(visible = isSearchFocused && searchQuery.isEmpty() && viewModel.showPopularRestaurants.value) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 12.dp)
+                        .shadow(16.dp, RoundedCornerShape(20.dp)),
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            text = "✨ 현위치 인기 핫플 추천",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF757575),
+                            modifier = Modifier.padding(bottom = 12.dp, start = 4.dp)
+                        )
+
+                        FlowRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            viewModel.popularRestaurants.take(viewModel.maxPopularRestaurants.floatValue.toInt()).forEachIndexed { index, restaurant ->
+                                val rank = index + 1
+                                Surface(
+                                    modifier = Modifier.clickable {
+                                        viewModel.searchPlacesRealtime("${restaurant.title} 식당")
+                                        focusManager.clearFocus()
+                                        keyboardController?.hide()
+                                    },
+                                    shape = RoundedCornerShape(50),
+                                    color = Color(0xFFF5F5F5)
+                                ) {
+                                    Text(
+                                        text = "${rank}위 ${restaurant.title}",
+                                        fontSize = 13.sp,
+                                        color = Color(0xFF424242),
+                                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
 
             AnimatedVisibility(visible = isSearchActive) {
                 Card(
@@ -773,6 +1077,7 @@ fun MapScreen(viewModel: MainViewModel) {
                                     .clickable {
                                         viewModel.selectedPlace.value = place
                                         viewModel.isSearchActive.value = false
+                                        focusManager.clearFocus()
                                         keyboardController?.hide()
                                     }
                                     .padding(horizontal = 20.dp, vertical = 16.dp),
@@ -828,22 +1133,21 @@ fun MapScreen(viewModel: MainViewModel) {
             RestaurantListContent(
                 restaurants = nearbyRestaurants,
                 selectedDetail = selectedRestaurantDetail,
-                radius = viewModel.searchRadius.intValue, // 바텀 시트에 반경 전달
-                onRestaurantClick = { viewModel.fetchRestaurantDetail(it.contentid) }
+                radius = viewModel.searchRadius.intValue,
+                onRestaurantClick = { viewModel.fetchRestaurantDetail(it.contentid) },
+                onImageClick = { viewerImages = it } // 💡 하위 컴포넌트로 뷰어 띄우기 함수 전달
             )
         }
     }
 }
 
-// ============================================================
-// 식당 리스트 바텀 시트
-// ============================================================
 @Composable
 private fun RestaurantListContent(
     restaurants: List<TourRestaurant>,
     selectedDetail: TourRestaurantDetail?,
     radius: Int,
-    onRestaurantClick: (TourRestaurant) -> Unit
+    onRestaurantClick: (TourRestaurant) -> Unit,
+    onImageClick: (List<String>) -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -858,7 +1162,6 @@ private fun RestaurantListContent(
             )
             Spacer(modifier = Modifier.height(4.dp))
 
-            // 포맷팅 적용 (500m 또는 1.5km 형태)
             val radiusStr = if (radius >= 1000) {
                 if (radius % 1000 == 0) "${radius / 1000}km"
                 else String.format("%.1fkm", radius / 1000f)
@@ -896,7 +1199,8 @@ private fun RestaurantListContent(
                     RestaurantCard(
                         restaurant = restaurant,
                         detail = if (selectedDetail?.contentid == restaurant.contentid) selectedDetail else null,
-                        onClick = { onRestaurantClick(restaurant) }
+                        onClick = { onRestaurantClick(restaurant) },
+                        onImageClick = { onImageClick(restaurant.customImageUrls.ifEmpty { listOf(restaurant.firstimage) }) }
                     )
                 }
             }
@@ -904,16 +1208,13 @@ private fun RestaurantListContent(
     }
 }
 
-// ============================================================
-// 식당 카드
-// ============================================================
 @Composable
 private fun RestaurantCard(
     restaurant: TourRestaurant,
     detail: TourRestaurantDetail?,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onImageClick: () -> Unit
 ) {
-    // 💡 핵심 수정: http 주소를 https로 강제 변환하여 이미지 로드 차단 해결
     val rawImageUrl = restaurant.firstimage.ifEmpty { restaurant.firstimage2 }
     val secureImageUrl = rawImageUrl.replace("http://", "https://")
 
@@ -925,13 +1226,14 @@ private fun RestaurantCard(
     ) {
         Column {
             AsyncImage(
-                model = secureImageUrl, // 💡 변환된 안전한 URL 적용
+                model = secureImageUrl,
                 contentDescription = restaurant.title,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(150.dp)
                     .clip(RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp))
+                    .clickable { onImageClick() } // 💡 식당 이미지 클릭 시 뷰어 실행
             )
 
             Column(modifier = Modifier.padding(16.dp)) {
@@ -976,9 +1278,6 @@ private fun RestaurantCard(
     }
 }
 
-// ============================================================
-// 식당 정보 Row
-// ============================================================
 @Composable
 private fun RestaurantInfoRow(title: String, value: String) {
     Column(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {

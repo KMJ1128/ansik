@@ -1,3 +1,6 @@
+import java.util.Properties
+import java.io.FileInputStream
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -16,10 +19,24 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // ========================================================
+        // local.properties에서 SERVER_URL을 읽어 BuildConfig 필드로 주입
+        // ========================================================
+        val localProperties = Properties()
+        val localPropertiesFile = rootProject.file("local.properties")
+        if (localPropertiesFile.exists()) {
+            localProperties.load(FileInputStream(localPropertiesFile))
+        }
+        val serverUrl = localProperties.getProperty("SERVER_URL")
+            ?: "http://10.0.2.2:8080/"
+
+        buildConfigField("String", "SERVER_URL", "\"$serverUrl\"")
     }
 
     buildFeatures {
         compose = true
+        buildConfig = true   // ⭐ 이거 꼭 추가해야 BuildConfig 필드 생성됨
     }
 
     buildTypes {
@@ -31,14 +48,17 @@ android {
             )
         }
     }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
+
     kotlinOptions {
         jvmTarget = "11"
     }
 }
+
 
 dependencies {
     implementation(libs.androidx.core.ktx)

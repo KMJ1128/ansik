@@ -7,10 +7,7 @@ import java.util.UUID
 // ============================================================
 
 data class TravelSpot(
-
-    val id: String =
-        UUID.randomUUID().toString(),
-
+    val id: String = UUID.randomUUID().toString(),
     val name: String
 )
 
@@ -19,22 +16,14 @@ data class TravelSpot(
 // ============================================================
 
 data class PlaceInfo(
-
-    val id: String =
-        UUID.randomUUID().toString(),
-
+    val id: String = UUID.randomUUID().toString(),
     val name: String,
-
     val address: String,
-
     val tag: String,
-
-    val imageUrl: String,
-
+    val imageUrl: String = "",
+    val imageUrls: List<String> = emptyList(), // 💡 여러 이미지를 담기 위한 리스트 추가
     val latitude: Double,
-
     val longitude: Double,
-
     var day: Int = 1
 )
 
@@ -43,39 +32,15 @@ data class PlaceInfo(
 // ============================================================
 
 data class KakaoSearchResponse(
-
-    val documents:
-    List<KakaoPlace> =
-        emptyList()
+    val documents: List<KakaoPlace> = emptyList()
 )
 
 data class KakaoPlace(
-
     val place_name: String = "",
-
     val road_address_name: String = "",
-
     val category_group_name: String = "",
-
     val x: String = "",
-
     val y: String = ""
-)
-
-// ============================================================
-// Kakao Image API (이제 사용 안함 - 참고용 유지)
-// ============================================================
-
-data class KakaoImageResponse(
-
-    val documents:
-    List<KakaoImageDocument> =
-        emptyList()
-)
-
-data class KakaoImageDocument(
-
-    val image_url: String = ""
 )
 
 // ============================================================
@@ -83,17 +48,11 @@ data class KakaoImageDocument(
 // ============================================================
 
 data class NaverImageResponse(
-
-    val items:
-    List<NaverImageItem> =
-        emptyList()
+    val items: List<NaverImageItem> = emptyList()
 )
 
 data class NaverImageItem(
-
-    val link: String = "",
-
-    // 💡 차단되지 않는 썸네일 이미지 주소 추가
+    val link: String = "", // 💡 고화질 원본 이미지 URL
     val thumbnail: String = ""
 )
 
@@ -102,53 +61,28 @@ data class NaverImageItem(
 // ============================================================
 
 data class TourApiResponse<T>(
-
-    val response:
-    TourApiResponseBody<T>? =
-        null
+    val response: TourApiResponseBody<T>? = null
 )
 
 data class TourApiResponseBody<T>(
-
-    val header:
-    TourApiHeader? =
-        null,
-
-    val body:
-    TourApiBody<T>? =
-        null
+    val header: TourApiHeader? = null,
+    val body: TourApiBody<T>? = null
 )
 
 data class TourApiHeader(
-
-    val resultCode: String? =
-        null,
-
-    val resultMsg: String? =
-        null
+    val resultCode: String? = null,
+    val resultMsg: String? = null
 )
 
 data class TourApiBody<T>(
-
-    val items:
-    TourApiItems<T>? =
-        null,
-
-    val numOfRows: Int? =
-        null,
-
-    val pageNo: Int? =
-        null,
-
-    val totalCount: Int? =
-        null
+    val items: TourApiItems<T>? = null,
+    val numOfRows: Int? = null,
+    val pageNo: Int? = null,
+    val totalCount: Int? = null
 )
 
 data class TourApiItems<T>(
-
-    val item:
-    List<T>? =
-        null
+    val item: List<T>? = null
 )
 
 // ============================================================
@@ -156,28 +90,19 @@ data class TourApiItems<T>(
 // 위치 기반 음식점 검색
 // ============================================================
 
-typealias TourLocationResponse =
-        TourApiResponse<TourRestaurant>
+typealias TourLocationResponse = TourApiResponse<TourRestaurant>
 
 data class TourRestaurant(
-
     val contentid: String = "",
-
     val contenttypeid: String = "",
-
     val title: String = "",
-
     val mapx: String = "",
-
     val mapy: String = "",
-
     val addr1: String = "",
-
     val addr2: String = "",
-
     val firstimage: String = "",
-
-    val firstimage2: String = ""
+    val firstimage2: String = "",
+    val customImageUrls: List<String> = emptyList() // 💡 갤러리 뷰어용 리스트 추가
 )
 
 // ============================================================
@@ -185,47 +110,20 @@ data class TourRestaurant(
 // 음식점 상세정보
 // ============================================================
 
-typealias TourDetailIntroResponse =
-        TourApiResponse<TourRestaurantDetail>
+typealias TourDetailIntroResponse = TourApiResponse<TourRestaurantDetail>
 
 data class TourRestaurantDetail(
-
-    val contentid: String? =
-        null,
-
-    val contenttypeid: String? =
-        null,
-
-    val firstmenu: String? =
-        null,
-
-    val treatmenu: String? =
-        null,
-
-    val kidsfacility: String? =
-        null,
-
-    val parkingfood: String? =
-        null,
-
-    val packing: String? =
-        null,
-
-    val seat: String? =
-        null,
-
-    val smoking: String? =
-        null,
-
-    val creditcardfood: String? =
-        null,
-
-    val reservationfood: String? =
-        null,
-
-    val opentimefood: String? =
-        null,
-
-    val restdatefood: String? =
-        null
+    val contentid: String? = null,
+    val contenttypeid: String? = null,
+    val firstmenu: String? = null,
+    val treatmenu: String? = null,
+    val kidsfacility: String? = null,
+    val parkingfood: String? = null,
+    val packing: String? = null,
+    val seat: String? = null,
+    val smoking: String? = null,
+    val creditcardfood: String? = null,
+    val reservationfood: String? = null,
+    val opentimefood: String? = null,
+    val restdatefood: String? = null
 )
