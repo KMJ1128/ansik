@@ -54,8 +54,33 @@ class MainViewModel(
     private var lastFetchedLat = 37.5665
     private var lastFetchedLng = 126.9780
 
+    // 🔥 리뷰 바텀시트 상태 관리 (추가됨)
+    var showReviewSheet = mutableStateOf(false)
+    val selectedPlaceReviews = mutableStateListOf<BlogReview>()
+    var isFetchingReviews = mutableStateOf(false)
+
     init {
         fetchPopularDataDynamic(lastFetchedLat, lastFetchedLng, force = true)
+    }
+
+    // 🔥 리뷰 불러오기 함수 (추가됨)
+    fun fetchPlaceReviews(placeName: String) {
+        viewModelScope.launch {
+            isFetchingReviews.value = true
+            showReviewSheet.value = true
+            try {
+                val reviews = withContext(Dispatchers.IO) {
+                    RetrofitClient.api.getPlaceReviews(placeName)
+                }
+                selectedPlaceReviews.clear()
+                selectedPlaceReviews.addAll(reviews)
+            } catch (e: Exception) {
+                Log.e("Reviews", "리뷰 불러오기 실패", e)
+                selectedPlaceReviews.clear()
+            } finally {
+                isFetchingReviews.value = false
+            }
+        }
     }
 
     private suspend fun fetchExactImages(tourId: String?, title: String?, mapX: Double?, mapY: Double?): List<String> {
@@ -75,7 +100,6 @@ class MainViewModel(
         }
     }
 
-    // 🔥 수정 1: 지도를 움직일 때마다 호출되는 인기 핫플에서는 구글 API 절대 호출 안 함 (과금 방어)
     fun fetchPopularDataDynamic(lat: Double, lng: Double, force: Boolean = false) {
         if (!force) {
             val distance = FloatArray(1)
@@ -163,7 +187,6 @@ class MainViewModel(
     var isFetchingRestaurants = mutableStateOf(false)
     var selectedRestaurantDetail = mutableStateOf<TourRestaurantDetail?>(null)
 
-    // 🔥 수정 2: 검색창 자동완성 목록에서도 구글 API 호출 제거 (타이핑할 때마다 호출되는 것 방지)
     fun searchPlacesRealtime(query: String) {
         searchQuery.value = query
         isSearchActive.value = query.isNotEmpty()
@@ -186,7 +209,7 @@ class MainViewModel(
                             name = place.place_name,
                             address = place.road_address_name.ifEmpty { context.getString(R.string.no_address) },
                             tag = shortTag.ifEmpty { context.getString(R.string.place) },
-                            imageUrl = DEFAULT_IMAGE_URL, // 임시 이미지 표출
+                            imageUrl = DEFAULT_IMAGE_URL,
                             imageUrls = listOf(DEFAULT_IMAGE_URL),
                             latitude = place.y.toDoubleOrNull() ?: 0.0,
                             longitude = place.x.toDoubleOrNull() ?: 0.0,
@@ -202,7 +225,6 @@ class MainViewModel(
         }
     }
 
-    // 🔥 유지: 사용자가 직접 클릭한 마커/장소 카드에 대해서만 정확한 구글 이미지 호출
     fun selectLocationFromMap(name: String, lat: Double, lng: Double) {
         viewModelScope.launch {
             try {
@@ -210,7 +232,6 @@ class MainViewModel(
                     val searchRes = RetrofitClient.api.searchPlace(query = name)
                     val matchedPlace = searchRes.documents.firstOrNull()
 
-                    // 클릭했을 때만 호출!
                     val images = fetchExactImages(null, name, lng, lat)
                     val finalImages = images.ifEmpty { listOf(DEFAULT_IMAGE_URL) }
 
@@ -242,7 +263,6 @@ class MainViewModel(
         }
     }
 
-    // 🔥 수정 3: 주변 식당 리스트. 공공데이터(TourAPI) 이미지가 없을 때만 최후의 수단으로 구글 API 호출 (최대한 아끼기)
     fun searchNearbyRestaurants(lat: Double, lng: Double) {
         viewModelScope.launch {
             isFetchingRestaurants.value = true
@@ -259,7 +279,6 @@ class MainViewModel(
                             async {
                                 val tourImages = getValidTourImages(listOf(restaurant.firstimage, restaurant.firstimage2))
 
-                                // 공공데이터에 사진이 없으면 그때만 제한적으로 구글 API 호출
                                 val exactImages = if (tourImages.isEmpty()) {
                                     fetchExactImages(restaurant.contentid, restaurant.title, restaurant.mapx.toDoubleOrNull(), restaurant.mapy.toDoubleOrNull())
                                 } else {

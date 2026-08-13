@@ -2,18 +2,10 @@ package com.kmj.ansik.ui
 
 import java.util.UUID
 
-// ============================================================
-// 여행 장소
-// ============================================================
-
 data class TravelSpot(
     val id: String = UUID.randomUUID().toString(),
     val name: String
 )
-
-// ============================================================
-// 일정 장소
-// ============================================================
 
 data class PlaceInfo(
     val id: String = UUID.randomUUID().toString(),
@@ -26,10 +18,6 @@ data class PlaceInfo(
     val longitude: Double,
     var day: Int = 1
 )
-
-// ============================================================
-// Kakao Local API
-// ============================================================
 
 data class KakaoSearchResponse(
     val documents: List<KakaoPlace> = emptyList()
@@ -44,10 +32,6 @@ data class KakaoPlace(
     val y: String = ""
 )
 
-// ============================================================
-// Naver Image API
-// ============================================================
-
 data class NaverImageResponse(
     val items: List<NaverImageItem> = emptyList()
 )
@@ -55,30 +39,18 @@ data class NaverImageResponse(
 data class NaverImageItem(
     val title: String = "",
     val link: String = "",
-    val thumbnail: String = "",
-    val sizeheight: String = "",
-    val sizewidth: String = ""
+    val thumbnail: String = ""
 )
-
-// ============================================================
-// TourAPI 공통 응답
-// ============================================================
 
 data class TourApiResponse<T>(
-    val response: TourApiResponseBody<T>? = null
+    val response: TourApiBodyOuter<T>? = null
 )
 
-data class TourApiResponseBody<T>(
-    val header: TourApiHeader? = null,
-    val body: TourApiBody<T>? = null
+data class TourApiBodyOuter<T>(
+    val body: TourApiBodyInner<T>? = null
 )
 
-data class TourApiHeader(
-    val resultCode: String? = null,
-    val resultMsg: String? = null
-)
-
-data class TourApiBody<T>(
+data class TourApiBodyInner<T>(
     val items: TourApiItems<T>? = null,
     val numOfRows: Int? = null,
     val pageNo: Int? = null,
@@ -88,11 +60,6 @@ data class TourApiBody<T>(
 data class TourApiItems<T>(
     val item: List<T>? = null
 )
-
-// ============================================================
-// TourAPI
-// 위치 기반 음식점 검색
-// ============================================================
 
 typealias TourLocationResponse = TourApiResponse<TourRestaurant>
 
@@ -109,11 +76,6 @@ data class TourRestaurant(
     val imageUrls: List<String> = emptyList()
 )
 
-// ============================================================
-// TourAPI
-// 음식점 상세정보
-// ============================================================
-
 typealias TourDetailIntroResponse = TourApiResponse<TourRestaurantDetail>
 
 data class TourRestaurantDetail(
@@ -128,6 +90,12 @@ data class TourRestaurantDetail(
     val smoking: String? = null,
     val creditcardfood: String? = null,
     val reservationfood: String? = null,
-    val opentimefood: String? = null,
-    val restdatefood: String? = null
+    val opentimefood: String? = null
+)
+
+// 🔥 네이버 블로그 리뷰 모델 추가
+data class BlogReview(
+    val title: String = "",
+    val description: String = "",
+    val link: String = ""
 )

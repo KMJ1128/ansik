@@ -162,7 +162,7 @@ private fun MainTabScreen(
                 navController = navController,
                 startDestination = "map"
             ) {
-                composable("map") { MapScreen(viewModel = viewModel) }
+                composable("map") { MainScreen(viewModel = viewModel) }
                 composable("ai") { AiRecommendationScreen(viewModel = viewModel) }
                 composable("profile") {
                     ProfileScreen(
