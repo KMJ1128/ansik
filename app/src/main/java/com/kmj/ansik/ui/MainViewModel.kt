@@ -2,6 +2,7 @@ package com.kmj.ansik.ui
 
 import android.app.Application
 import android.content.Context
+import android.location.Location
 import android.util.Log
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -9,6 +10,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.kmj.ansik.R
 import com.naver.maps.geometry.LatLng
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -18,7 +20,6 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import com.kmj.ansik.R
 
 class MainViewModel(
     application: Application
@@ -57,20 +58,28 @@ class MainViewModel(
         fetchPopularDataDynamic(lastFetchedLat, lastFetchedLng, force = true)
     }
 
-    // 💡 안드로이드에서 네이버 고화질(link) 이미지를 직접 추출
-    private suspend fun getFilteredImages(query: String): List<String> {
+    private suspend fun fetchExactImages(tourId: String?, title: String?, mapX: Double?, mapY: Double?): List<String> {
         return try {
-            val response = RetrofitClient.api.searchImageNaver(query)
-            response.items.map { it.link.replace("http://", "https://") }
+            RetrofitClient.api.getExactImages(tourId, title, mapX, mapY)
         } catch (e: Exception) {
+            Log.e("ImageFetch", "이미지 요청 실패: $title", e)
             emptyList()
         }
     }
 
+    private suspend fun getValidTourImages(urls: List<String>): List<String> {
+        return withContext(Dispatchers.IO) {
+            urls.filter { it.isNotBlank() }
+                .map { it.replace("http://", "https://") }
+                .distinct()
+        }
+    }
+
+    // 🔥 수정 1: 지도를 움직일 때마다 호출되는 인기 핫플에서는 구글 API 절대 호출 안 함 (과금 방어)
     fun fetchPopularDataDynamic(lat: Double, lng: Double, force: Boolean = false) {
         if (!force) {
             val distance = FloatArray(1)
-            android.location.Location.distanceBetween(lastFetchedLat, lastFetchedLng, lat, lng, distance)
+            Location.distanceBetween(lastFetchedLat, lastFetchedLng, lat, lng, distance)
             if (distance[0] < 3000f) return
         }
 
@@ -90,40 +99,18 @@ class MainViewModel(
                     val rests = restsRes.response?.body?.items?.item ?: emptyList()
 
                     val updatedPlaces = withContext(Dispatchers.IO) {
-                        coroutineScope {
-                            places.map { place ->
-                                async {
-                                    val finalImages = if (place.firstimage.isBlank() && place.firstimage2.isBlank()) {
-                                        val shortAddr = place.addr1.split(" ").take(2).joinToString(" ")
-                                        getFilteredImages("${place.title} $shortAddr")
-                                    } else {
-                                        listOfNotNull(place.firstimage, place.firstimage2)
-                                    }
-                                    place.copy(
-                                        firstimage = finalImages.firstOrNull() ?: "",
-                                        imageUrls = finalImages // 💡 모델 변수명 일치
-                                    )
-                                }
-                            }.awaitAll()
+                        places.map { place ->
+                            val tourImages = getValidTourImages(listOf(place.firstimage, place.firstimage2))
+                            val finalImages = tourImages.ifEmpty { listOf(DEFAULT_IMAGE_URL) }
+                            place.copy(firstimage = finalImages.first(), imageUrls = finalImages)
                         }
                     }
 
                     val updatedRests = withContext(Dispatchers.IO) {
-                        coroutineScope {
-                            rests.map { rest ->
-                                async {
-                                    val finalImages = if (rest.firstimage.isBlank() && rest.firstimage2.isBlank()) {
-                                        val shortAddr = rest.addr1.split(" ").take(2).joinToString(" ")
-                                        getFilteredImages("${rest.title} $shortAddr 식당")
-                                    } else {
-                                        listOfNotNull(rest.firstimage, rest.firstimage2)
-                                    }
-                                    rest.copy(
-                                        firstimage = finalImages.firstOrNull() ?: "",
-                                        imageUrls = finalImages // 💡 모델 변수명 일치
-                                    )
-                                }
-                            }.awaitAll()
+                        rests.map { rest ->
+                            val tourImages = getValidTourImages(listOf(rest.firstimage, rest.firstimage2))
+                            val finalImages = tourImages.ifEmpty { listOf(DEFAULT_IMAGE_URL) }
+                            rest.copy(firstimage = finalImages.first(), imageUrls = finalImages)
                         }
                     }
 
@@ -161,7 +148,6 @@ class MainViewModel(
                     travelRoute[index] = place.copy(day = days.value)
                 }
             }
-
             if (currentSelectedDay.value > days.value) {
                 currentSelectedDay.value = days.value
             }
@@ -177,6 +163,7 @@ class MainViewModel(
     var isFetchingRestaurants = mutableStateOf(false)
     var selectedRestaurantDetail = mutableStateOf<TourRestaurantDetail?>(null)
 
+    // 🔥 수정 2: 검색창 자동완성 목록에서도 구글 API 호출 제거 (타이핑할 때마다 호출되는 것 방지)
     fun searchPlacesRealtime(query: String) {
         searchQuery.value = query
         isSearchActive.value = query.isNotEmpty()
@@ -192,32 +179,21 @@ class MainViewModel(
             try {
                 val placesWithImages = withContext(Dispatchers.IO) {
                     val response = RetrofitClient.api.searchPlace(query = query)
-                    coroutineScope {
-                        response.documents.map { place ->
-                            async {
-                                val shortAddr = place.road_address_name.split(" ").take(2).joinToString(" ")
-                                val exactQuery = "${place.place_name} $shortAddr"
-
-                                val images = getFilteredImages(exactQuery)
-                                val finalImages = images.ifEmpty { listOf(DEFAULT_IMAGE_URL) }
-                                val shortTag = place.category_group_name.split(">").lastOrNull()?.trim().orEmpty()
-
-                                PlaceInfo(
-                                    id = place.id,
-                                    name = place.place_name,
-                                    address = place.road_address_name.ifEmpty { context.getString(R.string.no_address) },
-                                    tag = shortTag.ifEmpty { context.getString(R.string.place) },
-                                    imageUrl = finalImages.first(),
-                                    imageUrls = finalImages,
-                                    latitude = place.y.toDoubleOrNull() ?: 0.0,
-                                    longitude = place.x.toDoubleOrNull() ?: 0.0,
-                                    day = currentSelectedDay.value
-                                )
-                            }
-                        }.awaitAll()
+                    response.documents.map { place ->
+                        val shortTag = place.category_group_name.split(">").lastOrNull()?.trim().orEmpty()
+                        PlaceInfo(
+                            id = place.id,
+                            name = place.place_name,
+                            address = place.road_address_name.ifEmpty { context.getString(R.string.no_address) },
+                            tag = shortTag.ifEmpty { context.getString(R.string.place) },
+                            imageUrl = DEFAULT_IMAGE_URL, // 임시 이미지 표출
+                            imageUrls = listOf(DEFAULT_IMAGE_URL),
+                            latitude = place.y.toDoubleOrNull() ?: 0.0,
+                            longitude = place.x.toDoubleOrNull() ?: 0.0,
+                            day = currentSelectedDay.value
+                        )
                     }
                 }
-
                 recommendedPlaces.clear()
                 recommendedPlaces.addAll(placesWithImages)
             } catch (e: Exception) {
@@ -226,6 +202,7 @@ class MainViewModel(
         }
     }
 
+    // 🔥 유지: 사용자가 직접 클릭한 마커/장소 카드에 대해서만 정확한 구글 이미지 호출
     fun selectLocationFromMap(name: String, lat: Double, lng: Double) {
         viewModelScope.launch {
             try {
@@ -233,19 +210,17 @@ class MainViewModel(
                     val searchRes = RetrofitClient.api.searchPlace(query = name)
                     val matchedPlace = searchRes.documents.firstOrNull()
 
-                    val shortAddr = matchedPlace?.road_address_name?.split(" ")?.take(2)?.joinToString(" ") ?: ""
-                    val exactQuery = "$name $shortAddr".trim()
-
-                    val images = getFilteredImages(exactQuery)
+                    // 클릭했을 때만 호출!
+                    val images = fetchExactImages(null, name, lng, lat)
                     val finalImages = images.ifEmpty { listOf(DEFAULT_IMAGE_URL) }
 
                     val shortTag = matchedPlace?.category_group_name?.split(">")?.lastOrNull()?.trim() ?: context.getString(R.string.poi)
-                    val address = matchedPlace?.road_address_name?.ifEmpty { context.getString(R.string.no_address) } ?: context.getString(R.string.selected_from_map)
+                    val finalAddress = matchedPlace?.road_address_name?.ifEmpty { context.getString(R.string.no_address) } ?: context.getString(R.string.selected_from_map)
 
                     PlaceInfo(
                         id = matchedPlace?.id ?: "",
                         name = name,
-                        address = address,
+                        address = finalAddress,
                         tag = shortTag,
                         imageUrl = finalImages.first(),
                         imageUrls = finalImages,
@@ -267,17 +242,14 @@ class MainViewModel(
         }
     }
 
+    // 🔥 수정 3: 주변 식당 리스트. 공공데이터(TourAPI) 이미지가 없을 때만 최후의 수단으로 구글 API 호출 (최대한 아끼기)
     fun searchNearbyRestaurants(lat: Double, lng: Double) {
         viewModelScope.launch {
             isFetchingRestaurants.value = true
             selectedRestaurantDetail.value = null
             try {
                 val response = withContext(Dispatchers.IO) {
-                    RetrofitClient.api.getNearbyRestaurants(
-                        lng = lng,
-                        lat = lat,
-                        radius = searchRadius.intValue
-                    )
+                    RetrofitClient.api.getNearbyRestaurants(lng, lat, searchRadius.intValue)
                 }
                 val items = response.response?.body?.items?.item ?: emptyList()
 
@@ -285,14 +257,19 @@ class MainViewModel(
                     coroutineScope {
                         items.map { restaurant ->
                             async {
-                                val finalImages = if (restaurant.firstimage.isBlank() && restaurant.firstimage2.isBlank()) {
-                                    val shortAddr = restaurant.addr1.split(" ").take(2).joinToString(" ")
-                                    getFilteredImages("${restaurant.title} $shortAddr 식당")
+                                val tourImages = getValidTourImages(listOf(restaurant.firstimage, restaurant.firstimage2))
+
+                                // 공공데이터에 사진이 없으면 그때만 제한적으로 구글 API 호출
+                                val exactImages = if (tourImages.isEmpty()) {
+                                    fetchExactImages(restaurant.contentid, restaurant.title, restaurant.mapx.toDoubleOrNull(), restaurant.mapy.toDoubleOrNull())
                                 } else {
-                                    listOfNotNull(restaurant.firstimage, restaurant.firstimage2)
+                                    emptyList()
                                 }
+
+                                val finalImages = (tourImages + exactImages).distinct().ifEmpty { listOf(DEFAULT_IMAGE_URL) }
+
                                 restaurant.copy(
-                                    firstimage = finalImages.firstOrNull() ?: "",
+                                    firstimage = finalImages.first(),
                                     imageUrls = finalImages
                                 )
                             }

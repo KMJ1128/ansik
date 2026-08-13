@@ -45,7 +45,7 @@ data class KakaoPlace(
 )
 
 // ============================================================
-// 💡 Naver Image API (롤백)
+// Naver Image API
 // ============================================================
 
 data class NaverImageResponse(
@@ -53,8 +53,11 @@ data class NaverImageResponse(
 )
 
 data class NaverImageItem(
-    val link: String = "", // 원본 고화질
-    val thumbnail: String = ""
+    val title: String = "",
+    val link: String = "",
+    val thumbnail: String = "",
+    val sizeheight: String = "",
+    val sizewidth: String = ""
 )
 
 // ============================================================

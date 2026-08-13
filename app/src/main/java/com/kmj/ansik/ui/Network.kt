@@ -13,11 +13,14 @@ interface ApiService {
         @Query("query") query: String
     ): KakaoSearchResponse
 
-    // 💡 네이버 이미지 검색으로 롤백
-    @GET("api/image")
-    suspend fun searchImageNaver(
-        @Query("query") query: String
-    ): NaverImageResponse
+    // 🔥 구글 API 정밀 검색을 위해 위도/경도 파라미터 적용
+    @GET("api/image/exact")
+    suspend fun getExactImages(
+        @Query("tourId") tourId: String? = null,
+        @Query("title") title: String? = null,
+        @Query("mapX") mapX: Double? = null,
+        @Query("mapY") mapY: Double? = null
+    ): List<String>
 
     @GET("api/tour/location")
     suspend fun getNearbyRestaurants(
