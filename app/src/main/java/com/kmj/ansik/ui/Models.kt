@@ -21,7 +21,7 @@ data class PlaceInfo(
     val address: String,
     val tag: String,
     val imageUrl: String = "",
-    val imageUrls: List<String> = emptyList(), // 💡 여러 이미지를 담기 위한 리스트 추가
+    val imageUrls: List<String> = emptyList(),
     val latitude: Double,
     val longitude: Double,
     var day: Int = 1
@@ -36,6 +36,7 @@ data class KakaoSearchResponse(
 )
 
 data class KakaoPlace(
+    val id: String = "",
     val place_name: String = "",
     val road_address_name: String = "",
     val category_group_name: String = "",
@@ -44,7 +45,7 @@ data class KakaoPlace(
 )
 
 // ============================================================
-// Naver Image API
+// 💡 Naver Image API (롤백)
 // ============================================================
 
 data class NaverImageResponse(
@@ -52,7 +53,7 @@ data class NaverImageResponse(
 )
 
 data class NaverImageItem(
-    val link: String = "", // 💡 고화질 원본 이미지 URL
+    val link: String = "", // 원본 고화질
     val thumbnail: String = ""
 )
 
@@ -102,7 +103,7 @@ data class TourRestaurant(
     val addr2: String = "",
     val firstimage: String = "",
     val firstimage2: String = "",
-    val customImageUrls: List<String> = emptyList() // 💡 갤러리 뷰어용 리스트 추가
+    val imageUrls: List<String> = emptyList()
 )
 
 // ============================================================

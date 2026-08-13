@@ -13,6 +13,7 @@ interface ApiService {
         @Query("query") query: String
     ): KakaoSearchResponse
 
+    // 💡 네이버 이미지 검색으로 롤백
     @GET("api/image")
     suspend fun searchImageNaver(
         @Query("query") query: String
@@ -30,14 +31,12 @@ interface ApiService {
         @Query("contentId") contentId: String
     ): TourDetailIntroResponse
 
-    // 💡 2순위: 동적 좌표 기반 인기 관광지 API
     @GET("api/tour/popular-places")
     suspend fun getPopularPlaces(
         @Query("mapX") lng: Double,
         @Query("mapY") lat: Double
     ): TourLocationResponse
 
-    // 💡 1순위: 동적 좌표 기반 인기 음식점 API
     @GET("api/tour/popular-restaurants")
     suspend fun getPopularRestaurants(
         @Query("mapX") lng: Double,

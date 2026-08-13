@@ -57,6 +57,16 @@ class MainViewModel(
         fetchPopularDataDynamic(lastFetchedLat, lastFetchedLng, force = true)
     }
 
+    // 💡 안드로이드에서 네이버 고화질(link) 이미지를 직접 추출
+    private suspend fun getFilteredImages(query: String): List<String> {
+        return try {
+            val response = RetrofitClient.api.searchImageNaver(query)
+            response.items.map { it.link.replace("http://", "https://") }
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
     fun fetchPopularDataDynamic(lat: Double, lng: Double, force: Boolean = false) {
         if (!force) {
             val distance = FloatArray(1)
@@ -83,24 +93,15 @@ class MainViewModel(
                         coroutineScope {
                             places.map { place ->
                                 async {
-                                    val naverImages = try {
+                                    val finalImages = if (place.firstimage.isBlank() && place.firstimage2.isBlank()) {
                                         val shortAddr = place.addr1.split(" ").take(2).joinToString(" ")
-                                        val exactQuery = "${place.title} $shortAddr"
-                                        val imgRes = RetrofitClient.api.searchImageNaver(exactQuery)
-                                        // 💡 고화질 이미지(link) 여러 장 추출
-                                        imgRes.items.map { it.link.replace("http://", "https://") }
-                                    } catch (e: Exception) {
-                                        emptyList()
+                                        getFilteredImages("${place.title} $shortAddr")
+                                    } else {
+                                        listOfNotNull(place.firstimage, place.firstimage2)
                                     }
-
-                                    val finalImages = (listOfNotNull(
-                                        place.firstimage.takeIf { it.isNotBlank() },
-                                        place.firstimage2.takeIf { it.isNotBlank() }
-                                    ) + naverImages).distinct()
-
                                     place.copy(
                                         firstimage = finalImages.firstOrNull() ?: "",
-                                        customImageUrls = finalImages
+                                        imageUrls = finalImages // 💡 모델 변수명 일치
                                     )
                                 }
                             }.awaitAll()
@@ -111,23 +112,15 @@ class MainViewModel(
                         coroutineScope {
                             rests.map { rest ->
                                 async {
-                                    val naverImages = try {
+                                    val finalImages = if (rest.firstimage.isBlank() && rest.firstimage2.isBlank()) {
                                         val shortAddr = rest.addr1.split(" ").take(2).joinToString(" ")
-                                        val exactQuery = "${rest.title} $shortAddr 맛집"
-                                        val imgRes = RetrofitClient.api.searchImageNaver(exactQuery)
-                                        imgRes.items.map { it.link.replace("http://", "https://") }
-                                    } catch (e: Exception) {
-                                        emptyList()
+                                        getFilteredImages("${rest.title} $shortAddr 식당")
+                                    } else {
+                                        listOfNotNull(rest.firstimage, rest.firstimage2)
                                     }
-
-                                    val finalImages = (listOfNotNull(
-                                        rest.firstimage.takeIf { it.isNotBlank() },
-                                        rest.firstimage2.takeIf { it.isNotBlank() }
-                                    ) + naverImages).distinct()
-
                                     rest.copy(
                                         firstimage = finalImages.firstOrNull() ?: "",
-                                        customImageUrls = finalImages
+                                        imageUrls = finalImages // 💡 모델 변수명 일치
                                     )
                                 }
                             }.awaitAll()
@@ -202,20 +195,15 @@ class MainViewModel(
                     coroutineScope {
                         response.documents.map { place ->
                             async {
-                                val naverImages = try {
-                                    val shortAddr = place.road_address_name.split(" ").take(2).joinToString(" ")
-                                    val exactQuery = "${place.place_name} $shortAddr"
-                                    val imageResponse = RetrofitClient.api.searchImageNaver(query = exactQuery)
-                                    imageResponse.items.map { it.link.replace("http://", "https://") }
-                                } catch (e: Exception) {
-                                    Log.e("NaverImageSearch", "[장소검색] 실패: ${place.place_name}", e)
-                                    emptyList()
-                                }
+                                val shortAddr = place.road_address_name.split(" ").take(2).joinToString(" ")
+                                val exactQuery = "${place.place_name} $shortAddr"
 
-                                val finalImages = naverImages.ifEmpty { listOf(DEFAULT_IMAGE_URL) }
+                                val images = getFilteredImages(exactQuery)
+                                val finalImages = images.ifEmpty { listOf(DEFAULT_IMAGE_URL) }
                                 val shortTag = place.category_group_name.split(">").lastOrNull()?.trim().orEmpty()
 
                                 PlaceInfo(
+                                    id = place.id,
                                     name = place.place_name,
                                     address = place.road_address_name.ifEmpty { context.getString(R.string.no_address) },
                                     tag = shortTag.ifEmpty { context.getString(R.string.place) },
@@ -245,21 +233,17 @@ class MainViewModel(
                     val searchRes = RetrofitClient.api.searchPlace(query = name)
                     val matchedPlace = searchRes.documents.firstOrNull()
 
-                    val naverImages = try {
-                        val shortAddr = matchedPlace?.road_address_name?.split(" ")?.take(2)?.joinToString(" ") ?: ""
-                        val exactQuery = "$name $shortAddr".trim()
-                        val imageRes = RetrofitClient.api.searchImageNaver(query = exactQuery)
-                        imageRes.items.map { it.link.replace("http://", "https://") }
-                    } catch (e: Exception) {
-                        Log.e("NaverImageSearch", "[지도클릭] 실패: $name", e)
-                        emptyList()
-                    }
+                    val shortAddr = matchedPlace?.road_address_name?.split(" ")?.take(2)?.joinToString(" ") ?: ""
+                    val exactQuery = "$name $shortAddr".trim()
 
-                    val finalImages = naverImages.ifEmpty { listOf(DEFAULT_IMAGE_URL) }
+                    val images = getFilteredImages(exactQuery)
+                    val finalImages = images.ifEmpty { listOf(DEFAULT_IMAGE_URL) }
+
                     val shortTag = matchedPlace?.category_group_name?.split(">")?.lastOrNull()?.trim() ?: context.getString(R.string.poi)
                     val address = matchedPlace?.road_address_name?.ifEmpty { context.getString(R.string.no_address) } ?: context.getString(R.string.selected_from_map)
 
                     PlaceInfo(
+                        id = matchedPlace?.id ?: "",
                         name = name,
                         address = address,
                         tag = shortTag,
@@ -301,23 +285,15 @@ class MainViewModel(
                     coroutineScope {
                         items.map { restaurant ->
                             async {
-                                val naverImages = try {
+                                val finalImages = if (restaurant.firstimage.isBlank() && restaurant.firstimage2.isBlank()) {
                                     val shortAddr = restaurant.addr1.split(" ").take(2).joinToString(" ")
-                                    val exactQuery = "${restaurant.title} $shortAddr 식당"
-                                    val imgRes = RetrofitClient.api.searchImageNaver(query = exactQuery)
-                                    imgRes.items.map { it.link.replace("http://", "https://") }
-                                } catch (e: Exception) {
-                                    emptyList()
+                                    getFilteredImages("${restaurant.title} $shortAddr 식당")
+                                } else {
+                                    listOfNotNull(restaurant.firstimage, restaurant.firstimage2)
                                 }
-
-                                val finalImages = (listOfNotNull(
-                                    restaurant.firstimage.takeIf { it.isNotBlank() },
-                                    restaurant.firstimage2.takeIf { it.isNotBlank() }
-                                ) + naverImages).distinct()
-
                                 restaurant.copy(
                                     firstimage = finalImages.firstOrNull() ?: "",
-                                    customImageUrls = finalImages
+                                    imageUrls = finalImages
                                 )
                             }
                         }.awaitAll()

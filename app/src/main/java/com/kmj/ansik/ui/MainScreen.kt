@@ -310,7 +310,6 @@ fun MapScreen(viewModel: MainViewModel) {
     var showHotPlaceFilterDialog by remember { mutableStateOf(false) }
     var isSearchFocused by remember { mutableStateOf(false) }
 
-    // 💡 이미지 뷰어 띄울 URL 리스트를 보관하는 상태 변수
     var viewerImages by remember { mutableStateOf<List<String>?>(null) }
 
     val restaurantSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
@@ -518,9 +517,11 @@ fun MapScreen(viewModel: MainViewModel) {
                 }
             }
 
-            travelRoute.forEach { place ->
+            // 💡 타입 추론 명시
+            val currentRouteList: List<PlaceInfo> = viewModel.travelRoute.toList()
+            currentRouteList.forEach { place ->
                 val dayColor = getMapDayColor(place.day)
-                val dayIndex = travelRoute.filter { it.day == place.day }.indexOf(place) + 1
+                val dayIndex = currentRouteList.filter { it.day == place.day }.indexOf(place) + 1
                 val customMarkerIcon = rememberNumberedMarker(number = dayIndex, composeColor = dayColor)
 
                 key("route_${place.id}") {
@@ -544,7 +545,9 @@ fun MapScreen(viewModel: MainViewModel) {
             }
 
             if (viewModel.showPopularPlaces.value) {
-                viewModel.popularPlaces.take(viewModel.maxPopularPlaces.floatValue.toInt()).forEach { place ->
+                // 💡 타입 추론 명확화
+                val placesList: List<TourRestaurant> = viewModel.popularPlaces.toList().take(viewModel.maxPopularPlaces.floatValue.toInt())
+                placesList.forEach { place ->
                     val lng = place.mapx.toDoubleOrNull()
                     val lat = place.mapy.toDoubleOrNull()
                     if (lat != null && lng != null && lat != 0.0 && lng != 0.0) {
@@ -564,7 +567,9 @@ fun MapScreen(viewModel: MainViewModel) {
             }
 
             if (viewModel.showPopularRestaurants.value) {
-                viewModel.popularRestaurants.take(viewModel.maxPopularRestaurants.floatValue.toInt()).forEachIndexed { index, restaurant ->
+                // 💡 타입 추론 명확화
+                val restsList: List<TourRestaurant> = viewModel.popularRestaurants.toList().take(viewModel.maxPopularRestaurants.floatValue.toInt())
+                restsList.forEachIndexed { index, restaurant ->
                     val rank = index + 1
                     val lng = restaurant.mapx.toDoubleOrNull()
                     val lat = restaurant.mapy.toDoubleOrNull()
@@ -587,7 +592,8 @@ fun MapScreen(viewModel: MainViewModel) {
                 }
             }
 
-            nearbyRestaurants.forEach { restaurant ->
+            val nearbyList: List<TourRestaurant> = nearbyRestaurants.toList()
+            nearbyList.forEach { restaurant ->
                 val lng = restaurant.mapx.toDoubleOrNull()
                 val lat = restaurant.mapy.toDoubleOrNull()
                 if (lat != null && lng != null && lat != 0.0 && lng != 0.0) {
@@ -730,13 +736,15 @@ fun MapScreen(viewModel: MainViewModel) {
                             viewModel.movePlace(from.index, to.index)
                         }
 
+                        val currentRouteList: List<PlaceInfo> = travelRoute.toList()
+
                         LazyColumn(
                             state = lazyListState,
                             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 12.dp),
                             modifier = Modifier.weight(1f),
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            items(items = travelRoute, key = { it.id }) { place ->
+                            items(items = currentRouteList, key = { it.id }) { place ->
                                 ReorderableItem(reorderableState, key = place.id) { isDragging ->
                                     val isHighlighted = place.id == highlightedPlaceId
                                     Card(
@@ -835,9 +843,10 @@ fun MapScreen(viewModel: MainViewModel) {
                                 modifier = Modifier
                                     .size(82.dp)
                                     .clip(RoundedCornerShape(14.dp))
-                                    // 💡 이미지 클릭 시 뷰어 실행 로직 추가
                                     .clickable {
-                                        viewerImages = place.imageUrls.ifEmpty { listOf(place.imageUrl) }
+                                        // 💡 명시적인 List 선언 및 분기 처리
+                                        val urls: List<String> = place.imageUrls.toList()
+                                        viewerImages = if (urls.isEmpty()) listOf(place.imageUrl) else urls
                                     }
                             )
                             Spacer(modifier = Modifier.width(14.dp))
@@ -938,7 +947,6 @@ fun MapScreen(viewModel: MainViewModel) {
             }
         }
 
-        // 4. 검색창, 핫플 필터 및 추천 검색어
         Column(
             modifier = Modifier
                 .align(Alignment.TopCenter)
@@ -1036,7 +1044,8 @@ fun MapScreen(viewModel: MainViewModel) {
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            viewModel.popularRestaurants.take(viewModel.maxPopularRestaurants.floatValue.toInt()).forEachIndexed { index, restaurant ->
+                            val restsList: List<TourRestaurant> = viewModel.popularRestaurants.toList().take(viewModel.maxPopularRestaurants.floatValue.toInt())
+                            restsList.forEachIndexed { index, restaurant ->
                                 val rank = index + 1
                                 Surface(
                                     modifier = Modifier.clickable {
@@ -1070,7 +1079,8 @@ fun MapScreen(viewModel: MainViewModel) {
                     colors = CardDefaults.cardColors(containerColor = Color.White)
                 ) {
                     Column {
-                        viewModel.recommendedPlaces.forEach { place ->
+                        val recommendedList: List<PlaceInfo> = viewModel.recommendedPlaces.toList()
+                        recommendedList.forEach { place ->
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -1131,11 +1141,11 @@ fun MapScreen(viewModel: MainViewModel) {
             }
         ) {
             RestaurantListContent(
-                restaurants = nearbyRestaurants,
+                restaurants = nearbyRestaurants.toList(),
                 selectedDetail = selectedRestaurantDetail,
                 radius = viewModel.searchRadius.intValue,
                 onRestaurantClick = { viewModel.fetchRestaurantDetail(it.contentid) },
-                onImageClick = { viewerImages = it } // 💡 하위 컴포넌트로 뷰어 띄우기 함수 전달
+                onImageClick = { viewerImages = it }
             )
         }
     }
@@ -1195,12 +1205,16 @@ private fun RestaurantListContent(
                 contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 40.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                items(restaurants, key = { it.contentid }) { restaurant ->
+                items(items = restaurants, key = { it.contentid }) { restaurant ->
                     RestaurantCard(
                         restaurant = restaurant,
                         detail = if (selectedDetail?.contentid == restaurant.contentid) selectedDetail else null,
                         onClick = { onRestaurantClick(restaurant) },
-                        onImageClick = { onImageClick(restaurant.customImageUrls.ifEmpty { listOf(restaurant.firstimage) }) }
+                        // 💡 명시적인 List 선언 및 분기 처리
+                        onImageClick = {
+                            val urls: List<String> = restaurant.imageUrls.toList()
+                            onImageClick(if (urls.isEmpty()) listOf(restaurant.firstimage) else urls)
+                        }
                     )
                 }
             }
@@ -1233,7 +1247,7 @@ private fun RestaurantCard(
                     .fillMaxWidth()
                     .height(150.dp)
                     .clip(RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp))
-                    .clickable { onImageClick() } // 💡 식당 이미지 클릭 시 뷰어 실행
+                    .clickable { onImageClick() }
             )
 
             Column(modifier = Modifier.padding(16.dp)) {
