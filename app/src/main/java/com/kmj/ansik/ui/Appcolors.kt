@@ -19,25 +19,36 @@ object AppColors {
     val TextPrimary = Color(0xFF1C1F1E)
     val TextSecondary = Color(0xFF7A8079)
     val Divider = Color(0xFFEAEBE6)
+
+    val Success = Color(0xFF2E7D32)
+    val SuccessSoft = Color(0xFFE8F5E9)
+
+    val Info = Color(0xFF1976D2)
+
+    val Warning = Color(0xFFFBC02D)
+
+    val Danger = Color(0xFFE53935)
 }
 
-val DayColorPalette = listOf(
-    Color(0xFFEF4C4C),
-    Color(0xFFFF8A3D),
-    Color(0xFFFFC93D),
-    Color(0xFF4CC97A),
-    Color(0xFF33B0E0),
-    Color(0xFF6C7BE0),
-    Color(0xFFB05CE0),
-    Color(0xFFE85BA6),
-    Color(0xFFA97155),
-    Color(0xFF6E8494)
+private val DayColorPalette = listOf(
+    Color(0xFFE53935),
+    Color(0xFFFF7043),
+    Color(0xFFFFCA28),
+    Color(0xFF43A047),
+    Color(0xFF1E88E5),
+    Color(0xFF3949AB),
+    Color(0xFF8E24AA),
+    Color(0xFFD81B60),
+    Color(0xFF6D4C41),
+    Color(0xFF546E7A)
 )
 
 fun getDayColor(day: Int): Color {
-    if (day < 1) return Color.Gray
+    if (day < 1) {
+        return Color.Gray
+    }
 
-    val index = (day - 1) % DayColorPalette.size
-
-    return DayColorPalette[index]
+    return DayColorPalette[
+        (day - 1) % DayColorPalette.size
+    ]
 }

@@ -126,4 +126,12 @@
 
     <string name="radius_settings_title">검색 반경 설정</string>
     <string name="confirm">확인</string>
+
+    <string name="review_view">후기 보기</string>
+    <string name="detail_view">상세 보기</string>
+    <string name="restaurant_detail_title">식당 상세 정보</string>
+    <string name="close">닫기</string>
+    <string name="naver_blog_reviews">네이버 블로그 방문 후기</string>
+    <string name="no_reviews">등록된 후기가 없습니다.</string>
+    <string name="open_original">원문 보기 &gt;</string>
 </resources>

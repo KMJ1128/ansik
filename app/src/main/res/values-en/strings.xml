@@ -124,4 +124,12 @@
 
     <string name="radius_settings_title">Search Radius Settings</string>
     <string name="confirm">OK</string>
+
+    <string name="review_view">Reviews</string>
+    <string name="detail_view">Details</string>
+    <string name="restaurant_detail_title">Restaurant Details</string>
+    <string name="close">Close</string>
+    <string name="naver_blog_reviews">Naver Blog Reviews</string>
+    <string name="no_reviews">No reviews found.</string>
+    <string name="open_original">Open original &gt;</string>
 </resources>

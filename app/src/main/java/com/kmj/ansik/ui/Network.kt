@@ -8,63 +8,102 @@ import retrofit2.http.Query
 
 interface ApiService {
 
-    // 🔥 mapX, mapY 파라미터 추가 완료
     @GET("api/place")
     suspend fun searchPlace(
-        @Query("query") query: String,
-        @Query("mapX") mapX: Double? = null,
-        @Query("mapY") mapY: Double? = null
+        @Query("query")
+        query: String,
+
+        @Query("mapX")
+        mapX: Double? = null,
+
+        @Query("mapY")
+        mapY: Double? = null
     ): KakaoSearchResponse
 
     @GET("api/image/exact")
     suspend fun getExactImages(
-        @Query("tourId") tourId: String? = null,
-        @Query("title") title: String? = null,
-        @Query("mapX") mapX: Double? = null,
-        @Query("mapY") mapY: Double? = null
+        @Query("tourId")
+        tourId: String? = null,
+
+        @Query("title")
+        title: String? = null,
+
+        @Query("mapX")
+        mapX: Double? = null,
+
+        @Query("mapY")
+        mapY: Double? = null
+    ): List<String>
+
+    @GET("api/tour/menu-images")
+    suspend fun getTourMenuImages(
+        @Query("contentId")
+        contentId: String
     ): List<String>
 
     @GET("api/tour/location")
     suspend fun getNearbyRestaurants(
-        @Query("mapX") lng: Double,
-        @Query("mapY") lat: Double,
-        @Query("radius") radius: Int
+        @Query("mapX")
+        lng: Double,
+
+        @Query("mapY")
+        lat: Double,
+
+        @Query("radius")
+        radius: Int
     ): TourLocationResponse
 
     @GET("api/tour/detail")
     suspend fun getRestaurantDetails(
-        @Query("contentId") contentId: String
+        @Query("contentId")
+        contentId: String
     ): TourDetailIntroResponse
 
     @GET("api/tour/popular-places")
     suspend fun getPopularPlaces(
-        @Query("mapX") lng: Double,
-        @Query("mapY") lat: Double
+        @Query("mapX")
+        lng: Double,
+
+        @Query("mapY")
+        lat: Double
     ): TourLocationResponse
 
     @GET("api/tour/popular-restaurants")
     suspend fun getPopularRestaurants(
-        @Query("mapX") lng: Double,
-        @Query("mapY") lat: Double
+        @Query("mapX")
+        lng: Double,
+
+        @Query("mapY")
+        lat: Double
     ): TourLocationResponse
 
-    // 🔥 주소(정확도 향상) 및 start(무한스크롤) 파라미터 유지
     @GET("api/tour/reviews")
     suspend fun getPlaceReviews(
-        @Query("placeName") placeName: String,
-        @Query("address") address: String,
-        @Query("start") start: Int
+        @Query("placeName")
+        placeName: String,
+
+        @Query("address")
+        address: String,
+
+        @Query("start")
+        start: Int
     ): List<BlogReview>
 }
 
 object RetrofitClient {
-    private val BASE_URL = BuildConfig.SERVER_URL
+
+    private val BASE_URL =
+        BuildConfig.SERVER_URL
 
     val api: ApiService by lazy {
         Retrofit.Builder()
             .baseUrl(BASE_URL)
-            .addConverterFactory(GsonConverterFactory.create())
+            .addConverterFactory(
+                GsonConverterFactory.create()
+            )
             .build()
-            .create(ApiService::class.java)
+            .create(
+                ApiService::class.java
+            )
     }
 }
