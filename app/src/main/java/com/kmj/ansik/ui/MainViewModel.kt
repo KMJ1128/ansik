@@ -33,15 +33,6 @@ class MainViewModel(
     val travelRoute = mutableStateListOf<PlaceInfo>()
     val recommendedPlaces = mutableStateListOf<PlaceInfo>()
 
-    val popularPlaces = mutableStateListOf<TourRestaurant>()
-    val popularRestaurants = mutableStateListOf<TourRestaurant>()
-
-    var showPopularPlaces = mutableStateOf(true)
-    var maxPopularPlaces = mutableFloatStateOf(10f)
-
-    var showPopularRestaurants = mutableStateOf(true)
-    var maxPopularRestaurants = mutableFloatStateOf(10f)
-
     var nights = mutableStateOf(3)
     var days = mutableStateOf(4)
     var currentSelectedDay = mutableStateOf(1)
@@ -51,32 +42,44 @@ class MainViewModel(
     var searchRadius = mutableIntStateOf(sharedPreferences.getInt("searchRadius", 2000))
         private set
 
-    private var lastFetchedLat = 37.5665
-    private var lastFetchedLng = 126.9780
-
-    // 🔥 리뷰 바텀시트 상태 관리 (추가됨)
     var showReviewSheet = mutableStateOf(false)
     val selectedPlaceReviews = mutableStateListOf<BlogReview>()
     var isFetchingReviews = mutableStateOf(false)
 
-    init {
-        fetchPopularDataDynamic(lastFetchedLat, lastFetchedLng, force = true)
-    }
+    // 리뷰 무한 스크롤 상태 관리
+    var reviewStartPage = 1
+    var hasMoreReviews = mutableStateOf(true)
+    var currentReviewPlaceName = ""
+    var currentReviewAddress = ""
 
-    // 🔥 리뷰 불러오기 함수 (추가됨)
-    fun fetchPlaceReviews(placeName: String) {
+    fun fetchPlaceReviews(placeName: String, address: String, isLoadMore: Boolean = false) {
+        if (isFetchingReviews.value) return
+
+        if (!isLoadMore) {
+            selectedPlaceReviews.clear()
+            reviewStartPage = 1
+            hasMoreReviews.value = true
+            currentReviewPlaceName = placeName
+            currentReviewAddress = address
+            showReviewSheet.value = true
+        }
+
+        if (!hasMoreReviews.value) return
+
         viewModelScope.launch {
             isFetchingReviews.value = true
-            showReviewSheet.value = true
             try {
                 val reviews = withContext(Dispatchers.IO) {
-                    RetrofitClient.api.getPlaceReviews(placeName)
+                    RetrofitClient.api.getPlaceReviews(currentReviewPlaceName, currentReviewAddress, reviewStartPage)
                 }
-                selectedPlaceReviews.clear()
-                selectedPlaceReviews.addAll(reviews)
+                if (reviews.isEmpty()) {
+                    hasMoreReviews.value = false
+                } else {
+                    selectedPlaceReviews.addAll(reviews)
+                    reviewStartPage += 5
+                }
             } catch (e: Exception) {
                 Log.e("Reviews", "리뷰 불러오기 실패", e)
-                selectedPlaceReviews.clear()
             } finally {
                 isFetchingReviews.value = false
             }
@@ -97,56 +100,6 @@ class MainViewModel(
             urls.filter { it.isNotBlank() }
                 .map { it.replace("http://", "https://") }
                 .distinct()
-        }
-    }
-
-    fun fetchPopularDataDynamic(lat: Double, lng: Double, force: Boolean = false) {
-        if (!force) {
-            val distance = FloatArray(1)
-            Location.distanceBetween(lastFetchedLat, lastFetchedLng, lat, lng, distance)
-            if (distance[0] < 3000f) return
-        }
-
-        lastFetchedLat = lat
-        lastFetchedLng = lng
-
-        viewModelScope.launch {
-            try {
-                coroutineScope {
-                    val placesDef = async(Dispatchers.IO) { RetrofitClient.api.getPopularPlaces(lng, lat) }
-                    val restsDef = async(Dispatchers.IO) { RetrofitClient.api.getPopularRestaurants(lng, lat) }
-
-                    val placesRes = placesDef.await()
-                    val restsRes = restsDef.await()
-
-                    val places = placesRes.response?.body?.items?.item ?: emptyList()
-                    val rests = restsRes.response?.body?.items?.item ?: emptyList()
-
-                    val updatedPlaces = withContext(Dispatchers.IO) {
-                        places.map { place ->
-                            val tourImages = getValidTourImages(listOf(place.firstimage, place.firstimage2))
-                            val finalImages = tourImages.ifEmpty { listOf(DEFAULT_IMAGE_URL) }
-                            place.copy(firstimage = finalImages.first(), imageUrls = finalImages)
-                        }
-                    }
-
-                    val updatedRests = withContext(Dispatchers.IO) {
-                        rests.map { rest ->
-                            val tourImages = getValidTourImages(listOf(rest.firstimage, rest.firstimage2))
-                            val finalImages = tourImages.ifEmpty { listOf(DEFAULT_IMAGE_URL) }
-                            rest.copy(firstimage = finalImages.first(), imageUrls = finalImages)
-                        }
-                    }
-
-                    popularPlaces.clear()
-                    popularPlaces.addAll(updatedPlaces)
-
-                    popularRestaurants.clear()
-                    popularRestaurants.addAll(updatedRests)
-                }
-            } catch (e: Exception) {
-                Log.e("PopularData", "동적 인기 데이터 불러오기 실패", e)
-            }
         }
     }
 
@@ -201,7 +154,7 @@ class MainViewModel(
             delay(400)
             try {
                 val placesWithImages = withContext(Dispatchers.IO) {
-                    val response = RetrofitClient.api.searchPlace(query = query)
+                    val response = RetrofitClient.api.searchPlace(query = query, mapX = null, mapY = null)
                     response.documents.map { place ->
                         val shortTag = place.category_group_name.split(">").lastOrNull()?.trim().orEmpty()
                         PlaceInfo(
@@ -225,11 +178,12 @@ class MainViewModel(
         }
     }
 
+    // 🔥 에러 수정: ApiService 파라미터명과 일치시키고 (mapX, mapY), 카카오 API에 없는 필드(address_name) 제거
     fun selectLocationFromMap(name: String, lat: Double, lng: Double) {
         viewModelScope.launch {
             try {
                 val newPlace = withContext(Dispatchers.IO) {
-                    val searchRes = RetrofitClient.api.searchPlace(query = name)
+                    val searchRes = RetrofitClient.api.searchPlace(query = name, mapX = lng, mapY = lat)
                     val matchedPlace = searchRes.documents.firstOrNull()
 
                     val images = fetchExactImages(null, name, lng, lat)
