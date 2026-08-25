@@ -63,6 +63,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.SoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -659,7 +660,10 @@ internal fun BoxScope.BottomCards(
 
     AnimatedVisibility(
         visible = viewModel.selectedPlace.value == null &&
-            (viewModel.isFetchingRestaurants.value || viewModel.nearbyRestaurants.isNotEmpty()),
+            (
+                viewModel.isFetchingRestaurants.value ||
+                    viewModel.hasSearchedRestaurants.value
+                ),
         enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
         exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
         modifier = Modifier
@@ -707,21 +711,36 @@ internal fun BoxScope.BottomCards(
                     ) {
                         CircularProgressIndicator(color = AppColors.Success)
                     }
+                } else if (viewModel.nearbyRestaurants.isEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(120.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = stringResource(id = R.string.no_restaurants_found),
+                            color = AppColors.TextSecondary,
+                            fontSize = 13.sp,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(horizontal = 24.dp)
+                        )
+                    }
                 } else {
                     LazyRow(
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         items(
                             items = viewModel.nearbyRestaurants,
-                            key = { it.contentid }
+                            key = { it.id }
                         ) { restaurant ->
                             RestaurantHorizontalCard(
                                 restaurant = restaurant,
                                 onCardClick = {
-                                    val lat = restaurant.mapy.toDoubleOrNull()
-                                    val lng = restaurant.mapx.toDoubleOrNull()
+                                    val lat = restaurant.latitude
+                                    val lng = restaurant.longitude
 
-                                    if (lat != null && lng != null) {
+                                    if (lat != 0.0 && lng != 0.0) {
                                         coroutineScope.launch {
                                             cameraPositionState.animate(
                                                 CameraUpdate.scrollTo(LatLng(lat, lng))
@@ -734,8 +753,8 @@ internal fun BoxScope.BottomCards(
                                     onShowViewer(
                                         restaurant.imageUrls.ifEmpty {
                                             listOf(
-                                                restaurant.firstimage.ifEmpty {
-                                                    restaurant.firstimage2
+                                                restaurant.imageUrl.ifBlank {
+                                                    RestaurantRepository.DEFAULT_IMAGE_URL
                                                 }
                                             )
                                         }
@@ -744,12 +763,12 @@ internal fun BoxScope.BottomCards(
                                 onReviewClick = {
                                     viewModel.fetchPlaceReviews(
                                         restaurant.title,
-                                        restaurant.addr1
+                                        restaurant.address
                                     )
                                 },
                                 onDetailClick = {
                                     viewModel.fetchRestaurantDetail(
-                                        restaurant.contentid
+                                        restaurant
                                     )
                                     onShowDetailPopup()
                                 }

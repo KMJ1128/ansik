@@ -1,0 +1,136 @@
+<resources>
+    <string name="app_name">Ansik（アンシク）</string>
+    <string name="app_title">Ansik（アンシク）</string>
+    <string name="health_management_title">🩺 どのような健康管理が必要ですか？</string>
+    <string name="health_management_desc">複数選択できます。あなたに合わせた 🔴🟡🟢 ガイドを提供します。</string>
+    <string name="basic_disease_care">基礎疾患の管理</string>
+    <string name="allergy_triggers">⚠️ アレルギー原因物質</string>
+    <string name="health_diet">🥗 健康・ダイエット食</string>
+    <string name="religion_belief_diet">🙏 宗教・信条に基づく食事</string>
+    <string name="go_to_travel_route">旅行ルートを作る 🗺️</string>
+    <string name="expand">展開</string>
+    <string name="enter_custom_other">その他を直接入力</string>
+    <string name="add">追加</string>
+
+    <string name="no_address">住所情報なし</string>
+    <string name="place">場所</string>
+    <string name="poi">関心地点</string>
+    <string name="selected_from_map">地図で選択した場所</string>
+
+    <string name="my_travel_schedule">旅行スケジュール</string>
+    <string name="nights_days">%1$d泊%2$d日</string>
+    <string name="change_order">順番を変更</string>
+    <string name="delete">削除</string>
+    <string name="day_format">%1$d日目</string>
+    <string name="search_placeholder">どこへ行きますか？</string>
+    <string name="search">検索</string>
+    <string name="clear">クリア</string>
+    <string name="place_image">場所の画像</string>
+    <string name="directions_roadview">経路案内 / ロードビュー</string>
+    <string name="add_to_schedule_desc">スケジュールに追加</string>
+    <string name="add_schedule">予定を追加</string>
+    <string name="find_restaurant">レストランを探す</string>
+    <string name="loading_public_data">公共データを読み込み中...</string>
+    <string name="find_nearby_safe_restaurants">TourAPI登録レストランを探す</string>
+    <string name="settings">設定</string>
+
+    <string-array name="basic_conditions">
+        <item>糖尿病管理（低糖質）</item>
+        <item>高血圧（減塩）</item>
+        <item>痛風（低プリン体）</item>
+        <item>脂質異常症（低コレステロール）</item>
+        <item>慢性腎不全（低カリウム）</item>
+        <item>胃腸障害（低刺激）</item>
+        <item>心血管疾患</item>
+        <item>肥満・体重管理</item>
+        <item>妊娠中・授乳中</item>
+    </string-array>
+
+    <string-array name="allergy_items">
+        <item>甲殻類</item>
+        <item>ナッツ類</item>
+        <item>牛乳・乳製品</item>
+        <item>大豆</item>
+        <item>小麦（グルテン）</item>
+        <item>卵</item>
+        <item>魚</item>
+        <item>貝類</item>
+        <item>桃</item>
+        <item>トマト</item>
+        <item>豚肉</item>
+        <item>亜硫酸塩（ワインなど）</item>
+    </string-array>
+
+    <string-array name="diet_items">
+        <item>ヴィーガン（完全菜食）</item>
+        <item>ラクト・オボ（乳製品・卵可）</item>
+        <item>ペスカタリアン（魚介類可）</item>
+        <item>ケトジェニック（低糖質・高脂質）</item>
+        <item>高タンパク・バルクアップ</item>
+        <item>グルテンフリー</item>
+        <item>断続的断食</item>
+        <item>低脂肪食</item>
+        <item>地中海食</item>
+        <item>糖質制限食</item>
+    </string-array>
+
+    <string-array name="religion_items">
+        <item>ハラール（イスラム教）</item>
+        <item>コーシャ（ユダヤ教）</item>
+        <item>牛肉禁止（ヒンドゥー教）</item>
+        <item>豚肉禁止</item>
+        <item>五葷禁止（仏教）</item>
+        <item>菜食（セブンスデー・アドベンチスト）</item>
+        <item>根菜禁止（ジャイナ教）</item>
+        <item>オーガニック志向</item>
+        <item>動物福祉に配慮した食事</item>
+        <item>フェアトレード食材</item>
+    </string-array>
+
+    <string name="tab_map">地図</string>
+    <string name="tab_ai_course">AIコース</string>
+    <string name="tab_profile">マイ情報</string>
+
+    <string name="ai_course_title">AIおすすめコース</string>
+    <string name="ai_course_desc">健康条件と旅行情報に基づき、\nあなたに合った旅行コースを提案します。</string>
+    <string name="ai_course_card_title">✨ AI旅行コース提案</string>
+    <string name="ai_course_card_desc">選択した健康・食事条件と\n旅行日程を分析し、最適なコースを提案します。</string>
+    <string name="ai_course_button">AIおすすめコースを作成</string>
+    <string name="current_selected_conditions">現在選択中の条件</string>
+
+    <string name="my_schedule_short">旅程</string>
+    <string name="restaurant_list_title">韓国観光公社登録レストラン</string>
+    <string name="restaurant_list_desc">%1$s以内のTourAPI登録レストラン</string>
+    <string name="search_radius">検索範囲</string>
+    <string name="no_restaurants_found">検索範囲内に韓国観光公社登録のレストランがありません。</string>
+    <string name="restaurant_main_menu">代表メニュー</string>
+    <string name="restaurant_treat_menu">取扱メニュー</string>
+    <string name="restaurant_open_time">営業時間</string>
+    <string name="restaurant_parking">駐車場</string>
+    <string name="restaurant_packing">テイクアウト</string>
+    <string name="tap_to_view_details">タップして詳細を表示</string>
+
+    <string name="select_language_title">言語を選択してください\nSelect your language</string>
+    <string name="lang_korean">한국어</string>
+    <string name="lang_english">English</string>
+    <string name="lang_japanese">日本語</string>
+    <string name="lang_chinese_simplified">简体中文</string>
+
+    <string name="go_back">戻る</string>
+    <string name="language_settings">言語設定</string>
+    <string name="radius_settings_title">検索範囲の設定</string>
+    <string name="confirm">確認</string>
+
+    <string name="review_view">レビューを見る</string>
+    <string name="detail_view">詳細を見る</string>
+    <string name="restaurant_detail_title">レストラン詳細情報</string>
+    <string name="close">閉じる</string>
+    <string name="naver_blog_reviews">Naverブログ訪問レビュー</string>
+    <string name="no_reviews">登録されたレビューはありません。</string>
+    <string name="open_original">原文を見る &gt;</string>
+
+    <string name="source_tour_api">TourAPI</string>
+    <string name="source_kakao">Kakao</string>
+    <string name="menu_image_title">メニュー画像</string>
+    <string name="no_menu_evidence">確認できるメニュー情報がまだありません。このレストランは候補から除外せず、情報不足として表示します。</string>
+</resources>

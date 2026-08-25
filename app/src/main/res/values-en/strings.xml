@@ -34,7 +34,7 @@
     <string name="add_schedule">Add Schedule</string>
     <string name="find_restaurant">Find restaurant</string>
     <string name="loading_public_data">Loading public data...</string>
-    <string name="find_nearby_safe_restaurants">Find Safe Restaurants Nearby</string>
+    <string name="find_nearby_safe_restaurants">Find TourAPI Restaurants</string>
     <string name="settings">Settings</string>
 
     <string-array name="basic_conditions">
@@ -104,10 +104,10 @@
     <string name="current_selected_conditions">Currently Selected</string>
 
     <string name="my_schedule_short">My\nPlan</string>
-    <string name="restaurant_list_title">Restaurant List</string>
-    <string name="restaurant_list_desc">Safe restaurants within %1$s</string>
+    <string name="restaurant_list_title">KTO-Registered Restaurants</string>
+    <string name="restaurant_list_desc">TourAPI restaurants within %1$s</string>
     <string name="search_radius">Search Radius</string>
-    <string name="no_restaurants_found">No restaurants found nearby.</string>
+    <string name="no_restaurants_found">No Korea Tourism Organization restaurants were found within this radius.</string>
     <string name="restaurant_main_menu">Main Menu</string>
     <string name="restaurant_treat_menu">Menu Items</string>
     <string name="restaurant_open_time">Opening Hours</string>
@@ -118,6 +118,8 @@
     <string name="select_language_title">언어를 선택해주세요\nSelect your language</string>
     <string name="lang_korean">한국어</string>
     <string name="lang_english">English</string>
+    <string name="lang_japanese">日本語</string>
+    <string name="lang_chinese_simplified">简体中文</string>
 
     <string name="go_back">Go Back</string>
     <string name="language_settings">Language Settings</string>
@@ -132,4 +134,10 @@
     <string name="naver_blog_reviews">Naver Blog Reviews</string>
     <string name="no_reviews">No reviews found.</string>
     <string name="open_original">Open original &gt;</string>
+
+    <string name="source_tour_api">TourAPI</string>
+    <string name="source_kakao">Kakao</string>
+    <string name="menu_image_title">Menu images</string>
+    <string name="no_menu_evidence">No reliable menu information is available yet. This restaurant remains visible and is marked as having insufficient information.</string>
+
 </resources>

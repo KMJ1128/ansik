@@ -76,6 +76,23 @@ data class TourRestaurant(
     val imageUrls: List<String> = emptyList()
 )
 
+data class RestaurantSummary(
+    val id: String = "",
+    val title: String = "",
+    val address: String = "",
+    val latitude: Double = 0.0,
+    val longitude: Double = 0.0,
+    val imageUrl: String = "",
+    val imageUrls: List<String> = emptyList(),
+    val tourContentId: String? = null,
+    val kakaoPlaceId: String? = null,
+    val sources: List<String> = emptyList(),
+    val distanceMeters: Int = 0
+) {
+    val hasTourData: Boolean
+        get() = !tourContentId.isNullOrBlank()
+}
+
 typealias TourDetailIntroResponse = TourApiResponse<TourRestaurantDetail>
 
 data class TourRestaurantDetail(
@@ -88,12 +105,39 @@ data class TourRestaurantDetail(
     val packing: String? = null,
     val seat: String? = null,
     val smoking: String? = null,
-    val creditcardfood: String? = null,
+    val chkcreditcardfood: String? = null,
     val reservationfood: String? = null,
     val opentimefood: String? = null
 )
 
-// 🔥 네이버 블로그 리뷰 모델 추가
+enum class RiskStatus {
+    GREEN,
+    YELLOW,
+    RED,
+    UNKNOWN
+}
+
+enum class MenuEvidenceType {
+    TOUR_MAIN_MENU,
+    TOUR_TREAT_MENU,
+    TOUR_MENU_IMAGE,
+    OFFICIAL_MENU,
+    USER_MENU_IMAGE,
+    UNKNOWN
+}
+
+data class RestaurantDetailState(
+    val restaurant: RestaurantSummary,
+    val tourDetail: TourRestaurantDetail? = null,
+    val menuImages: List<String> = emptyList(),
+    val riskStatus: RiskStatus = RiskStatus.UNKNOWN
+) {
+    val hasMenuEvidence: Boolean
+        get() = !tourDetail?.firstmenu.isNullOrBlank() ||
+            !tourDetail?.treatmenu.isNullOrBlank() ||
+            menuImages.isNotEmpty()
+}
+
 data class BlogReview(
     val title: String = "",
     val description: String = "",

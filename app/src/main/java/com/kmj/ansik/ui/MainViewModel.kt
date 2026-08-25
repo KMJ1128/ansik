@@ -18,91 +18,65 @@ class MainViewModel(
     application: Application
 ) : AndroidViewModel(application) {
 
-    private val context =
-        application.applicationContext
+    private val context = application.applicationContext
+    private val placeRepository = PlaceRepository()
+    private val restaurantRepository = RestaurantRepository()
+    private val reviewRepository = ReviewRepository()
 
-    private val placeRepository =
-        PlaceRepository()
+    private val sharedPreferences = context.getSharedPreferences(
+        PREFS_NAME,
+        Context.MODE_PRIVATE
+    )
 
-    private val restaurantRepository =
-        RestaurantRepository()
-
-    private val reviewRepository =
-        ReviewRepository()
-
-    private val sharedPreferences =
-        context.getSharedPreferences(
-            PREFS_NAME,
-            Context.MODE_PRIVATE
-        )
-
-    var selectedConditions =
-        mutableStateOf<Set<String>>(emptySet())
+    var selectedConditions = mutableStateOf<Set<String>>(emptySet())
         private set
 
-    val travelRoute =
-        mutableStateListOf<PlaceInfo>()
+    val travelRoute = mutableStateListOf<PlaceInfo>()
+    val recommendedPlaces = mutableStateListOf<PlaceInfo>()
 
-    val recommendedPlaces =
-        mutableStateListOf<PlaceInfo>()
-
-    var nights =
-        mutableStateOf(3)
+    var nights = mutableStateOf(3)
         private set
 
-    var days =
-        mutableStateOf(4)
+    var days = mutableStateOf(4)
         private set
 
-    var currentSelectedDay =
-        mutableStateOf(1)
+    var currentSelectedDay = mutableStateOf(1)
         private set
 
-    var searchRadius =
-        mutableIntStateOf(
-            sharedPreferences.getInt(
-                KEY_SEARCH_RADIUS,
-                DEFAULT_SEARCH_RADIUS
-            )
-        )
+    var searchRadius = mutableIntStateOf(
+        sharedPreferences.getInt(KEY_SEARCH_RADIUS, DEFAULT_SEARCH_RADIUS)
+    )
         private set
 
-    var searchQuery =
-        mutableStateOf("")
+    var searchQuery = mutableStateOf("")
         private set
 
-    var isSearchActive =
-        mutableStateOf(false)
+    var isSearchActive = mutableStateOf(false)
         private set
 
-    var selectedPlace =
-        mutableStateOf<PlaceInfo?>(null)
+    var selectedPlace = mutableStateOf<PlaceInfo?>(null)
         private set
 
-    val nearbyRestaurants =
-        mutableStateListOf<TourRestaurant>()
+    val nearbyRestaurants = mutableStateListOf<RestaurantSummary>()
 
-    var isFetchingRestaurants =
-        mutableStateOf(false)
+    var isFetchingRestaurants = mutableStateOf(false)
         private set
 
-    var selectedRestaurantDetail =
-        mutableStateOf<TourRestaurantDetail?>(null)
+    var hasSearchedRestaurants = mutableStateOf(false)
         private set
 
-    var showReviewSheet =
-        mutableStateOf(false)
+    var selectedRestaurantDetail = mutableStateOf<RestaurantDetailState?>(null)
         private set
 
-    val selectedPlaceReviews =
-        mutableStateListOf<BlogReview>()
-
-    var isFetchingReviews =
-        mutableStateOf(false)
+    var showReviewSheet = mutableStateOf(false)
         private set
 
-    var hasMoreReviews =
-        mutableStateOf(true)
+    val selectedPlaceReviews = mutableStateListOf<BlogReview>()
+
+    var isFetchingReviews = mutableStateOf(false)
+        private set
+
+    var hasMoreReviews = mutableStateOf(true)
         private set
 
     var currentReviewPlaceName = ""
@@ -114,12 +88,9 @@ class MainViewModel(
     private var reviewStartPage = 1
     private var searchJob: Job? = null
 
-    fun searchPlacesRealtime(
-        query: String
-    ) {
+    fun searchPlacesRealtime(query: String) {
         searchQuery.value = query
-        isSearchActive.value =
-            query.isNotEmpty()
+        isSearchActive.value = query.isNotEmpty()
 
         if (query.isBlank()) {
             recommendedPlaces.clear()
@@ -127,73 +98,41 @@ class MainViewModel(
         }
 
         searchJob?.cancel()
+        searchJob = viewModelScope.launch {
+            delay(SEARCH_DEBOUNCE_MS)
 
-        searchJob =
-            viewModelScope.launch {
-                delay(SEARCH_DEBOUNCE_MS)
+            try {
+                val response = placeRepository.searchPlace(query = query)
+                val places = response.documents.map { place ->
+                    val shortTag = place.category_group_name
+                        .split(">")
+                        .lastOrNull()
+                        ?.trim()
+                        .orEmpty()
 
-                try {
-                    val response =
-                        placeRepository.searchPlace(
-                            query = query
-                        )
-
-                    val places =
-                        response.documents.map { place ->
-                            val shortTag =
-                                place.category_group_name
-                                    .split(">")
-                                    .lastOrNull()
-                                    ?.trim()
-                                    .orEmpty()
-
-                            PlaceInfo(
-                                id = place.id,
-                                name = place.place_name,
-                                address =
-                                    place.road_address_name
-                                        .ifEmpty {
-                                            context.getString(
-                                                R.string.no_address
-                                            )
-                                        },
-                                tag =
-                                    shortTag.ifEmpty {
-                                        context.getString(
-                                            R.string.place
-                                        )
-                                    },
-                                imageUrl =
-                                    RestaurantRepository.DEFAULT_IMAGE_URL,
-                                imageUrls =
-                                    listOf(
-                                        RestaurantRepository.DEFAULT_IMAGE_URL
-                                    ),
-                                latitude =
-                                    place.y
-                                        .toDoubleOrNull()
-                                        ?: 0.0,
-                                longitude =
-                                    place.x
-                                        .toDoubleOrNull()
-                                        ?: 0.0,
-                                day =
-                                    currentSelectedDay.value
-                            )
-                        }
-
-                    recommendedPlaces.clear()
-                    recommendedPlaces.addAll(
-                        places
-                    )
-                } catch (e: Exception) {
-                    Log.e(
-                        "Search",
-                        "검색 통신 실패",
-                        e
+                    PlaceInfo(
+                        id = place.id,
+                        name = place.place_name,
+                        address = place.road_address_name.ifEmpty {
+                            context.getString(R.string.no_address)
+                        },
+                        tag = shortTag.ifEmpty {
+                            context.getString(R.string.place)
+                        },
+                        imageUrl = RestaurantRepository.DEFAULT_IMAGE_URL,
+                        imageUrls = listOf(RestaurantRepository.DEFAULT_IMAGE_URL),
+                        latitude = place.y.toDoubleOrNull() ?: 0.0,
+                        longitude = place.x.toDoubleOrNull() ?: 0.0,
+                        day = currentSelectedDay.value
                     )
                 }
+
+                recommendedPlaces.clear()
+                recommendedPlaces.addAll(places)
+            } catch (e: Exception) {
+                Log.e("Search", "검색 통신 실패", e)
             }
+        }
     }
 
     fun clearSearch() {
@@ -202,93 +141,52 @@ class MainViewModel(
         recommendedPlaces.clear()
     }
 
-    fun selectLocationFromMap(
-        name: String,
-        lat: Double,
-        lng: Double
-    ) {
+    fun selectLocationFromMap(name: String, lat: Double, lng: Double) {
         viewModelScope.launch {
             try {
-                val searchResponse =
-                    placeRepository.searchPlace(
-                        query = name,
-                        mapX = lng,
-                        mapY = lat
-                    )
+                val searchResponse = placeRepository.searchPlace(
+                    query = name,
+                    mapX = lng,
+                    mapY = lat
+                )
+                val matchedPlace = searchResponse.documents.firstOrNull()
 
-                val matchedPlace =
-                    searchResponse.documents
-                        .firstOrNull()
+                val images = placeRepository.fetchExactImages(
+                    title = name,
+                    mapX = lng,
+                    mapY = lat
+                )
+                val finalImages = images.ifEmpty {
+                    listOf(RestaurantRepository.DEFAULT_IMAGE_URL)
+                }
 
-                val images =
-                    placeRepository.fetchExactImages(
-                        title = name,
-                        mapX = lng,
-                        mapY = lat
-                    )
+                val shortTag = matchedPlace?.category_group_name
+                    ?.split(">")
+                    ?.lastOrNull()
+                    ?.trim()
+                    ?: context.getString(R.string.poi)
 
-                val finalImages =
-                    images.ifEmpty {
-                        listOf(
-                            RestaurantRepository.DEFAULT_IMAGE_URL
-                        )
-                    }
+                val finalAddress = matchedPlace?.road_address_name
+                    ?.ifEmpty { context.getString(R.string.no_address) }
+                    ?: context.getString(R.string.selected_from_map)
 
-                val shortTag =
-                    matchedPlace
-                        ?.category_group_name
-                        ?.split(">")
-                        ?.lastOrNull()
-                        ?.trim()
-                        ?: context.getString(
-                            R.string.poi
-                        )
-
-                val finalAddress =
-                    matchedPlace
-                        ?.road_address_name
-                        ?.ifEmpty {
-                            context.getString(
-                                R.string.no_address
-                            )
-                        }
-                        ?: context.getString(
-                            R.string.selected_from_map
-                        )
-
-                selectedPlace.value =
-                    PlaceInfo(
-                        id =
-                            matchedPlace
-                                ?.id
-                                .orEmpty(),
-                        name = name,
-                        address =
-                            finalAddress,
-                        tag =
-                            shortTag,
-                        imageUrl =
-                            finalImages.first(),
-                        imageUrls =
-                            finalImages,
-                        latitude =
-                            lat,
-                        longitude =
-                            lng,
-                        day =
-                            currentSelectedDay.value
-                    )
+                selectedPlace.value = PlaceInfo(
+                    id = matchedPlace?.id.orEmpty(),
+                    name = name,
+                    address = finalAddress,
+                    tag = shortTag,
+                    imageUrl = finalImages.first(),
+                    imageUrls = finalImages,
+                    latitude = lat,
+                    longitude = lng,
+                    day = currentSelectedDay.value
+                )
 
                 clearSearch()
                 clearNearbyRestaurants()
                 clearRestaurantDetail()
-
             } catch (e: Exception) {
-                Log.e(
-                    "MapClick",
-                    "지도 심볼 통신 실패",
-                    e
-                )
+                Log.e("MapClick", "지도 심볼 통신 실패", e)
             }
         }
     }
@@ -297,96 +195,57 @@ class MainViewModel(
         selectedPlace.value = null
     }
 
-    fun searchNearbyRestaurants(
-        lat: Double,
-        lng: Double
-    ) {
+    fun searchNearbyRestaurants(lat: Double, lng: Double) {
         viewModelScope.launch {
-            isFetchingRestaurants.value =
-                true
-
+            isFetchingRestaurants.value = true
+            hasSearchedRestaurants.value = false
             clearRestaurantDetail()
 
             try {
-                val restaurants =
-                    restaurantRepository
-                        .getNearbyRestaurants(
-                            longitude = lng,
-                            latitude = lat,
-                            radius =
-                                searchRadius.intValue
-                        )
+                val restaurants = restaurantRepository.getNearbyRestaurants(
+                    longitude = lng,
+                    latitude = lat,
+                    radius = searchRadius.intValue
+                )
 
                 nearbyRestaurants.clear()
-                nearbyRestaurants.addAll(
-                    restaurants
-                )
+                nearbyRestaurants.addAll(restaurants)
+                hasSearchedRestaurants.value = true
 
                 clearSelectedPlace()
                 clearSearch()
-
-            } catch (
-                e: retrofit2.HttpException
-            ) {
-                Log.e(
-                    "TourAPI",
-                    "HTTP 오류 코드 = ${e.code()}",
-                    e
-                )
-            } catch (
-                e: Exception
-            ) {
-                Log.e(
-                    "TourAPI",
-                    "주변 식당 검색 실패",
-                    e
-                )
+            } catch (e: retrofit2.HttpException) {
+                Log.e("TourAPI", "HTTP 오류 코드 = ${e.code()}", e)
+            } catch (e: Exception) {
+                Log.e("TourAPI", "주변 식당 검색 실패", e)
             } finally {
-                isFetchingRestaurants.value =
-                    false
+                isFetchingRestaurants.value = false
             }
         }
     }
 
     fun clearNearbyRestaurants() {
         nearbyRestaurants.clear()
+        hasSearchedRestaurants.value = false
     }
 
-    fun fetchRestaurantDetail(
-        contentId: String
-    ) {
+    fun fetchRestaurantDetail(restaurant: RestaurantSummary) {
         viewModelScope.launch {
             try {
                 selectedRestaurantDetail.value =
-                    restaurantRepository
-                        .getRestaurantDetail(
-                            contentId
-                        )
-            } catch (
-                e: retrofit2.HttpException
-            ) {
-                Log.e(
-                    "TourAPI_DETAIL",
-                    "HTTP 오류 코드 = ${e.code()}",
-                    e
-                )
+                    restaurantRepository.getRestaurantDetail(restaurant)
+            } catch (e: retrofit2.HttpException) {
+                Log.e("TourAPI_DETAIL", "HTTP 오류 코드 = ${e.code()}", e)
                 clearRestaurantDetail()
-            } catch (
-                e: Exception
-            ) {
-                Log.e(
-                    "TourAPI_DETAIL",
-                    "식당 상세 검색 실패",
-                    e
-                )
+            } catch (e: Exception) {
+                Log.e("TourAPI_DETAIL", "식당 상세 검색 실패", e)
                 clearRestaurantDetail()
             }
         }
     }
 
     fun clearRestaurantDetail() {
-        selectedRestaurantDetail.value =
-            null
+        selectedRestaurantDetail.value = null
     }
 
     fun fetchPlaceReviews(
@@ -394,69 +253,39 @@ class MainViewModel(
         address: String,
         isLoadMore: Boolean = false
     ) {
-        if (isFetchingReviews.value) {
-            return
-        }
+        if (isFetchingReviews.value) return
 
         if (!isLoadMore) {
             selectedPlaceReviews.clear()
-
             reviewStartPage = 1
-
-            hasMoreReviews.value =
-                true
-
-            currentReviewPlaceName =
-                placeName
-
-            currentReviewAddress =
-                address
-
-            showReviewSheet.value =
-                true
+            hasMoreReviews.value = true
+            currentReviewPlaceName = placeName
+            currentReviewAddress = address
+            showReviewSheet.value = true
         }
 
-        if (!hasMoreReviews.value) {
-            return
-        }
+        if (!hasMoreReviews.value) return
 
         viewModelScope.launch {
-            isFetchingReviews.value =
-                true
+            isFetchingReviews.value = true
 
             try {
-                val reviews =
-                    reviewRepository
-                        .getPlaceReviews(
-                            placeName =
-                                currentReviewPlaceName,
-                            address =
-                                currentReviewAddress,
-                            start =
-                                reviewStartPage
-                        )
+                val reviews = reviewRepository.getPlaceReviews(
+                    placeName = currentReviewPlaceName,
+                    address = currentReviewAddress,
+                    start = reviewStartPage
+                )
 
                 if (reviews.isEmpty()) {
-                    hasMoreReviews.value =
-                        false
+                    hasMoreReviews.value = false
                 } else {
-                    selectedPlaceReviews
-                        .addAll(reviews)
-
-                    reviewStartPage +=
-                        REVIEW_PAGE_SIZE
+                    selectedPlaceReviews.addAll(reviews)
+                    reviewStartPage += REVIEW_PAGE_SIZE
                 }
-            } catch (
-                e: Exception
-            ) {
-                Log.e(
-                    "Reviews",
-                    "리뷰 불러오기 실패",
-                    e
-                )
+            } catch (e: Exception) {
+                Log.e("Reviews", "리뷰 불러오기 실패", e)
             } finally {
-                isFetchingReviews.value =
-                    false
+                isFetchingReviews.value = false
             }
         }
     }
@@ -465,144 +294,65 @@ class MainViewModel(
         showReviewSheet.value = false
     }
 
-    fun updateSearchRadius(
-        radius: Int
-    ) {
-        searchRadius.intValue =
-            radius
-
+    fun updateSearchRadius(radius: Int) {
+        searchRadius.intValue = radius
         sharedPreferences.edit()
-            .putInt(
-                KEY_SEARCH_RADIUS,
-                radius
-            )
+            .putInt(KEY_SEARCH_RADIUS, radius)
             .apply()
     }
 
     fun increaseDays() {
-        if (
-            days.value >=
-            MAX_TRAVEL_DAYS
-        ) {
-            return
-        }
+        if (days.value >= MAX_TRAVEL_DAYS) return
 
         days.value += 1
-        nights.value =
-            days.value - 1
+        nights.value = days.value - 1
     }
 
     fun decreaseDays() {
-        if (days.value <= 1) {
-            return
-        }
+        if (days.value <= 1) return
 
         days.value -= 1
-        nights.value =
-            days.value - 1
+        nights.value = days.value - 1
 
-        travelRoute
-            .forEachIndexed {
-                    index,
-                    place ->
-                if (
-                    place.day >
-                    days.value
-                ) {
-                    travelRoute[index] =
-                        place.copy(
-                            day =
-                                days.value
-                        )
-                }
+        travelRoute.forEachIndexed { index, place ->
+            if (place.day > days.value) {
+                travelRoute[index] = place.copy(day = days.value)
             }
+        }
 
-        if (
-            currentSelectedDay.value >
-            days.value
-        ) {
-            currentSelectedDay.value =
-                days.value
+        if (currentSelectedDay.value > days.value) {
+            currentSelectedDay.value = days.value
         }
     }
 
-    fun changePlaceDay(
-        place: PlaceInfo,
-        newDay: Int
-    ) {
-        val index =
-            travelRoute.indexOfFirst {
-                it.id == place.id
-            }
+    fun changePlaceDay(place: PlaceInfo, newDay: Int) {
+        val index = travelRoute.indexOfFirst { it.id == place.id }
+        if (index == -1) return
 
-        if (index == -1) {
-            return
-        }
-
-        travelRoute[index] =
-            travelRoute[index].copy(
-                day = newDay
-            )
-
-        currentSelectedDay.value =
-            newDay
-
-        travelRoute.sortBy {
-            it.day
-        }
+        travelRoute[index] = travelRoute[index].copy(day = newDay)
+        currentSelectedDay.value = newDay
+        travelRoute.sortBy { it.day }
     }
 
-    fun getRouteCoordsForDay(
-        day: Int
-    ): List<LatLng> {
+    fun getRouteCoordsForDay(day: Int): List<LatLng> {
         return travelRoute
-            .filter {
-                it.day == day
-            }
-            .map {
-                LatLng(
-                    it.latitude,
-                    it.longitude
-                )
-            }
+            .filter { it.day == day }
+            .map { LatLng(it.latitude, it.longitude) }
     }
 
-    fun toggleCondition(
-        condition: String
-    ) {
-        val current =
-            selectedConditions.value
-
-        selectedConditions.value =
-            if (
-                current.contains(
-                    condition
-                )
-            ) {
-                current - condition
-            } else {
-                current + condition
-            }
+    fun toggleCondition(condition: String) {
+        val current = selectedConditions.value
+        selectedConditions.value = if (current.contains(condition)) {
+            current - condition
+        } else {
+            current + condition
+        }
     }
 
-    fun addPlaceToRoute(
-        place: PlaceInfo
-    ) {
-        if (
-            travelRoute.none {
-                it.name == place.name
-            }
-        ) {
-            travelRoute.add(
-                place.copy(
-                    day =
-                        currentSelectedDay.value
-                )
-            )
-
-            travelRoute.sortBy {
-                it.day
-            }
+    fun addPlaceToRoute(place: PlaceInfo) {
+        if (travelRoute.none { it.name == place.name }) {
+            travelRoute.add(place.copy(day = currentSelectedDay.value))
+            travelRoute.sortBy { it.day }
         }
 
         clearSelectedPlace()
@@ -611,55 +361,23 @@ class MainViewModel(
         clearRestaurantDetail()
     }
 
-    fun removePlace(
-        place: PlaceInfo
-    ) {
-        travelRoute.remove(
-            place
-        )
+    fun removePlace(place: PlaceInfo) {
+        travelRoute.remove(place)
     }
 
-    fun movePlace(
-        fromIndex: Int,
-        toIndex: Int
-    ) {
-        if (
-            fromIndex !in
-            travelRoute.indices ||
-            toIndex !in
-            travelRoute.indices
-        ) {
-            return
-        }
+    fun movePlace(fromIndex: Int, toIndex: Int) {
+        if (fromIndex !in travelRoute.indices || toIndex !in travelRoute.indices) return
 
-        val item =
-            travelRoute.removeAt(
-                fromIndex
-            )
-
-        travelRoute.add(
-            toIndex,
-            item
-        )
+        val item = travelRoute.removeAt(fromIndex)
+        travelRoute.add(toIndex, item)
     }
 
     companion object {
-        private const val PREFS_NAME =
-            "AnsikPrefs"
-
-        private const val KEY_SEARCH_RADIUS =
-            "searchRadius"
-
-        private const val DEFAULT_SEARCH_RADIUS =
-            2000
-
-        private const val MAX_TRAVEL_DAYS =
-            14
-
-        private const val SEARCH_DEBOUNCE_MS =
-            400L
-
-        private const val REVIEW_PAGE_SIZE =
-            5
+        private const val PREFS_NAME = "AnsikPrefs"
+        private const val KEY_SEARCH_RADIUS = "searchRadius"
+        private const val DEFAULT_SEARCH_RADIUS = 2000
+        private const val MAX_TRAVEL_DAYS = 14
+        private const val SEARCH_DEBOUNCE_MS = 400L
+        private const val REVIEW_PAGE_SIZE = 5
     }
 }

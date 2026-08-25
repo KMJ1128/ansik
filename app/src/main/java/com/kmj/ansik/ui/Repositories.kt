@@ -3,7 +3,6 @@ package com.kmj.ansik.ui
 import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
 
@@ -36,11 +35,7 @@ class PlaceRepository(
                 mapY = mapY
             )
         } catch (e: Exception) {
-            Log.e(
-                "PlaceRepository",
-                "이미지 요청 실패: $title",
-                e
-            )
+            Log.e("PlaceRepository", "이미지 요청 실패: $title", e)
             emptyList()
         }
     }
@@ -54,89 +49,80 @@ class RestaurantRepository(
         longitude: Double,
         latitude: Double,
         radius: Int
-    ): List<TourRestaurant> = withContext(Dispatchers.IO) {
-        val response = api.getNearbyRestaurants(
-            longitude,
-            latitude,
-            radius
-        )
+    ): List<RestaurantSummary> = withContext(Dispatchers.IO) {
+        api.getTourApiNearbyRestaurants(
+            lng = longitude,
+            lat = latitude,
+            radius = radius
+        ).map { restaurant ->
+            val sourceImages = normalizeImages(
+                restaurant.imageUrls + restaurant.imageUrl
+            )
 
-        val items = response.response
-            ?.body
-            ?.items
-            ?.item
-            .orEmpty()
+            val fallbackImages = if (
+                sourceImages.isEmpty() &&
+                restaurant.hasTourData
+            ) {
+                placeRepository.fetchExactImages(
+                    tourId = restaurant.tourContentId,
+                    title = restaurant.title,
+                    mapX = restaurant.longitude,
+                    mapY = restaurant.latitude
+                )
+            } else {
+                emptyList()
+            }
 
-        coroutineScope {
-            items.map { restaurant ->
-                async {
-                    val tourImages = normalizeImages(
-                        listOf(
-                            restaurant.firstimage,
-                            restaurant.firstimage2
-                        )
-                    )
+            val finalImages = normalizeImages(sourceImages + fallbackImages)
 
-                    val exactImages =
-                        if (tourImages.isEmpty()) {
-                            placeRepository.fetchExactImages(
-                                tourId = restaurant.contentid,
-                                title = restaurant.title,
-                                mapX = restaurant.mapx.toDoubleOrNull(),
-                                mapY = restaurant.mapy.toDoubleOrNull()
-                            )
-                        } else {
-                            emptyList()
-                        }
-
-                    val finalImages =
-                        (tourImages + exactImages)
-                            .filter { it.isNotBlank() }
-                            .map {
-                                it.replace(
-                                    "http://",
-                                    "https://"
-                                )
-                            }
-                            .distinct()
-                            .ifEmpty {
-                                listOf(DEFAULT_IMAGE_URL)
-                            }
-
-                    restaurant.copy(
-                        firstimage = finalImages.first(),
-                        imageUrls = finalImages
-                    )
-                }
-            }.awaitAll()
+            restaurant.copy(
+                imageUrl = finalImages.firstOrNull().orEmpty(),
+                imageUrls = finalImages
+            )
         }
     }
 
     suspend fun getRestaurantDetail(
-        contentId: String
-    ): TourRestaurantDetail? =
-        withContext(Dispatchers.IO) {
-            val response =
-                api.getRestaurantDetails(contentId)
+        restaurant: RestaurantSummary
+    ): RestaurantDetailState = coroutineScope {
+        val contentId = restaurant.tourContentId
 
-            response.response
-                ?.body
-                ?.items
-                ?.item
-                ?.firstOrNull()
+        if (contentId.isNullOrBlank()) {
+            return@coroutineScope RestaurantDetailState(
+                restaurant = restaurant
+            )
         }
+
+        val detailDeferred = async(Dispatchers.IO) {
+            runCatching {
+                api.getRestaurantDetails(contentId)
+                    .response
+                    ?.body
+                    ?.items
+                    ?.item
+                    ?.firstOrNull()
+            }.getOrNull()
+        }
+
+        val menuImagesDeferred = async(Dispatchers.IO) {
+            runCatching {
+                api.getTourMenuImages(contentId)
+            }.getOrDefault(emptyList())
+        }
+
+        RestaurantDetailState(
+            restaurant = restaurant,
+            tourDetail = detailDeferred.await(),
+            menuImages = normalizeImages(menuImagesDeferred.await())
+        )
+    }
 
     private fun normalizeImages(
         urls: List<String>
     ): List<String> {
         return urls
             .filter { it.isNotBlank() }
-            .map {
-                it.replace(
-                    "http://",
-                    "https://"
-                )
-            }
+            .map { it.replace("http://", "https://") }
             .distinct()
     }
 
@@ -153,12 +139,11 @@ class ReviewRepository(
         placeName: String,
         address: String,
         start: Int
-    ): List<BlogReview> =
-        withContext(Dispatchers.IO) {
-            api.getPlaceReviews(
-                placeName,
-                address,
-                start
-            )
-        }
+    ): List<BlogReview> = withContext(Dispatchers.IO) {
+        api.getPlaceReviews(
+            placeName = placeName,
+            address = address,
+            start = start
+        )
+    }
 }

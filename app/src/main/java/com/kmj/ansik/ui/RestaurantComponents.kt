@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -66,14 +67,15 @@ import com.kmj.ansik.R
 
 @Composable
 internal fun RestaurantHorizontalCard(
-    restaurant: TourRestaurant,
+    restaurant: RestaurantSummary,
     onCardClick: () -> Unit,
     onImageClick: () -> Unit,
     onReviewClick: () -> Unit,
     onDetailClick: () -> Unit
 ) {
-    val rawImageUrl = restaurant.firstimage.ifEmpty { restaurant.firstimage2 }
-    val secureImageUrl = rawImageUrl.replace("http://", "https://")
+    val secureImageUrl = restaurant.imageUrl
+        .replace("http://", "https://")
+        .ifBlank { RestaurantRepository.DEFAULT_IMAGE_URL }
 
     Card(
         modifier = Modifier
@@ -85,9 +87,7 @@ internal fun RestaurantHorizontalCard(
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
             AsyncImage(
-                model = secureImageUrl.ifEmpty {
-                    RestaurantRepository.DEFAULT_IMAGE_URL
-                },
+                model = secureImageUrl,
                 contentDescription = stringResource(id = R.string.place_image),
                 modifier = Modifier
                     .fillMaxWidth()
@@ -108,11 +108,18 @@ internal fun RestaurantHorizontalCard(
             )
 
             Text(
-                text = restaurant.addr1,
+                text = restaurant.address,
                 fontSize = 11.sp,
                 color = Color.Gray,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            RestaurantSourceRow(
+                sources = restaurant.sources,
+                distanceMeters = restaurant.distanceMeters
             )
 
             Spacer(modifier = Modifier.height(10.dp))
@@ -241,66 +248,142 @@ internal fun AppDialogs(
     }
 
     if (showDetailPopup && viewModel.selectedRestaurantDetail.value != null) {
+        val detailState = viewModel.selectedRestaurantDetail.value!!
+        val detail = detailState.tourDetail
+
         AlertDialog(
             onDismissRequest = onDismissDetailPopup,
             containerColor = Color.White,
             shape = RoundedCornerShape(20.dp),
             title = {
-                Text(
-                    text = stringResource(id = R.string.restaurant_detail_title),
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp,
-                    color = AppColors.Success
-                )
+                Column {
+                    Text(
+                        text = detailState.restaurant.title,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp,
+                        color = AppColors.Success
+                    )
+                    if (detailState.restaurant.address.isNotBlank()) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = detailState.restaurant.address,
+                            fontSize = 12.sp,
+                            color = AppColors.TextSecondary,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
             },
             text = {
-                viewModel.selectedRestaurantDetail.value?.let { detail ->
-                    Column(modifier = Modifier.padding(top = 8.dp)) {
-                        detail.firstmenu
-                            ?.takeIf { it.isNotBlank() }
-                            ?.let {
+                LazyColumn(
+                    modifier = Modifier.heightIn(max = 430.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    item {
+                        RestaurantSourceRow(
+                            sources = detailState.restaurant.sources,
+                            distanceMeters = detailState.restaurant.distanceMeters
+                        )
+                    }
+
+                    detail?.firstmenu
+                        ?.takeIf { it.isNotBlank() }
+                        ?.let { value ->
+                            item {
                                 RestaurantInfoRow(
                                     title = stringResource(id = R.string.restaurant_main_menu),
-                                    value = it
+                                    value = value
                                 )
                             }
+                        }
 
-                        detail.treatmenu
-                            ?.takeIf { it.isNotBlank() }
-                            ?.let {
+                    detail?.treatmenu
+                        ?.takeIf { it.isNotBlank() }
+                        ?.let { value ->
+                            item {
                                 RestaurantInfoRow(
                                     title = stringResource(id = R.string.restaurant_treat_menu),
-                                    value = it
+                                    value = value
                                 )
                             }
+                        }
 
-                        detail.opentimefood
-                            ?.takeIf { it.isNotBlank() }
-                            ?.let {
+                    if (detailState.menuImages.isNotEmpty()) {
+                        item {
+                            Text(
+                                text = stringResource(id = R.string.menu_image_title),
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = AppColors.Success
+                            )
+                        }
+                        item {
+                            LazyRow(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                items(detailState.menuImages) { imageUrl ->
+                                    AsyncImage(
+                                        model = imageUrl,
+                                        contentDescription = stringResource(id = R.string.menu_image_title),
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier
+                                            .size(width = 150.dp, height = 100.dp)
+                                            .clip(RoundedCornerShape(10.dp))
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    if (!detailState.hasMenuEvidence) {
+                        item {
+                            Surface(
+                                color = Color(0xFFF5F5F5),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Text(
+                                    text = stringResource(id = R.string.no_menu_evidence),
+                                    modifier = Modifier.padding(14.dp),
+                                    fontSize = 13.sp,
+                                    color = AppColors.TextSecondary
+                                )
+                            }
+                        }
+                    }
+
+                    detail?.opentimefood
+                        ?.takeIf { it.isNotBlank() }
+                        ?.let { value ->
+                            item {
                                 RestaurantInfoRow(
                                     title = stringResource(id = R.string.restaurant_open_time),
-                                    value = it
+                                    value = value
                                 )
                             }
+                        }
 
-                        detail.packing
-                            ?.takeIf { it.isNotBlank() }
-                            ?.let {
+                    detail?.packing
+                        ?.takeIf { it.isNotBlank() }
+                        ?.let { value ->
+                            item {
                                 RestaurantInfoRow(
                                     title = stringResource(id = R.string.restaurant_packing),
-                                    value = it
+                                    value = value
                                 )
                             }
+                        }
 
-                        detail.parkingfood
-                            ?.takeIf { it.isNotBlank() }
-                            ?.let {
+                    detail?.parkingfood
+                        ?.takeIf { it.isNotBlank() }
+                        ?.let { value ->
+                            item {
                                 RestaurantInfoRow(
                                     title = stringResource(id = R.string.restaurant_parking),
-                                    value = it
+                                    value = value
                                 )
                             }
-                    }
+                        }
                 }
             },
             confirmButton = {
@@ -313,6 +396,64 @@ internal fun AppDialogs(
                 }
             }
         )
+    }
+
+}
+
+@Composable
+private fun RestaurantSourceRow(
+    sources: List<String>,
+    distanceMeters: Int
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        sources.distinct().forEach { source ->
+            val label = when (source) {
+                "TOUR_API" -> stringResource(id = R.string.source_tour_api)
+                "KAKAO" -> stringResource(id = R.string.source_kakao)
+                else -> source
+            }
+
+            Surface(
+                color = if (source == "TOUR_API") {
+                    AppColors.SuccessSoft
+                } else {
+                    Color(0xFFFFF3E0)
+                },
+                shape = RoundedCornerShape(50)
+            ) {
+                Text(
+                    text = label,
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = if (source == "TOUR_API") {
+                        AppColors.Success
+                    } else {
+                        Color(0xFFEF6C00)
+                    }
+                )
+            }
+        }
+
+        if (distanceMeters > 0) {
+            Text(
+                text = formatDistance(distanceMeters),
+                fontSize = 11.sp,
+                color = AppColors.TextSecondary
+            )
+        }
+    }
+}
+
+private fun formatDistance(distanceMeters: Int): String {
+    return if (distanceMeters >= 1000) {
+        String.format("%.1f km", distanceMeters / 1000f)
+    } else {
+        "${distanceMeters} m"
     }
 }
 
@@ -367,7 +508,7 @@ internal fun ReviewBottomSheet(viewModel: MainViewModel) {
 
             when {
                 viewModel.isFetchingReviews.value &&
-                        viewModel.selectedPlaceReviews.isEmpty() -> {
+                    viewModel.selectedPlaceReviews.isEmpty() -> {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()

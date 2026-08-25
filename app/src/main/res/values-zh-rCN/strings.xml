@@ -1,0 +1,136 @@
+<resources>
+    <string name="app_name">Ansik</string>
+    <string name="app_title">Ansik</string>
+    <string name="health_management_title">🩺 您需要哪种健康管理？</string>
+    <string name="health_management_desc">可多选。我们将提供个性化的 🔴🟡🟢 指南。</string>
+    <string name="basic_disease_care">基础疾病管理</string>
+    <string name="allergy_triggers">⚠️ 过敏原</string>
+    <string name="health_diet">🥗 健身与减脂饮食</string>
+    <string name="religion_belief_diet">🙏 宗教与信仰饮食</string>
+    <string name="go_to_travel_route">规划旅行路线 🗺️</string>
+    <string name="expand">展开</string>
+    <string name="enter_custom_other">手动输入其他内容</string>
+    <string name="add">添加</string>
+
+    <string name="no_address">暂无地址</string>
+    <string name="place">地点</string>
+    <string name="poi">兴趣点</string>
+    <string name="selected_from_map">从地图选择的地点</string>
+
+    <string name="my_travel_schedule">我的旅行日程</string>
+    <string name="nights_days">%1$d晚%2$d天</string>
+    <string name="change_order">调整顺序</string>
+    <string name="delete">删除</string>
+    <string name="day_format">第%1$d天</string>
+    <string name="search_placeholder">您想去哪里？</string>
+    <string name="search">搜索</string>
+    <string name="clear">清除</string>
+    <string name="place_image">地点图片</string>
+    <string name="directions_roadview">路线 / 街景</string>
+    <string name="add_to_schedule_desc">添加到日程</string>
+    <string name="add_schedule">添加日程</string>
+    <string name="find_restaurant">查找餐厅</string>
+    <string name="loading_public_data">正在加载公共数据...</string>
+    <string name="find_nearby_safe_restaurants">查找TourAPI注册餐厅</string>
+    <string name="settings">设置</string>
+
+    <string-array name="basic_conditions">
+        <item>糖尿病管理（低糖）</item>
+        <item>高血压（低钠）</item>
+        <item>痛风（低嘌呤）</item>
+        <item>高脂血症（低胆固醇）</item>
+        <item>慢性肾功能不全（低钾）</item>
+        <item>胃肠道疾病（低刺激）</item>
+        <item>心血管疾病</item>
+        <item>肥胖/体重管理</item>
+        <item>孕妇/哺乳期</item>
+    </string-array>
+
+    <string-array name="allergy_items">
+        <item>甲壳类</item>
+        <item>坚果</item>
+        <item>牛奶/乳制品</item>
+        <item>大豆</item>
+        <item>小麦（麸质）</item>
+        <item>鸡蛋</item>
+        <item>鱼类</item>
+        <item>贝类</item>
+        <item>桃</item>
+        <item>西红柿</item>
+        <item>猪肉</item>
+        <item>亚硫酸盐（葡萄酒等）</item>
+    </string-array>
+
+    <string-array name="diet_items">
+        <item>严格素食</item>
+        <item>蛋奶素</item>
+        <item>鱼素</item>
+        <item>生酮饮食（低碳高脂）</item>
+        <item>高蛋白/增肌</item>
+        <item>无麸质饮食</item>
+        <item>间歇性断食</item>
+        <item>低脂饮食</item>
+        <item>地中海饮食</item>
+        <item>低碳水饮食</item>
+    </string-array>
+
+    <string-array name="religion_items">
+        <item>清真（伊斯兰教）</item>
+        <item>犹太洁食（犹太教）</item>
+        <item>禁食牛肉（印度教）</item>
+        <item>禁食猪肉</item>
+        <item>禁食五辛（佛教）</item>
+        <item>素食（基督复临安息日会）</item>
+        <item>禁食根茎类（耆那教）</item>
+        <item>偏好有机食品</item>
+        <item>动物福利饮食</item>
+        <item>公平贸易食材</item>
+    </string-array>
+
+    <string name="tab_map">地图</string>
+    <string name="tab_ai_course">AI路线</string>
+    <string name="tab_profile">我的信息</string>
+
+    <string name="ai_course_title">AI推荐路线</string>
+    <string name="ai_course_desc">根据您的健康条件和旅行信息，\n为您推荐个性化旅行路线。</string>
+    <string name="ai_course_card_title">✨ AI旅行路线推荐</string>
+    <string name="ai_course_card_desc">分析您选择的健康、饮食条件和\n旅行日程，为您推荐最佳路线。</string>
+    <string name="ai_course_button">创建AI推荐路线</string>
+    <string name="current_selected_conditions">当前已选条件</string>
+
+    <string name="my_schedule_short">我的\n日程</string>
+    <string name="restaurant_list_title">韩国旅游发展局注册餐厅</string>
+    <string name="restaurant_list_desc">%1$s范围内的TourAPI注册餐厅</string>
+    <string name="search_radius">搜索半径</string>
+    <string name="no_restaurants_found">搜索范围内没有韩国旅游发展局注册的餐厅。</string>
+    <string name="restaurant_main_menu">招牌菜</string>
+    <string name="restaurant_treat_menu">供应菜单</string>
+    <string name="restaurant_open_time">营业时间</string>
+    <string name="restaurant_parking">停车</string>
+    <string name="restaurant_packing">外带</string>
+    <string name="tap_to_view_details">点击查看详情</string>
+
+    <string name="select_language_title">请选择语言\nSelect your language</string>
+    <string name="lang_korean">한국어</string>
+    <string name="lang_english">English</string>
+    <string name="lang_japanese">日本語</string>
+    <string name="lang_chinese_simplified">简体中文</string>
+
+    <string name="go_back">返回</string>
+    <string name="language_settings">语言设置</string>
+    <string name="radius_settings_title">搜索半径设置</string>
+    <string name="confirm">确定</string>
+
+    <string name="review_view">查看评价</string>
+    <string name="detail_view">查看详情</string>
+    <string name="restaurant_detail_title">餐厅详细信息</string>
+    <string name="close">关闭</string>
+    <string name="naver_blog_reviews">Naver博客到店评价</string>
+    <string name="no_reviews">暂无评价。</string>
+    <string name="open_original">查看原文 &gt;</string>
+
+    <string name="source_tour_api">TourAPI</string>
+    <string name="source_kakao">Kakao</string>
+    <string name="menu_image_title">菜单图片</string>
+    <string name="no_menu_evidence">目前没有可确认的菜单信息。该餐厅不会从候选结果中排除，并会标记为信息不足。</string>
+</resources>

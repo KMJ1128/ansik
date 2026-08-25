@@ -39,23 +39,37 @@ fun LanguageScreen(
                 textAlign = TextAlign.Center
             )
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
-            ) {
-                // 한국어 카드
-                LanguageCard(
-                    flag = "🇰🇷",
-                    languageName = stringResource(id = R.string.lang_korean),
-                    onClick = { onLanguageSelected("ko") }
-                )
-
-                // 영어 카드
-                LanguageCard(
-                    flag = "🇺🇸",
-                    languageName = stringResource(id = R.string.lang_english),
-                    onClick = { onLanguageSelected("en") }
-                )
+            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    LanguageCard(
+                        flag = "🇰🇷",
+                        languageName = stringResource(id = R.string.lang_korean),
+                        onClick = { onLanguageSelected("ko") }
+                    )
+                    LanguageCard(
+                        flag = "🇺🇸",
+                        languageName = stringResource(id = R.string.lang_english),
+                        onClick = { onLanguageSelected("en") }
+                    )
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    LanguageCard(
+                        flag = "🇯🇵",
+                        languageName = stringResource(id = R.string.lang_japanese),
+                        onClick = { onLanguageSelected("ja") }
+                    )
+                    LanguageCard(
+                        flag = "🇨🇳",
+                        languageName = stringResource(id = R.string.lang_chinese_simplified),
+                        onClick = { onLanguageSelected("zh-CN") }
+                    )
+                }
             }
         }
     }
