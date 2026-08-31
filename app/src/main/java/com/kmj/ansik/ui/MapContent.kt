@@ -16,10 +16,12 @@ import com.naver.maps.geometry.LatLng
 import com.naver.maps.map.CameraAnimation
 import com.naver.maps.map.CameraUpdate
 import com.naver.maps.map.compose.CameraPositionState
+import com.naver.maps.map.compose.CircleOverlay
 import com.naver.maps.map.compose.ExperimentalNaverMapApi
 import com.naver.maps.map.compose.Marker
 import com.naver.maps.map.compose.MarkerState
 import com.naver.maps.map.compose.NaverMap
+import com.naver.maps.map.compose.LocationOverlay
 import com.naver.maps.map.compose.PathOverlay
 import com.naver.maps.map.overlay.OverlayImage
 import com.naver.maps.map.util.MarkerIcons
@@ -61,6 +63,22 @@ internal fun NaverMapContent(
         },
         onMapClick = { _, _ -> viewModel.clearSelectedPlace() }
     ) {
+        viewModel.currentUserLocation.value?.let { currentLocation ->
+            CircleOverlay(
+                center = currentLocation,
+                radius = viewModel.searchRadius.intValue.toDouble(),
+                color = Color(0x2234A853),
+                outlineColor = Color(0xAA34A853),
+                outlineWidth = 2.dp
+            )
+            LocationOverlay(
+                position = currentLocation,
+                circleColor = Color(0x333A86FF),
+                circleOutlineColor = Color.White,
+                circleOutlineWidth = 2.dp
+            )
+        }
+
         for (day in 1..viewModel.days.value) {
             val coords = viewModel.getRouteCoordsForDay(day)
             if (coords.size >= 2) {

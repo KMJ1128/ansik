@@ -43,9 +43,15 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -54,6 +60,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -119,7 +126,8 @@ internal fun RestaurantHorizontalCard(
 
             RestaurantSourceRow(
                 sources = restaurant.sources,
-                distanceMeters = restaurant.distanceMeters
+                distanceMeters = restaurant.distanceMeters,
+                koreanFallback = restaurant.koreanFallback
             )
 
             Spacer(modifier = Modifier.height(10.dp))
@@ -173,6 +181,7 @@ internal fun AppDialogs(
     onDismissViewer: () -> Unit,
     showRadiusDialog: Boolean,
     onDismissRadiusDialog: () -> Unit,
+    onConfirmRadius: () -> Unit,
     showDetailPopup: Boolean,
     onDismissDetailPopup: () -> Unit
 ) {
@@ -235,7 +244,12 @@ internal fun AppDialogs(
                 }
             },
             confirmButton = {
-                TextButton(onClick = onDismissRadiusDialog) {
+                TextButton(
+                    onClick = {
+                        onConfirmRadius()
+                        onDismissRadiusDialog()
+                    }
+                ) {
                     Text(
                         text = stringResource(id = R.string.confirm),
                         color = AppColors.Success,
@@ -247,9 +261,42 @@ internal fun AppDialogs(
         )
     }
 
+    if (
+        showDetailPopup &&
+        viewModel.isFetchingRestaurantDetail.value &&
+        viewModel.selectedRestaurantDetail.value == null
+    ) {
+        AlertDialog(
+            onDismissRequest = onDismissDetailPopup,
+            confirmButton = {},
+            containerColor = Color.White,
+            shape = RoundedCornerShape(20.dp),
+            title = {
+                Text(
+                    text = stringResource(id = R.string.loading_restaurant_details),
+                    fontWeight = FontWeight.Bold,
+                    color = AppColors.Success
+                )
+            },
+            text = {
+                LoadingSkeleton(
+                    label = stringResource(id = R.string.loading_restaurant_details),
+                    rows = 4
+                )
+            }
+        )
+    }
+
     if (showDetailPopup && viewModel.selectedRestaurantDetail.value != null) {
         val detailState = viewModel.selectedRestaurantDetail.value!!
         val detail = detailState.tourDetail
+        val researchedMenus = detailState.menuGuide?.menus.orEmpty()
+        val menuNames = remember(detail?.firstmenu, detail?.treatmenu, researchedMenus) {
+            researchedMenus
+                .map { it.name }
+                .filter { it.isNotBlank() }
+                .ifEmpty { extractMenuNames(detail?.firstmenu, detail?.treatmenu) }
+        }
 
         AlertDialog(
             onDismissRequest = onDismissDetailPopup,
@@ -283,53 +330,75 @@ internal fun AppDialogs(
                     item {
                         RestaurantSourceRow(
                             sources = detailState.restaurant.sources,
-                            distanceMeters = detailState.restaurant.distanceMeters
+                            distanceMeters = detailState.restaurant.distanceMeters,
+                            koreanFallback = detailState.restaurant.koreanFallback
                         )
                     }
 
-                    detail?.firstmenu
-                        ?.takeIf { it.isNotBlank() }
-                        ?.let { value ->
-                            item {
-                                RestaurantInfoRow(
-                                    title = stringResource(id = R.string.restaurant_main_menu),
-                                    value = value
-                                )
-                            }
-                        }
-
-                    detail?.treatmenu
-                        ?.takeIf { it.isNotBlank() }
-                        ?.let { value ->
-                            item {
-                                RestaurantInfoRow(
-                                    title = stringResource(id = R.string.restaurant_treat_menu),
-                                    value = value
-                                )
-                            }
-                        }
-
-                    if (detailState.menuImages.isNotEmpty()) {
+                    if (menuNames.isNotEmpty()) {
                         item {
                             Text(
-                                text = stringResource(id = R.string.menu_image_title),
-                                fontSize = 12.sp,
+                                text = stringResource(id = R.string.restaurant_all_menus),
+                                fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = AppColors.Success
                             )
+                            Text(
+                                text = stringResource(id = R.string.menu_tap_for_details),
+                                fontSize = 11.sp,
+                                color = AppColors.TextSecondary
+                            )
+                            if (researchedMenus.isNotEmpty()) {
+                                Text(
+                                    text = stringResource(id = R.string.menu_guide_ai_notice),
+                                    fontSize = 10.sp,
+                                    color = AppColors.TextSecondary,
+                                    modifier = Modifier.padding(top = 3.dp)
+                                )
+                            }
                         }
-                        item {
-                            LazyRow(
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+
+                        items(menuNames, key = { it }) { menuName ->
+                            val selectedDetail = viewModel.selectedMenuDetail.value
+                            val isSelected = selectedDetail?.menuName == menuName
+                            val researchedMenu = researchedMenus.firstOrNull { it.name == menuName }
+
+                            Surface(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        if (researchedMenu != null) {
+                                            viewModel.showResearchedMenuDetail(researchedMenu)
+                                        } else {
+                                            viewModel.fetchMenuDetail(menuName)
+                                        }
+                                    },
+                                color = if (isSelected) Color(0xFFE8F5E9) else Color(0xFFF7F7F7),
+                                shape = RoundedCornerShape(12.dp),
+                                border = BorderStroke(
+                                    1.dp,
+                                    if (isSelected) Color(0xFF81C784) else Color(0xFFE0E0E0)
+                                )
                             ) {
-                                items(detailState.menuImages) { imageUrl ->
-                                    AsyncImage(
-                                        model = imageUrl,
-                                        contentDescription = stringResource(id = R.string.menu_image_title),
-                                        contentScale = ContentScale.Crop,
-                                        modifier = Modifier
-                                            .size(width = 150.dp, height = 100.dp)
-                                            .clip(RoundedCornerShape(10.dp))
+                                Text(
+                                    text = menuName,
+                                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 11.dp),
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+
+                            if (isSelected) {
+                                if (viewModel.isFetchingMenuDetail.value) {
+                                    LoadingSkeleton(
+                                        label = stringResource(id = R.string.loading_menu_details),
+                                        rows = 3
+                                    )
+                                } else {
+                                    MenuDetailCard(
+                                        menuName = menuName,
+                                        profile = selectedDetail?.profile,
+                                        imageUrls = selectedDetail?.imageUrls.orEmpty()
                                     )
                                 }
                             }
@@ -401,9 +470,186 @@ internal fun AppDialogs(
 }
 
 @Composable
+private fun MenuDetailCard(
+    menuName: String,
+    profile: MenuProfile?,
+    imageUrls: List<String>
+) {
+    val uriHandler = LocalUriHandler.current
+    val candidates = remember(imageUrls) {
+        imageUrls.filter { it.isNotBlank() }.distinct()
+    }
+    var imageIndex by remember(candidates) { mutableIntStateOf(0) }
+    val imageUrl = candidates.getOrNull(imageIndex)
+    Card(
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFF7FBF7)),
+        shape = RoundedCornerShape(16.dp),
+        border = BorderStroke(1.dp, Color(0xFFC8E6C9))
+    ) {
+        Column(modifier = Modifier.padding(14.dp)) {
+            Text(
+                text = stringResource(id = R.string.menu_details),
+                fontSize = 11.sp,
+                color = AppColors.Success,
+                fontWeight = FontWeight.Bold
+            )
+            Text(text = menuName, fontSize = 20.sp, fontWeight = FontWeight.ExtraBold)
+
+            imageUrl?.takeIf { it.isNotBlank() }?.let {
+                Spacer(modifier = Modifier.height(10.dp))
+                AsyncImage(
+                    model = it,
+                    contentDescription = stringResource(id = R.string.menu_reference_photo),
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(170.dp)
+                        .clip(RoundedCornerShape(12.dp)),
+                    onError = {
+                        if (imageIndex < candidates.lastIndex) imageIndex += 1
+                    }
+                )
+                Text(
+                    text = stringResource(id = R.string.menu_reference_photo),
+                    fontSize = 10.sp,
+                    color = AppColors.TextSecondary,
+                    modifier = Modifier.padding(top = 4.dp)
+                )
+            }
+
+            if (!profile?.description.isNullOrBlank()) {
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(text = profile!!.description, fontSize = 14.sp, lineHeight = 20.sp)
+                if (profile.descriptionSource.startsWith("NAVER") ||
+                    profile.descriptionSource.startsWith("OPENAI")) {
+                    val sourceLabel = if (profile.descriptionSource.startsWith("OPENAI")) {
+                        stringResource(id = R.string.menu_description_source_openai)
+                    } else {
+                        stringResource(id = R.string.menu_description_source_naver)
+                    }
+                    Text(
+                        text = sourceLabel,
+                        fontSize = 10.sp,
+                        color = AppColors.Success,
+                        modifier = Modifier
+                            .padding(top = 5.dp)
+                            .then(
+                                if (profile.descriptionSourceUrl.isNotBlank()) {
+                                    Modifier.clickable {
+                                        uriHandler.openUri(profile.descriptionSourceUrl)
+                                    }
+                                } else {
+                                    Modifier
+                                }
+                            )
+                    )
+                }
+            } else {
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(
+                    text = stringResource(id = R.string.menu_knowledge_unavailable),
+                    fontSize = 13.sp,
+                    color = AppColors.TextSecondary
+                )
+            }
+
+            profile?.tasteTags?.takeIf { it.isNotEmpty() }?.let {
+                MenuTextSection(stringResource(id = R.string.menu_taste), it.joinToString(" · "))
+            }
+            profile?.typicalIngredients?.takeIf { it.isNotEmpty() }?.let {
+                MenuTextSection(stringResource(id = R.string.menu_typical_ingredients), it.joinToString(" · "))
+            }
+            profile?.possibleAllergens?.takeIf { it.isNotEmpty() }?.let {
+                MenuTextSection(stringResource(id = R.string.menu_possible_allergens), it.joinToString(" · "))
+            }
+
+            profile?.nutrition?.let { nutrition ->
+                Spacer(modifier = Modifier.height(12.dp))
+                HorizontalDivider(color = Color(0xFFDDEBDD))
+                Spacer(modifier = Modifier.height(10.dp))
+                Text(
+                    text = stringResource(id = R.string.menu_nutrition_reference),
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = AppColors.Success
+                )
+                if (nutrition.basisAmount.isNotBlank()) {
+                    Text(
+                        text = stringResource(id = R.string.menu_nutrition_basis, nutrition.basisAmount),
+                        fontSize = 10.sp,
+                        color = AppColors.TextSecondary
+                    )
+                }
+                Text(
+                    text = listOfNotNull(
+                        nutrition.energyKcal?.let { stringResource(R.string.menu_energy_value, it) },
+                        nutrition.carbohydrateG?.let { stringResource(R.string.menu_carbohydrate_value, it) },
+                        nutrition.proteinG?.let { stringResource(R.string.menu_protein_value, it) },
+                        nutrition.fatG?.let { stringResource(R.string.menu_fat_value, it) },
+                        nutrition.sugarG?.let { stringResource(R.string.menu_sugar_value, it) },
+                        nutrition.sodiumMg?.let { stringResource(R.string.menu_sodium_value, it) }
+                    ).joinToString("  ·  "),
+                    fontSize = 12.sp,
+                    lineHeight = 18.sp
+                )
+                Text(
+                    text = stringResource(id = R.string.menu_nutrition_source),
+                    fontSize = 10.sp,
+                    color = AppColors.TextSecondary
+                )
+            }
+
+            val disclaimer = profile?.disclaimer?.takeIf { it.isNotBlank() }
+                ?: stringResource(id = R.string.menu_general_disclaimer)
+            disclaimer.let {
+                Spacer(modifier = Modifier.height(12.dp))
+                Surface(color = Color(0xFFFFF8E1), shape = RoundedCornerShape(10.dp)) {
+                    Text(
+                        text = it,
+                        modifier = Modifier.padding(10.dp),
+                        fontSize = 11.sp,
+                        lineHeight = 16.sp,
+                        color = Color(0xFF795548)
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun MenuTextSection(title: String, value: String) {
+    Spacer(modifier = Modifier.height(10.dp))
+    Text(text = title, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = AppColors.Success)
+    Text(text = value, fontSize = 13.sp, lineHeight = 18.sp)
+}
+
+private fun extractMenuNames(firstMenu: String?, treatMenu: String?): List<String> {
+    val normalized = listOfNotNull(firstMenu, treatMenu)
+        .filter { it.isNotBlank() }
+        .joinToString("\n")
+        .replace(Regex("<br\\s*/?>", RegexOption.IGNORE_CASE), "\n")
+        .replace(Regex("<[^>]+>"), " ")
+        .replace("&nbsp;", " ")
+        .replace(Regex("\\d{1,3}(?:,\\d{3})+(?:원)?"), " ")
+
+    return normalized
+        .split(Regex("\\s*(?:\\r?\\n|,|/|·|ㆍ|•|\\||;)\\s*"))
+        .map { value ->
+            value
+                .replace(Regex("^[\\-–—·ㆍ•]+\\s*"), "")
+                .replace(Regex("\\s+\\d+(?:원)?$"), "")
+                .trim()
+        }
+        .filter { it.length >= 2 && it.any(Char::isLetter) }
+        .distinctBy { it.lowercase() }
+}
+
+@Composable
 private fun RestaurantSourceRow(
     sources: List<String>,
-    distanceMeters: Int
+    distanceMeters: Int,
+    koreanFallback: Boolean = false
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -435,6 +681,21 @@ private fun RestaurantSourceRow(
                     } else {
                         Color(0xFFEF6C00)
                     }
+                )
+            }
+        }
+
+        if (koreanFallback) {
+            Surface(
+                color = Color(0xFFECEFF1),
+                shape = RoundedCornerShape(50)
+            ) {
+                Text(
+                    text = stringResource(id = R.string.korean_original_data),
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF546E7A)
                 )
             }
         }
@@ -509,14 +770,10 @@ internal fun ReviewBottomSheet(viewModel: MainViewModel) {
             when {
                 viewModel.isFetchingReviews.value &&
                     viewModel.selectedPlaceReviews.isEmpty() -> {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(100.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator(color = AppColors.Success)
-                    }
+                    LoadingSkeleton(
+                        label = stringResource(id = R.string.loading_public_data),
+                        rows = 3
+                    )
                 }
 
                 viewModel.selectedPlaceReviews.isEmpty() -> {
@@ -608,6 +865,44 @@ internal fun ReviewBottomSheet(viewModel: MainViewModel) {
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun LoadingSkeleton(
+    label: String,
+    rows: Int
+) {
+    val transition = rememberInfiniteTransition(label = "loading-skeleton")
+    val alpha by transition.animateFloat(
+        initialValue = 0.32f,
+        targetValue = 0.78f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(750),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "loading-skeleton-alpha"
+    )
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 14.dp),
+        verticalArrangement = Arrangement.spacedBy(9.dp)
+    ) {
+        Text(
+            text = label,
+            fontSize = 12.sp,
+            color = AppColors.TextSecondary
+        )
+        repeat(rows) { index ->
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(if (index == rows - 1) 0.68f else 1f)
+                    .height(if (index == 0) 54.dp else 14.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(Color(0xFFDDE5DF).copy(alpha = alpha))
+            )
         }
     }
 }

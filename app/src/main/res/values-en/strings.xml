@@ -110,6 +110,10 @@
     <string name="no_restaurants_found">No Korea Tourism Organization restaurants were found within this radius.</string>
     <string name="restaurant_main_menu">Main Menu</string>
     <string name="restaurant_treat_menu">Menu Items</string>
+    <string name="restaurant_all_menus">All menu items</string>
+    <string name="menu_tap_for_details">Tap a menu item to load its description and reference image.</string>
+    <string name="menu_guide_ai_notice">Menus are based on public web sources matched by restaurant name and address.</string>
+    <string name="menu_details">Menu details</string>
     <string name="restaurant_open_time">Opening Hours</string>
     <string name="restaurant_parking">Parking</string>
     <string name="restaurant_packing">Takeout</string>
@@ -131,13 +135,36 @@
     <string name="detail_view">Details</string>
     <string name="restaurant_detail_title">Restaurant Details</string>
     <string name="close">Close</string>
-    <string name="naver_blog_reviews">Naver Blog Reviews</string>
-    <string name="no_reviews">No reviews found.</string>
+    <string name="naver_blog_reviews">Related web posts matched by name and address</string>
+    <string name="no_reviews">No posts matching this restaurant were found.</string>
+    <string name="my_location">My location</string>
+    <string name="find_restaurants_from_my_location">Find TourAPI restaurants near me</string>
+    <string name="getting_current_location">Getting your current location.</string>
+    <string name="loading_restaurant_details">Checking restaurant details and menus...</string>
+    <string name="loading_menu_details">Preparing the food guide and photos...</string>
     <string name="open_original">Open original &gt;</string>
 
     <string name="source_tour_api">TourAPI</string>
     <string name="source_kakao">Kakao</string>
+    <string name="korean_original_data">Korean original</string>
     <string name="menu_image_title">Menu images</string>
     <string name="no_menu_evidence">No reliable menu information is available yet. This restaurant remains visible and is marked as having insufficient information.</string>
+    <string name="menu_reference_photo">NAVER search reference image (may differ from the dish served)</string>
+    <string name="menu_knowledge_unavailable">General information for this dish is not available yet.</string>
+    <string name="menu_description_source_naver">Reference from NAVER Search · View source</string>
+    <string name="menu_description_source_openai">OpenAI web research · View evidence</string>
+    <string name="menu_taste">Taste profile</string>
+    <string name="menu_typical_ingredients">Common ingredients</string>
+    <string name="menu_possible_allergens">Possible allergens</string>
+    <string name="menu_nutrition_reference">Nutrition reference</string>
+    <string name="menu_nutrition_basis">Basis: %1$s</string>
+    <string name="menu_energy_value">Energy %1$.0f kcal</string>
+    <string name="menu_carbohydrate_value">Carbs %1$.1f g</string>
+    <string name="menu_protein_value">Protein %1$.1f g</string>
+    <string name="menu_fat_value">Fat %1$.1f g</string>
+    <string name="menu_sugar_value">Sugar %1$.1f g</string>
+    <string name="menu_sodium_value">Sodium %1$.0f mg</string>
+    <string name="menu_nutrition_source">Source: MFDS K-FIND</string>
+    <string name="menu_general_disclaimer">This is general dish information. The restaurant’s actual recipe, ingredients, serving size, and nutrition may differ. Confirm allergens directly with the restaurant.</string>
 
 </resources>

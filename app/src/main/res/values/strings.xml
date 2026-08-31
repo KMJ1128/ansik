@@ -112,6 +112,10 @@
     <string name="no_restaurants_found">검색 반경 내에 한국관광공사에 등록된 식당이 없습니다.</string>
     <string name="restaurant_main_menu">대표 메뉴</string>
     <string name="restaurant_treat_menu">취급 메뉴</string>
+    <string name="restaurant_all_menus">전체 메뉴</string>
+    <string name="menu_tap_for_details">메뉴를 누르면 음식 설명과 참고 이미지를 불러옵니다.</string>
+    <string name="menu_guide_ai_notice">식당명과 주소를 확인한 공개 웹 자료 기반 메뉴입니다.</string>
+    <string name="menu_details">메뉴 설명</string>
     <string name="restaurant_open_time">영업시간</string>
     <string name="restaurant_parking">주차</string>
     <string name="restaurant_packing">포장</string>
@@ -133,13 +137,36 @@
     <string name="detail_view">상세 보기</string>
     <string name="restaurant_detail_title">식당 상세 정보</string>
     <string name="close">닫기</string>
-    <string name="naver_blog_reviews">네이버 블로그 방문 후기</string>
-    <string name="no_reviews">등록된 후기가 없습니다.</string>
+    <string name="naver_blog_reviews">식당명·주소가 일치하는 관련 웹 후기</string>
+    <string name="no_reviews">이 식당과 일치하는 후기를 찾지 못했습니다.</string>
+    <string name="my_location">내 위치</string>
+    <string name="find_restaurants_from_my_location">내 위치 주변 관광공사 식당 찾기</string>
+    <string name="getting_current_location">현재 위치를 확인하는 중입니다.</string>
+    <string name="loading_restaurant_details">식당 정보와 메뉴를 확인하는 중...</string>
+    <string name="loading_menu_details">음식 설명과 사진을 준비하는 중...</string>
     <string name="open_original">원문 보기 &gt;</string>
 
     <string name="source_tour_api">TourAPI</string>
     <string name="source_kakao">Kakao</string>
+    <string name="korean_original_data">한국어 원문</string>
     <string name="menu_image_title">메뉴 이미지</string>
     <string name="no_menu_evidence">확인 가능한 메뉴 정보가 아직 없습니다. 이 식당은 후보에서 제외하지 않고 정보 부족 상태로 표시합니다.</string>
+    <string name="menu_reference_photo">네이버 검색 참고 이미지 (실제 제공 음식과 다를 수 있음)</string>
+    <string name="menu_knowledge_unavailable">이 메뉴에 대한 일반 음식 설명이 아직 등록되지 않았습니다.</string>
+    <string name="menu_description_source_naver">네이버 검색 참고 설명 · 원문 보기</string>
+    <string name="menu_description_source_openai">OpenAI 웹 조사 결과 · 근거 원문 보기</string>
+    <string name="menu_taste">맛 특징</string>
+    <string name="menu_typical_ingredients">일반적으로 사용되는 식재료</string>
+    <string name="menu_possible_allergens">주의 가능 성분</string>
+    <string name="menu_nutrition_reference">영양성분 참고값</string>
+    <string name="menu_nutrition_basis">기준량: %1$s</string>
+    <string name="menu_energy_value">열량 %1$.0f kcal</string>
+    <string name="menu_carbohydrate_value">탄수화물 %1$.1f g</string>
+    <string name="menu_protein_value">단백질 %1$.1f g</string>
+    <string name="menu_fat_value">지방 %1$.1f g</string>
+    <string name="menu_sugar_value">당류 %1$.1f g</string>
+    <string name="menu_sodium_value">나트륨 %1$.0f mg</string>
+    <string name="menu_nutrition_source">출처: 식품의약품안전처 K-FIND</string>
+    <string name="menu_general_disclaimer">일반적인 음식 정보입니다. 실제 식당의 조리법·식재료·제공량·영양성분은 다를 수 있으며, 알레르기 성분은 반드시 식당에 확인하세요.</string>
 
 </resources>

@@ -8,6 +8,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.appcompat.app.AppCompatDelegate
 import com.kmj.ansik.R
 import com.naver.maps.geometry.LatLng
 import kotlinx.coroutines.Job
@@ -59,6 +60,9 @@ class MainViewModel(
 
     val nearbyRestaurants = mutableStateListOf<RestaurantSummary>()
 
+    var currentUserLocation = mutableStateOf<LatLng?>(null)
+        private set
+
     var isFetchingRestaurants = mutableStateOf(false)
         private set
 
@@ -66,6 +70,15 @@ class MainViewModel(
         private set
 
     var selectedRestaurantDetail = mutableStateOf<RestaurantDetailState?>(null)
+        private set
+
+    var isFetchingRestaurantDetail = mutableStateOf(false)
+        private set
+
+    var selectedMenuDetail = mutableStateOf<MenuDetailState?>(null)
+        private set
+
+    var isFetchingMenuDetail = mutableStateOf(false)
         private set
 
     var showReviewSheet = mutableStateOf(false)
@@ -87,6 +100,9 @@ class MainViewModel(
 
     private var reviewStartPage = 1
     private var searchJob: Job? = null
+    private var menuDetailJob: Job? = null
+    private var restaurantDetailJob: Job? = null
+    private var loadingRestaurantId: String? = null
 
     fun searchPlacesRealtime(query: String) {
         searchQuery.value = query
@@ -205,7 +221,8 @@ class MainViewModel(
                 val restaurants = restaurantRepository.getNearbyRestaurants(
                     longitude = lng,
                     latitude = lat,
-                    radius = searchRadius.intValue
+                    radius = searchRadius.intValue,
+                    language = currentLanguageTag()
                 )
 
                 nearbyRestaurants.clear()
@@ -224,28 +241,106 @@ class MainViewModel(
         }
     }
 
+    fun updateCurrentLocation(latitude: Double, longitude: Double) {
+        currentUserLocation.value = LatLng(latitude, longitude)
+    }
+
+    fun searchRestaurantsFromCurrentLocation() {
+        currentUserLocation.value?.let { location ->
+            searchNearbyRestaurants(location.latitude, location.longitude)
+        }
+    }
+
     fun clearNearbyRestaurants() {
         nearbyRestaurants.clear()
         hasSearchedRestaurants.value = false
     }
 
     fun fetchRestaurantDetail(restaurant: RestaurantSummary) {
-        viewModelScope.launch {
+        if (selectedRestaurantDetail.value?.restaurant?.id == restaurant.id) return
+        if (isFetchingRestaurantDetail.value && loadingRestaurantId == restaurant.id) return
+
+        restaurantDetailJob?.cancel()
+        loadingRestaurantId = restaurant.id
+        clearMenuDetail()
+        restaurantDetailJob = viewModelScope.launch {
+            isFetchingRestaurantDetail.value = true
             try {
                 selectedRestaurantDetail.value =
-                    restaurantRepository.getRestaurantDetail(restaurant)
+                    restaurantRepository.getRestaurantDetail(
+                        restaurant = restaurant,
+                        language = currentLanguageTag()
+                    )
             } catch (e: retrofit2.HttpException) {
                 Log.e("TourAPI_DETAIL", "HTTP 오류 코드 = ${e.code()}", e)
                 clearRestaurantDetail()
             } catch (e: Exception) {
                 Log.e("TourAPI_DETAIL", "식당 상세 검색 실패", e)
                 clearRestaurantDetail()
+            } finally {
+                isFetchingRestaurantDetail.value = false
+                loadingRestaurantId = null
             }
         }
     }
 
     fun clearRestaurantDetail() {
+        restaurantDetailJob?.cancel()
+        restaurantDetailJob = null
+        loadingRestaurantId = null
         selectedRestaurantDetail.value = null
+        isFetchingRestaurantDetail.value = false
+        clearMenuDetail()
+    }
+
+    fun fetchMenuDetail(menuName: String) {
+        val cleanMenuName = menuName.trim()
+        if (cleanMenuName.isBlank()) return
+
+        menuDetailJob?.cancel()
+        selectedMenuDetail.value = MenuDetailState(menuName = cleanMenuName)
+        menuDetailJob = viewModelScope.launch {
+            isFetchingMenuDetail.value = true
+            try {
+                selectedMenuDetail.value = restaurantRepository.getMenuDetail(
+                    menuName = cleanMenuName,
+                    language = currentLanguageTag()
+                )
+            } catch (e: Exception) {
+                Log.e("MENU_DETAIL", "메뉴 상세 검색 실패: $cleanMenuName", e)
+            } finally {
+                isFetchingMenuDetail.value = false
+            }
+        }
+    }
+
+    fun showResearchedMenuDetail(menu: RestaurantMenuItem) {
+        menuDetailJob?.cancel()
+        menuDetailJob = null
+        isFetchingMenuDetail.value = false
+        selectedMenuDetail.value = MenuDetailState(
+            menuName = menu.name,
+            profile = MenuProfile(
+                menuName = menu.name,
+                canonicalKoreanName = menu.name,
+                description = menu.description,
+                tasteTags = menu.tasteTags,
+                typicalIngredients = menu.typicalIngredients,
+                possibleAllergens = menu.possibleAllergens,
+                matchStatus = "OPENAI_RESEARCHED",
+                descriptionSource = "OPENAI_WEB_RESEARCH",
+                descriptionSourceUrl = menu.sourceUrls.firstOrNull().orEmpty(),
+                disclaimer = selectedRestaurantDetail.value?.menuGuide?.disclaimer.orEmpty()
+            ),
+            imageUrls = menu.imageUrls
+        )
+    }
+
+    private fun clearMenuDetail() {
+        menuDetailJob?.cancel()
+        menuDetailJob = null
+        selectedMenuDetail.value = null
+        isFetchingMenuDetail.value = false
     }
 
     fun fetchPlaceReviews(
@@ -370,6 +465,12 @@ class MainViewModel(
 
         val item = travelRoute.removeAt(fromIndex)
         travelRoute.add(toIndex, item)
+    }
+
+    private fun currentLanguageTag(): String {
+        val appLocale = AppCompatDelegate.getApplicationLocales()[0]
+        return appLocale?.toLanguageTag()
+            ?: context.resources.configuration.locales[0].toLanguageTag()
     }
 
     companion object {

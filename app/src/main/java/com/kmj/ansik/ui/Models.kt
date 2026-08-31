@@ -85,6 +85,8 @@ data class RestaurantSummary(
     val imageUrl: String = "",
     val imageUrls: List<String> = emptyList(),
     val tourContentId: String? = null,
+    val tourLanguage: String = "ko",
+    val koreanFallback: Boolean = false,
     val kakaoPlaceId: String? = null,
     val sources: List<String> = emptyList(),
     val distanceMeters: Int = 0
@@ -129,14 +131,66 @@ enum class MenuEvidenceType {
 data class RestaurantDetailState(
     val restaurant: RestaurantSummary,
     val tourDetail: TourRestaurantDetail? = null,
-    val menuImages: List<String> = emptyList(),
+    val menuGuide: RestaurantMenuGuide? = null,
     val riskStatus: RiskStatus = RiskStatus.UNKNOWN
 ) {
     val hasMenuEvidence: Boolean
-        get() = !tourDetail?.firstmenu.isNullOrBlank() ||
-            !tourDetail?.treatmenu.isNullOrBlank() ||
-            menuImages.isNotEmpty()
+        get() = !menuGuide?.menus.isNullOrEmpty() ||
+            !tourDetail?.firstmenu.isNullOrBlank() ||
+            !tourDetail?.treatmenu.isNullOrBlank()
 }
+
+data class RestaurantMenuGuide(
+    val restaurantName: String = "",
+    val address: String = "",
+    val menus: List<RestaurantMenuItem> = emptyList(),
+    val status: String = "",
+    val generatedBy: String = "",
+    val disclaimer: String = ""
+)
+
+data class RestaurantMenuItem(
+    val name: String = "",
+    val description: String = "",
+    val tasteTags: List<String> = emptyList(),
+    val typicalIngredients: List<String> = emptyList(),
+    val possibleAllergens: List<String> = emptyList(),
+    val imageUrls: List<String> = emptyList(),
+    val sourceUrls: List<String> = emptyList(),
+    val confidence: String = "medium"
+)
+
+data class MenuDetailState(
+    val menuName: String,
+    val profile: MenuProfile? = null,
+    val imageUrls: List<String> = emptyList()
+)
+
+data class MenuProfile(
+    val menuName: String = "",
+    val canonicalKoreanName: String = "",
+    val description: String = "",
+    val tasteTags: List<String> = emptyList(),
+    val typicalIngredients: List<String> = emptyList(),
+    val possibleAllergens: List<String> = emptyList(),
+    val nutrition: MenuNutrition? = null,
+    val matchStatus: String = "UNMATCHED",
+    val descriptionSource: String = "",
+    val descriptionSourceUrl: String = "",
+    val disclaimer: String = ""
+)
+
+data class MenuNutrition(
+    val matchedFoodName: String = "",
+    val basisAmount: String = "",
+    val energyKcal: Double? = null,
+    val carbohydrateG: Double? = null,
+    val proteinG: Double? = null,
+    val fatG: Double? = null,
+    val sugarG: Double? = null,
+    val sodiumMg: Double? = null,
+    val sourceName: String = ""
+)
 
 data class BlogReview(
     val title: String = "",

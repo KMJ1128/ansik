@@ -25,14 +25,16 @@ class PlaceRepository(
         tourId: String? = null,
         title: String? = null,
         mapX: Double? = null,
-        mapY: Double? = null
+        mapY: Double? = null,
+        language: String = "ko"
     ): List<String> = withContext(Dispatchers.IO) {
         try {
             api.getExactImages(
                 tourId = tourId,
                 title = title,
                 mapX = mapX,
-                mapY = mapY
+                mapY = mapY,
+                language = language
             )
         } catch (e: Exception) {
             Log.e("PlaceRepository", "이미지 요청 실패: $title", e)
@@ -48,12 +50,14 @@ class RestaurantRepository(
     suspend fun getNearbyRestaurants(
         longitude: Double,
         latitude: Double,
-        radius: Int
+        radius: Int,
+        language: String
     ): List<RestaurantSummary> = withContext(Dispatchers.IO) {
         api.getTourApiNearbyRestaurants(
             lng = longitude,
             lat = latitude,
-            radius = radius
+            radius = radius,
+            language = language
         ).map { restaurant ->
             val sourceImages = normalizeImages(
                 restaurant.imageUrls + restaurant.imageUrl
@@ -67,7 +71,8 @@ class RestaurantRepository(
                     tourId = restaurant.tourContentId,
                     title = restaurant.title,
                     mapX = restaurant.longitude,
-                    mapY = restaurant.latitude
+                    mapY = restaurant.latitude,
+                    language = restaurant.tourLanguage
                 )
             } else {
                 emptyList()
@@ -83,19 +88,20 @@ class RestaurantRepository(
     }
 
     suspend fun getRestaurantDetail(
-        restaurant: RestaurantSummary
+        restaurant: RestaurantSummary,
+        language: String
     ): RestaurantDetailState = coroutineScope {
         val contentId = restaurant.tourContentId
 
-        if (contentId.isNullOrBlank()) {
-            return@coroutineScope RestaurantDetailState(
-                restaurant = restaurant
-            )
-        }
-
-        val detailDeferred = async(Dispatchers.IO) {
+        val detail = withContext(Dispatchers.IO) {
+            if (contentId.isNullOrBlank()) {
+                return@withContext null
+            }
             runCatching {
-                api.getRestaurantDetails(contentId)
+                api.getRestaurantDetails(
+                    contentId = contentId,
+                    language = restaurant.tourLanguage
+                )
                     .response
                     ?.body
                     ?.items
@@ -104,16 +110,53 @@ class RestaurantRepository(
             }.getOrNull()
         }
 
-        val menuImagesDeferred = async(Dispatchers.IO) {
+        val menuHints = listOfNotNull(detail?.firstmenu, detail?.treatmenu)
+            .map { it.trim() }
+            .filter { it.isNotBlank() }
+            .distinct()
+
+        val menuGuide = withContext(Dispatchers.IO) {
             runCatching {
-                api.getTourMenuImages(contentId)
-            }.getOrDefault(emptyList())
+                api.getRestaurantMenuGuide(
+                    restaurantName = restaurant.title,
+                    address = restaurant.address,
+                    language = language,
+                    menuHints = menuHints
+                )
+            }.getOrNull()
         }
 
         RestaurantDetailState(
             restaurant = restaurant,
-            tourDetail = detailDeferred.await(),
-            menuImages = normalizeImages(menuImagesDeferred.await())
+            tourDetail = detail,
+            menuGuide = menuGuide
+        )
+    }
+
+    suspend fun getMenuDetail(
+        menuName: String,
+        language: String
+    ): MenuDetailState = coroutineScope {
+        val profile = async(Dispatchers.IO) {
+            runCatching {
+                api.getMenuProfile(menuName = menuName, language = language)
+            }.getOrNull()
+        }.await()
+        val imageSearchName = profile?.canonicalKoreanName
+            ?.takeIf { it.isNotBlank() }
+            ?: menuName
+        val images = async(Dispatchers.IO) {
+            runCatching {
+                api.getMenuImages(menuName = imageSearchName)
+            }.getOrDefault(emptyList())
+        }.await()
+
+        MenuDetailState(
+            menuName = menuName,
+            profile = profile,
+            imageUrls = images
+                .filter { it.isNotBlank() }
+                .distinct()
         )
     }
 
