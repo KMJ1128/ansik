@@ -56,16 +56,17 @@ fun ProfileScreen(
                 title = {
                     Text(
                         text = stringResource(id = R.string.app_title),
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF1B5E20)
+                        fontWeight = FontWeight.ExtraBold,
+                        color = AppColors.PrimaryDark
                     )
                 },
                 // 설정 아이콘 삭제됨
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color(0xFFE8F5E9)
+                    containerColor = AppColors.PrimarySoft
                 )
             )
-        }
+        },
+        containerColor = AppColors.Background
     ) { paddingValues ->
 
         LazyColumn(
@@ -81,14 +82,15 @@ fun ProfileScreen(
                 Text(
                     text = stringResource(id = R.string.health_management_title),
                     fontSize = 22.sp,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.ExtraBold,
+                    color = AppColors.TextPrimary
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
                     text = stringResource(id = R.string.health_management_desc),
-                    color = Color.Gray,
+                    color = AppColors.TextSecondary,
                     fontSize = 13.sp
                 )
             }
@@ -98,7 +100,7 @@ fun ProfileScreen(
                     text = stringResource(id = R.string.basic_disease_care),
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp,
-                    color = Color(0xFF2E7D32)
+                    color = AppColors.PrimaryDark
                 )
 
                 Spacer(modifier = Modifier.height(12.dp))
@@ -148,20 +150,16 @@ fun ProfileScreen(
             item {
                 Spacer(modifier = Modifier.height(24.dp))
 
-                Button(
+                PlayfulButton(
                     onClick = onNavigateToMap,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(56.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF2E7D32)
-                    )
                 ) {
                     Text(
                         text = stringResource(id = R.string.go_to_travel_route),
                         fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.ExtraBold,
+                        color = Color.White
                     )
                 }
 
@@ -178,13 +176,13 @@ fun AnimatedChip(
     onToggle: (String) -> Unit
 ) {
     val backgroundColor by animateColorAsState(
-        targetValue = if (isSelected) Color(0xFF2E7D32) else Color.White,
+        targetValue = if (isSelected) AppColors.Primary else AppColors.Surface,
         animationSpec = tween(durationMillis = 200),
         label = "bgColor"
     )
 
     val textColor by animateColorAsState(
-        targetValue = if (isSelected) Color.White else Color.DarkGray,
+        targetValue = if (isSelected) Color.White else AppColors.TextPrimary,
         animationSpec = tween(durationMillis = 200),
         label = "textColor"
     )
@@ -207,8 +205,8 @@ fun AnimatedChip(
                 RoundedCornerShape(20.dp)
             )
             .border(
-                width = if (isSelected) 0.dp else 1.dp,
-                color = if (isSelected) Color.Transparent else Color(0xFFE0E0E0),
+                width = if (isSelected) 3.dp else 3.dp,
+                color = if (isSelected) AppColors.PrimaryDark else AppColors.Divider,
                 shape = RoundedCornerShape(20.dp)
             )
             .clickable(
@@ -224,7 +222,7 @@ fun AnimatedChip(
             text = label,
             color = textColor,
             fontSize = 14.sp,
-            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+            fontWeight = FontWeight.ExtraBold
         )
     }
 }
@@ -250,12 +248,13 @@ fun ExpandableCategorySection(
                 isExpanded = !isExpanded
             },
         colors = CardDefaults.cardColors(
-            containerColor = Color(0xFFF9F9F9)
+            containerColor = AppColors.Surface
         ),
         elevation = CardDefaults.cardElevation(
             defaultElevation = 0.dp
         ),
-        border = BorderStroke(1.dp, Color(0xFFEEEEEE))
+        border = BorderStroke(3.dp, AppColors.Divider),
+        shape = RoundedCornerShape(20.dp)
     ) {
         Column(
             modifier = Modifier
@@ -351,8 +350,8 @@ fun CustomInputRow(
                 .height(56.dp),
             singleLine = true,
             colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = Color(0xFF2E7D32),
-                unfocusedBorderColor = Color(0xFFE0E0E0)
+                focusedBorderColor = AppColors.Primary,
+                unfocusedBorderColor = AppColors.Divider
             )
         )
 
@@ -368,14 +367,14 @@ fun CustomInputRow(
             modifier = Modifier
                 .size(56.dp)
                 .background(
-                    Color(0xFFE8F5E9),
+                    AppColors.PrimarySoft,
                     RoundedCornerShape(8.dp)
                 )
         ) {
             Icon(
                 Icons.Default.Add,
                 contentDescription = stringResource(id = R.string.add),
-                tint = Color(0xFF2E7D32)
+                tint = AppColors.PrimaryDark
             )
         }
     }

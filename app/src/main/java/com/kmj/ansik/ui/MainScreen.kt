@@ -10,19 +10,27 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -92,6 +100,9 @@ fun MainScreen(
     val scheduleListState =
         rememberLazyListState()
 
+    val restaurantListState =
+        rememberLazyListState()
+
     var isScheduleExpanded by remember {
         mutableStateOf(false)
     }
@@ -100,13 +111,15 @@ fun MainScreen(
         mutableStateOf<String?>(null)
     }
 
+    var highlightedRestaurantId by remember {
+        mutableStateOf<String?>(null)
+    }
+
     var showRadiusDialog by remember {
         mutableStateOf(false)
     }
 
-    var searchCurrentLocationOnRadiusConfirm by remember {
-        mutableStateOf(false)
-    }
+    var pendingMapCenterSearch by remember { mutableStateOf<LatLng?>(null) }
 
     var showDetailPopup by remember {
         mutableStateOf(false)
@@ -114,6 +127,23 @@ fun MainScreen(
 
     var viewerImages by remember {
         mutableStateOf<List<String>?>(null)
+    }
+
+    var showSaveMyCourseDialog by remember { mutableStateOf(false) }
+    var myCourseTitle by remember { mutableStateOf("") }
+
+    LaunchedEffect(viewModel.appliedCourseVersion.intValue) {
+        if (viewModel.appliedCourseVersion.intValue > 0) {
+            isScheduleExpanded = true
+            if (viewModel.travelRoute.isNotEmpty()) {
+                val latitude = viewModel.travelRoute.map { it.latitude }.average()
+                val longitude = viewModel.travelRoute.map { it.longitude }.average()
+                cameraPositionState.animate(
+                    CameraUpdate.scrollAndZoomTo(LatLng(latitude, longitude), 12.5)
+                        .animate(CameraAnimation.Easing)
+                )
+            }
+        }
     }
 
     AppDialogs(
@@ -130,10 +160,10 @@ fun MainScreen(
                 false
         },
         onConfirmRadius = {
-            if (searchCurrentLocationOnRadiusConfirm) {
-                viewModel.searchRestaurantsFromCurrentLocation()
+            pendingMapCenterSearch?.let { center ->
+                viewModel.searchNearbyRestaurants(center.latitude, center.longitude)
             }
-            searchCurrentLocationOnRadiusConfirm = false
+            pendingMapCenterSearch = null
         },
         showDetailPopup =
             showDetailPopup,
@@ -154,15 +184,19 @@ fun MainScreen(
                 cameraPositionState,
             scheduleListState =
                 scheduleListState,
+            restaurantListState =
+                restaurantListState,
             highlightedPlaceId =
                 highlightedPlaceId,
+            highlightedRestaurantId =
+                highlightedRestaurantId,
             onHighlightPlace = {
                 highlightedPlaceId =
                     it
             },
-            onShowDetail = {
-                showDetailPopup =
-                    true
+            onHighlightRestaurant = {
+                highlightedRestaurantId =
+                    it
             }
         )
 
@@ -184,6 +218,13 @@ fun MainScreen(
                 isScheduleExpanded =
                     it
             },
+            onSaveMyCourse = {
+                myCourseTitle = context.getString(
+                    R.string.my_course_default_name,
+                    viewModel.savedMyCourses.size + 1
+                )
+                showSaveMyCourseDialog = true
+            },
             listState =
                 scheduleListState,
             highlightedPlaceId =
@@ -195,8 +236,12 @@ fun MainScreen(
                 viewModel,
             cameraPositionState =
                 cameraPositionState,
+            restaurantListState =
+                restaurantListState,
+            highlightedRestaurantId =
+                highlightedRestaurantId,
             onShowRadiusDialog = {
-                searchCurrentLocationOnRadiusConfirm = false
+                pendingMapCenterSearch = cameraPositionState.position.target
                 showRadiusDialog =
                     true
             },
@@ -210,12 +255,39 @@ fun MainScreen(
             }
         )
 
-        Column(
+        if (viewModel.isResolvingMapSelection.value) {
+            Surface(
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .padding(24.dp),
+                shape = RoundedCornerShape(22.dp),
+                color = Color.White,
+                shadowElevation = 8.dp
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = AppColors.Success,
+                        strokeWidth = 3.dp
+                    )
+                    Text(
+                        text = stringResource(id = R.string.loading_selected_place),
+                        color = AppColors.TextPrimary
+                    )
+                }
+            }
+        }
+
+        if (!viewModel.isSearchActive.value) Row(
             modifier = Modifier
-                .align(Alignment.CenterEnd)
-                .padding(end = 14.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
-            horizontalAlignment = Alignment.End
+                .align(Alignment.TopStart)
+                .padding(start = 16.dp, top = 88.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
             FloatingActionButton(
                 onClick = {
@@ -255,23 +327,10 @@ fun MainScreen(
 
             FloatingActionButton(
                 onClick = {
-                    if (!locationPermissionGranted) {
-                        locationPermissionLauncher.launch(
-                            arrayOf(
-                                Manifest.permission.ACCESS_FINE_LOCATION,
-                                Manifest.permission.ACCESS_COARSE_LOCATION
-                            )
-                        )
-                    } else if (viewModel.currentUserLocation.value != null) {
-                        searchCurrentLocationOnRadiusConfirm = true
-                        showRadiusDialog = true
-                    } else {
-                        Toast.makeText(
-                            context,
-                            context.getString(R.string.getting_current_location),
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
+                    // The GPS location remains on the device. Restaurant lookup uses
+                    // only the map center explicitly chosen by the user.
+                    pendingMapCenterSearch = cameraPositionState.position.target
+                    showRadiusDialog = true
                 },
                 modifier = Modifier.size(50.dp),
                 containerColor = AppColors.Success
@@ -288,6 +347,38 @@ fun MainScreen(
     ReviewBottomSheet(
         viewModel = viewModel
     )
+
+    if (showSaveMyCourseDialog) {
+        AlertDialog(
+            onDismissRequest = { showSaveMyCourseDialog = false },
+            title = { Text(stringResource(id = R.string.save_my_course)) },
+            text = {
+                OutlinedTextField(
+                    value = myCourseTitle,
+                    onValueChange = { myCourseTitle = it.take(60) },
+                    label = { Text(stringResource(id = R.string.course_name)) },
+                    singleLine = true
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    if (viewModel.saveCurrentMyCourse(myCourseTitle)) {
+                        showSaveMyCourseDialog = false
+                        Toast.makeText(
+                            context,
+                            context.getString(R.string.my_course_saved),
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }) { Text(stringResource(id = R.string.save)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showSaveMyCourseDialog = false }) {
+                    Text(stringResource(id = R.string.cancel))
+                }
+            }
+        )
+    }
 }
 
 private fun hasLocationPermission(context: Context): Boolean {

@@ -9,6 +9,8 @@
     <string name="religion_belief_diet">🙏 Religion and Belief Based Menu</string>
     <string name="go_to_travel_route">Plan Travel Route 🗺️</string>
     <string name="expand">Expand</string>
+    <string name="collapse_restaurant_list">Collapse restaurant list</string>
+    <string name="expand_restaurant_list">Expand restaurant list</string>
     <string name="enter_custom_other">Enter other manually</string>
     <string name="add">Add</string>
 
@@ -34,7 +36,10 @@
     <string name="add_schedule">Add Schedule</string>
     <string name="find_restaurant">Find restaurant</string>
     <string name="loading_public_data">Loading public data...</string>
-    <string name="find_nearby_safe_restaurants">Find TourAPI Restaurants</string>
+    <string name="searching_places">Searching for places...</string>
+    <string name="loading_selected_place">Loading the selected place...</string>
+    <string name="loading_nearby_restaurants">Finding restaurants near you...</string>
+    <string name="find_nearby_safe_restaurants">Find Nearby Restaurants</string>
     <string name="settings">Settings</string>
 
     <string-array name="basic_conditions">
@@ -104,10 +109,10 @@
     <string name="current_selected_conditions">Currently Selected</string>
 
     <string name="my_schedule_short">My\nPlan</string>
-    <string name="restaurant_list_title">KTO-Registered Restaurants</string>
-    <string name="restaurant_list_desc">TourAPI restaurants within %1$s</string>
+    <string name="restaurant_list_title">Nearby Restaurants</string>
+    <string name="restaurant_list_desc">Within %1$s of the map center</string>
     <string name="search_radius">Search Radius</string>
-    <string name="no_restaurants_found">No Korea Tourism Organization restaurants were found within this radius.</string>
+    <string name="no_restaurants_found">We couldn’t find restaurant information near here.</string>
     <string name="restaurant_main_menu">Main Menu</string>
     <string name="restaurant_treat_menu">Menu Items</string>
     <string name="restaurant_all_menus">All menu items</string>
@@ -138,13 +143,13 @@
     <string name="naver_blog_reviews">Related web posts matched by name and address</string>
     <string name="no_reviews">No posts matching this restaurant were found.</string>
     <string name="my_location">My location</string>
-    <string name="find_restaurants_from_my_location">Find TourAPI restaurants near me</string>
+    <string name="find_restaurants_from_my_location">Search from map center</string>
     <string name="getting_current_location">Getting your current location.</string>
     <string name="loading_restaurant_details">Checking restaurant details and menus...</string>
     <string name="loading_menu_details">Preparing the food guide and photos...</string>
     <string name="open_original">Open original &gt;</string>
 
-    <string name="source_tour_api">TourAPI</string>
+    <string name="source_tour_api">Source: © Korea Tourism Organization</string>
     <string name="source_kakao">Kakao</string>
     <string name="korean_original_data">Korean original</string>
     <string name="menu_image_title">Menu images</string>
@@ -166,5 +171,76 @@
     <string name="menu_sodium_value">Sodium %1$.0f mg</string>
     <string name="menu_nutrition_source">Source: MFDS K-FIND</string>
     <string name="menu_general_disclaimer">This is general dish information. The restaurant’s actual recipe, ingredients, serving size, and nutrition may differ. Confirm allergens directly with the restaurant.</string>
+    <string name="health_profile_needed">Select health, allergy, or diet preferences in My Info to see menu-specific guidance.</string>
+    <string name="health_menu_analysis_title">Explore Menus That Fit You</string>
+    <string name="health_menu_analysis_counts">Avoid %1$d · Check first %2$d · Looks suitable %3$d</string>
+    <string name="health_analysis_unavailable">There is not enough menu information to assess this safely. Please ask the restaurant.</string>
+    <string name="health_risk_avoid">Avoid</string>
+    <string name="health_risk_caution">Check first</string>
+    <string name="health_risk_safe">Looks suitable</string>
+    <string name="health_risk_unknown">Not enough info</string>
+    <string name="health_match_result">Personal health guide</string>
+    <string name="questions_for_restaurant">Questions to ask the restaurant</string>
+    <string name="health_analysis_disclaimer">AI guidance based on typical recipes; it is not medical advice. Confirm actual ingredients and cross-contact with the restaurant.</string>
+    <string name="ai_course_step">Step %1$d of %2$d</string>
+    <string name="choose_destination">Where would you like to go?</string>
+    <string name="choose_trip_length">Choose your trip length</string>
+    <string name="choose_travel_preferences">What kind of trip do you enjoy?</string>
+    <string name="ai_course_length_notice">You can create a trip of up to 7 days.</string>
+    <string name="preference_optional">Optional. You can select more than one.</string>
+    <string name="previous">Previous</string>
+    <string name="next">Next</string>
+    <string name="create_course">Create course</string>
+    <string name="creating_ai_course">Building a course around your travel preferences...</string>
+    <string name="saved_ai_courses">Saved AI courses</string>
+    <string name="why_this_course">Why this course was selected</string>
+    <string name="touring_tips">How to enjoy the trip</string>
+    <string name="tap_course_to_apply">Tap this card to apply it to the map and My Plan.</string>
+    <string name="ai_course_error_not_configured">The AI connection needs to be configured.</string>
+    <string name="ai_course_error_no_places">There are not enough tourism places in this area to build a course.</string>
+    <string name="ai_course_error_network">Could not reach the server. Check the server and network connection.</string>
+    <string name="ai_course_error_general">The course could not be created. Please try again shortly.</string>
+    <string name="course_category_attraction">Attraction</string><string name="course_category_culture">Culture</string>
+    <string name="course_category_festival">Festival</string><string name="course_category_leisure">Activity</string>
+    <string name="course_category_shopping">Shopping</string><string name="course_category_restaurant">Restaurant</string>
+    <string-array name="ai_course_cities">
+        <item>Seoul</item><item>Busan</item><item>Jeju Island</item><item>Incheon</item><item>Daegu</item><item>Daejeon</item><item>Gwangju</item>
+        <item>Ulsan</item><item>Sejong</item><item>Gyeongju</item><item>Gangneung</item><item>Jeonju</item><item>Yeosu</item><item>Sokcho</item>
+    </string-array>
+    <string-array name="ai_course_preferences">
+        <item>History &amp; heritage</item><item>Local food</item><item>Nature &amp; scenery</item><item>Culture &amp; art</item>
+        <item>Rest &amp; healing</item><item>Activities</item><item>Shopping</item><item>Family trip</item>
+    </string-array>
 
+    <string name="existing_schedule_question">Do you already have a schedule?</string>
+    <string name="no_schedule">Not yet</string><string name="have_schedule">Yes</string>
+    <string name="schedule_paste_hint">Example: Seoul, 3 days\nDay 1 Gyeongbokgung in the morning, show booked at 6 PM...</string>
+    <string name="schedule_required">Please enter your schedule.</string>
+    <string name="schedule_city_required">Include a destination or a recognizable landmark such as Gyeongbokgung or Haeundae.</string>
+    <string name="schedule_paste_notice">We prioritize fixed bookings and must-see places, then fill the gaps.</string>
+    <string name="choose_stops_per_day">How many stops per day?</string>
+    <string name="stops_per_day_value">%1$d stops a day</string>
+    <string name="stops_per_day_notice">Choose 3–7. More stops can make the day feel busier.</string>
+    <string name="saved_my_courses">Saved My Courses</string>
+    <string name="saved_my_courses_desc">Trips you arrange and save yourself</string>
+    <string name="create_my_course">Create a new personal course</string>
+    <string name="no_saved_my_courses">No personal courses yet. Tap + to build one on the map.</string>
+    <string name="save_my_course">Save My Course</string><string name="course_name">Course name</string>
+    <string name="my_course_default_name">My Trip %1$d</string><string name="my_course_saved">Your course was saved.</string>
+    <string name="saved_my_course_summary">%1$d days · %2$d stops</string>
+    <string name="apply_course_to_map">Apply to Map and My Plan</string>
+    <string name="save">Save</string><string name="cancel">Cancel</string>
+    <string name="login_welcome_title">Welcome to An-Sik</string>
+    <string name="login_welcome_description">Keep your health preferences and saved trips\nsafely available across your devices.</string>
+    <string name="login_with_kakao">Continue with Kakao</string>
+    <string name="login_with_naver">Continue with NAVER</string>
+    <string name="login_with_google">Continue with Google</string>
+    <string name="login_in_progress">Checking your sign-in…</string>
+    <string name="continue_without_login">Explore without signing in</string>
+    <string name="login_terms_notice">By continuing, you agree to the Terms of Service and Privacy Policy.</string>
+    <string name="guest_user">Guest user</string>
+    <string name="guest_account_description">Sign in to safely sync your health preferences and travel courses.</string>
+    <string name="signed_in_with">Signed in with %1$s</string>
+    <string name="sign_in">Sign in</string>
+    <string name="sign_out">Sign out</string>
 </resources>

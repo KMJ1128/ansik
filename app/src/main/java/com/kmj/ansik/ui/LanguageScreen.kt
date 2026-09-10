@@ -1,6 +1,7 @@
 package com.kmj.ansik.ui
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -21,7 +22,7 @@ fun LanguageScreen(
 ) {
     Surface(
         modifier = Modifier.fillMaxSize(),
-        color = Color(0xFFF9F9F9)
+        color = AppColors.Background
     ) {
         Column(
             modifier = Modifier
@@ -32,14 +33,14 @@ fun LanguageScreen(
         ) {
             Text(
                 text = stringResource(id = R.string.select_language_title),
-                fontSize = 22.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF1B5E20),
-                modifier = Modifier.padding(bottom = 48.dp),
+                fontSize = 28.sp,
+                fontWeight = FontWeight.ExtraBold,
+                color = AppColors.TextPrimary,
+                modifier = Modifier.padding(bottom = 36.dp),
                 textAlign = TextAlign.Center
             )
 
-            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceEvenly
@@ -83,11 +84,12 @@ fun LanguageCard(
 ) {
     Card(
         modifier = Modifier
-            .size(130.dp)
+            .size(width = 142.dp, height = 150.dp)
             .clickable { onClick() },
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+        shape = RoundedCornerShape(22.dp),
+        colors = CardDefaults.cardColors(containerColor = AppColors.Surface),
+        border = BorderStroke(3.dp, AppColors.Divider),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Column(
             modifier = Modifier.fillMaxSize(),
@@ -97,7 +99,7 @@ fun LanguageCard(
             // 국기가 메인이 되도록 폰트 크기를 매우 크게 설정
             Text(
                 text = flag,
-                fontSize = 64.sp
+                fontSize = 58.sp
             )
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -105,9 +107,9 @@ fun LanguageCard(
             // 해당 언어 텍스트는 작게 배치
             Text(
                 text = languageName,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF424242)
+                fontSize = 16.sp,
+                fontWeight = FontWeight.ExtraBold,
+                color = AppColors.TextPrimary
             )
         }
     }

@@ -3,6 +3,7 @@ package com.kmj.ansik.ui
 import android.content.Context
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -19,13 +20,12 @@ import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -45,6 +45,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.kmj.ansik.R
+import com.kmj.ansik.auth.AuthViewModel
+import com.kmj.ansik.auth.LoginScreen
 
 @Composable
 fun AnsikApp() {
@@ -52,6 +54,7 @@ fun AnsikApp() {
     val context = LocalContext.current
     val rootNavController = rememberNavController()
     val viewModel: MainViewModel = viewModel()
+    val authViewModel: AuthViewModel = viewModel()
 
     val sharedPref = context.getSharedPreferences(
         "AnsikPrefs",
@@ -62,14 +65,16 @@ fun AnsikApp() {
         "isFirstLaunch",
         true
     )
+    val hasGuestSession = sharedPref.getBoolean("continueAsGuest", false)
+    val initialRoute = when {
+        isFirstLaunch -> "language"
+        authViewModel.uiState.value.isAuthenticated || hasGuestSession -> "main"
+        else -> "login"
+    }
 
     NavHost(
         navController = rootNavController,
-        startDestination = if (isFirstLaunch) {
-            "language"
-        } else {
-            "main"
-        }
+        startDestination = initialRoute
     ) {
         composable("language") {
             LanguageScreen(
@@ -79,7 +84,11 @@ fun AnsikApp() {
                         .apply()
                     val localeList = LocaleListCompat.forLanguageTags(languageTag)
                     AppCompatDelegate.setApplicationLocales(localeList)
-                    rootNavController.navigate("main") {
+                    val nextRoute = if (
+                        authViewModel.uiState.value.isAuthenticated ||
+                        sharedPref.getBoolean("continueAsGuest", false)
+                    ) "main" else "login"
+                    rootNavController.navigate(nextRoute) {
                         popUpTo("language") {
                             inclusive = true
                         }
@@ -87,11 +96,37 @@ fun AnsikApp() {
                 }
             )
         }
+        composable("login") {
+            LoginScreen(
+                viewModel = authViewModel,
+                onAuthenticated = {
+                    sharedPref.edit().putBoolean("continueAsGuest", false).apply()
+                    rootNavController.navigate("main") {
+                        popUpTo("login") { inclusive = true }
+                        launchSingleTop = true
+                    }
+                },
+                onContinueAsGuest = {
+                    sharedPref.edit().putBoolean("continueAsGuest", true).apply()
+                    rootNavController.navigate("main") {
+                        popUpTo("login") { inclusive = true }
+                        launchSingleTop = true
+                    }
+                }
+            )
+        }
         composable("main") {
             MainTabScreen(
                 viewModel = viewModel,
+                authViewModel = authViewModel,
                 onNavigateToLanguage = {
                     rootNavController.navigate("language")
+                },
+                onNavigateToLogin = {
+                    sharedPref.edit().putBoolean("continueAsGuest", false).apply()
+                    rootNavController.navigate("login") {
+                        popUpTo("main") { inclusive = true }
+                    }
                 }
             )
         }
@@ -101,7 +136,9 @@ fun AnsikApp() {
 @Composable
 private fun MainTabScreen(
     viewModel: MainViewModel,
-    onNavigateToLanguage: () -> Unit
+    authViewModel: AuthViewModel,
+    onNavigateToLanguage: () -> Unit,
+    onNavigateToLogin: () -> Unit
 ) {
 
     val navController = rememberNavController()
@@ -111,7 +148,10 @@ private fun MainTabScreen(
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         bottomBar = {
-            NavigationBar {
+            NavigationBar(
+                containerColor = AppColors.Surface,
+                tonalElevation = 0.dp
+            ) {
                 NavigationBarItem(
                     selected = currentRoute == "map",
                     onClick = {
@@ -121,7 +161,8 @@ private fun MainTabScreen(
                         }
                     },
                     icon = { Icon(Icons.Default.Map, contentDescription = stringResource(id = R.string.tab_map)) },
-                    label = { Text(stringResource(id = R.string.tab_map)) }
+                    label = { Text(stringResource(id = R.string.tab_map), fontWeight = FontWeight.Bold) },
+                    colors = playfulNavigationColors()
                 )
 
                 NavigationBarItem(
@@ -130,7 +171,8 @@ private fun MainTabScreen(
                         navController.navigate("ai") { launchSingleTop = true }
                     },
                     icon = { Icon(Icons.Default.AutoAwesome, contentDescription = stringResource(id = R.string.tab_ai_course)) },
-                    label = { Text(stringResource(id = R.string.tab_ai_course)) }
+                    label = { Text(stringResource(id = R.string.tab_ai_course), fontWeight = FontWeight.Bold) },
+                    colors = playfulNavigationColors()
                 )
 
                 NavigationBarItem(
@@ -139,7 +181,8 @@ private fun MainTabScreen(
                         navController.navigate("profile") { launchSingleTop = true }
                     },
                     icon = { Icon(Icons.Default.Person, contentDescription = stringResource(id = R.string.tab_profile)) },
-                    label = { Text(stringResource(id = R.string.tab_profile)) }
+                    label = { Text(stringResource(id = R.string.tab_profile), fontWeight = FontWeight.Bold) },
+                    colors = playfulNavigationColors()
                 )
 
                 NavigationBarItem(
@@ -148,7 +191,8 @@ private fun MainTabScreen(
                         navController.navigate("settings") { launchSingleTop = true }
                     },
                     icon = { Icon(Icons.Default.Settings, contentDescription = stringResource(id = R.string.settings)) },
-                    label = { Text(stringResource(id = R.string.settings)) }
+                    label = { Text(stringResource(id = R.string.settings), fontWeight = FontWeight.Bold) },
+                    colors = playfulNavigationColors()
                 )
             }
         }
@@ -163,7 +207,17 @@ private fun MainTabScreen(
                 startDestination = "map"
             ) {
                 composable("map") { MainScreen(viewModel = viewModel) }
-                composable("ai") { AiRecommendationScreen(viewModel = viewModel) }
+                composable("ai") {
+                    AiRecommendationScreen(
+                        viewModel = viewModel,
+                        onCourseApplied = {
+                            navController.navigate("map") {
+                                popUpTo("map") { inclusive = false }
+                                launchSingleTop = true
+                            }
+                        }
+                    )
+                }
                 composable("profile") {
                     ProfileScreen(
                         viewModel = viewModel,
@@ -177,8 +231,13 @@ private fun MainTabScreen(
                 }
                 composable("settings") {
                     SettingsScreen(
+                        authUser = authViewModel.uiState.value.user,
                         onNavigateBack = { navController.popBackStack() },
-                        onNavigateToLanguage = { onNavigateToLanguage() }
+                        onNavigateToLanguage = { onNavigateToLanguage() },
+                        onLogin = onNavigateToLogin,
+                        onLogout = {
+                            authViewModel.logout(onNavigateToLogin)
+                        }
                     )
                 }
             }
@@ -187,90 +246,10 @@ private fun MainTabScreen(
 }
 
 @Composable
-private fun AiRecommendationScreen(viewModel: MainViewModel) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(top = 24.dp, start = 20.dp, end = 20.dp)
-    ) {
-        Text(
-            text = stringResource(id = R.string.ai_course_title),
-            fontSize = 28.sp,
-            fontWeight = FontWeight.ExtraBold
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Text(
-            text = stringResource(id = R.string.ai_course_desc),
-            fontSize = 15.sp,
-            color = Color(0xFF757575)
-        )
-
-        Spacer(modifier = Modifier.height(32.dp))
-
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(20.dp),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFFE8F5E9))
-        ) {
-            Column(modifier = Modifier.padding(20.dp)) {
-                Text(
-                    text = stringResource(id = R.string.ai_course_card_title),
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF2E7D32)
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Text(
-                    text = stringResource(id = R.string.ai_course_card_desc),
-                    fontSize = 14.sp,
-                    color = Color(0xFF555555)
-                )
-
-                Spacer(modifier = Modifier.height(20.dp))
-
-                Button(
-                    onClick = { /* 추후 기능 연결 */ },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(14.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32))
-                ) {
-                    Icon(Icons.Default.AutoAwesome, contentDescription = null)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(text = stringResource(id = R.string.ai_course_button), fontWeight = FontWeight.Bold)
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        if (viewModel.selectedConditions.value.isNotEmpty()) {
-            Text(
-                text = stringResource(id = R.string.current_selected_conditions),
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(viewModel.selectedConditions.value.toList()) { condition ->
-                    Surface(
-                        color = Color(0xFFF1F8E9),
-                        shape = RoundedCornerShape(50)
-                    ) {
-                        Text(
-                            text = condition,
-                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
-                            fontSize = 13.sp,
-                            color = Color(0xFF2E7D32)
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
+private fun playfulNavigationColors() = NavigationBarItemDefaults.colors(
+    selectedIconColor = AppColors.PrimaryDark,
+    selectedTextColor = AppColors.PrimaryDark,
+    indicatorColor = AppColors.PrimarySoft,
+    unselectedIconColor = AppColors.TextSecondary,
+    unselectedTextColor = AppColors.TextSecondary
+)

@@ -9,6 +9,8 @@
     <string name="religion_belief_diet">🙏 宗教・信条に基づく食事</string>
     <string name="go_to_travel_route">旅行ルートを作る 🗺️</string>
     <string name="expand">展開</string>
+    <string name="collapse_restaurant_list">レストラン一覧を閉じる</string>
+    <string name="expand_restaurant_list">レストラン一覧を開く</string>
     <string name="enter_custom_other">その他を直接入力</string>
     <string name="add">追加</string>
 
@@ -31,7 +33,10 @@
     <string name="add_schedule">予定を追加</string>
     <string name="find_restaurant">レストランを探す</string>
     <string name="loading_public_data">公共データを読み込み中...</string>
-    <string name="find_nearby_safe_restaurants">TourAPI登録レストランを探す</string>
+    <string name="searching_places">スポットを探しています...</string>
+    <string name="loading_selected_place">スポット情報を読み込んでいます...</string>
+    <string name="loading_nearby_restaurants">近くのレストランを探しています...</string>
+    <string name="find_nearby_safe_restaurants">近くのレストランを探す</string>
     <string name="settings">設定</string>
 
     <string-array name="basic_conditions">
@@ -99,10 +104,10 @@
     <string name="current_selected_conditions">現在選択中の条件</string>
 
     <string name="my_schedule_short">旅程</string>
-    <string name="restaurant_list_title">韓国観光公社登録レストラン</string>
-    <string name="restaurant_list_desc">%1$s以内のTourAPI登録レストラン</string>
+    <string name="restaurant_list_title">近くのレストラン</string>
+    <string name="restaurant_list_desc">地図の中心から%1$s以内</string>
     <string name="search_radius">検索範囲</string>
-    <string name="no_restaurants_found">検索範囲内に韓国観光公社登録のレストランがありません。</string>
+    <string name="no_restaurants_found">この周辺ではレストラン情報が見つかりませんでした。</string>
     <string name="restaurant_main_menu">代表メニュー</string>
     <string name="restaurant_treat_menu">取扱メニュー</string>
     <string name="restaurant_all_menus">全メニュー</string>
@@ -132,13 +137,13 @@
     <string name="naver_blog_reviews">店名と住所が一致する関連ウェブ記事</string>
     <string name="no_reviews">この店舗と一致する記事は見つかりませんでした。</string>
     <string name="my_location">現在地</string>
-    <string name="find_restaurants_from_my_location">現在地周辺のTourAPI登録店を探す</string>
+    <string name="find_restaurants_from_my_location">地図の中心から探す</string>
     <string name="getting_current_location">現在地を確認しています。</string>
     <string name="loading_restaurant_details">店舗情報とメニューを確認しています...</string>
     <string name="loading_menu_details">料理説明と写真を準備しています...</string>
     <string name="open_original">原文を見る &gt;</string>
 
-    <string name="source_tour_api">TourAPI</string>
+    <string name="source_tour_api">出典：©韓国観光公社</string>
     <string name="source_kakao">Kakao</string>
     <string name="korean_original_data">韓国語原文</string>
     <string name="menu_image_title">メニュー画像</string>
@@ -160,4 +165,75 @@
     <string name="menu_sodium_value">ナトリウム %1$.0f mg</string>
     <string name="menu_nutrition_source">出典：韓国食品医薬品安全処 K-FIND</string>
     <string name="menu_general_disclaimer">一般的な料理情報です。実際のレシピ、食材、量、栄養成分は店舗により異なります。アレルゲンは必ず店舗にご確認ください。</string>
+    <string name="health_profile_needed">「マイ情報」で健康・アレルギー・食事条件を選ぶと、メニュー別の注意点を確認できます。</string>
+    <string name="health_menu_analysis_title">自分に合うメニューを見る</string>
+    <string name="health_menu_analysis_counts">避ける %1$d · 要確認 %2$d · 適していそう %3$d</string>
+    <string name="health_analysis_unavailable">安全に判断するためのメニュー情報が不足しています。店舗に直接ご確認ください。</string>
+    <string name="health_risk_avoid">避ける</string>
+    <string name="health_risk_caution">要確認</string>
+    <string name="health_risk_safe">適していそう</string>
+    <string name="health_risk_unknown">情報不足</string>
+    <string name="health_match_result">個別健康ガイド</string>
+    <string name="questions_for_restaurant">店舗への確認事項</string>
+    <string name="health_analysis_disclaimer">一般的な調理法に基づくAIの参考情報であり、医療診断ではありません。実際の食材と交差接触は店舗にご確認ください。</string>
+    <string name="ai_course_step">%1$d / %2$d ステップ</string>
+    <string name="choose_destination">どこへ旅行しますか？</string>
+    <string name="choose_trip_length">旅行期間を選んでください</string>
+    <string name="choose_travel_preferences">どんな旅行が好きですか？</string>
+    <string name="ai_course_length_notice">最大7日間の旅行を作成できます。</string>
+    <string name="preference_optional">任意です。複数選択できます。</string>
+    <string name="previous">前へ</string>
+    <string name="next">次へ</string>
+    <string name="create_course">コースを作成</string>
+    <string name="creating_ai_course">旅行の好みに合わせてコースを作成中...</string>
+    <string name="saved_ai_courses">保存したAIコース</string>
+    <string name="why_this_course">このコースを選んだ理由</string>
+    <string name="touring_tips">観光の回り方とヒント</string>
+    <string name="tap_course_to_apply">カードをタップすると地図とMy Planに適用します。</string>
+    <string name="ai_course_error_not_configured">AI接続の設定が必要です。</string>
+    <string name="ai_course_error_no_places">この地域ではコース作成に十分な観光スポットがありません。</string>
+    <string name="ai_course_error_network">サーバーに接続できません。サーバーとネットワークをご確認ください。</string>
+    <string name="ai_course_error_general">コースを作成できませんでした。しばらくしてから再度お試しください。</string>
+    <string name="course_category_attraction">観光地</string><string name="course_category_culture">文化施設</string>
+    <string name="course_category_festival">祭り</string><string name="course_category_leisure">体験・レジャー</string>
+    <string name="course_category_shopping">ショッピング</string><string name="course_category_restaurant">飲食店</string>
+    <string-array name="ai_course_cities">
+        <item>ソウル</item><item>釜山</item><item>済州島</item><item>仁川</item><item>大邱</item><item>大田</item><item>光州</item>
+        <item>蔚山</item><item>世宗</item><item>慶州</item><item>江陵</item><item>全州</item><item>麗水</item><item>束草</item>
+    </string-array>
+    <string-array name="ai_course_preferences">
+        <item>史跡・歴史</item><item>グルメ</item><item>自然・景色</item><item>文化・芸術</item>
+        <item>休息・癒やし</item><item>体験・アクティビティ</item><item>ショッピング</item><item>家族旅行</item>
+    </string-array>
+    <string name="existing_schedule_question">すでに決めた予定はありますか？</string>
+    <string name="no_schedule">ありません</string><string name="have_schedule">あります</string>
+    <string name="schedule_paste_hint">例：ソウル2泊3日\n1日目午前は景福宮、18時に公演予約...</string>
+    <string name="schedule_required">予定を入力してください。</string>
+    <string name="schedule_city_required">旅行地域、または景福宮・海雲台のように地域が分かる場所を入力してください。</string>
+    <string name="schedule_paste_notice">予約時間と必ず行きたい場所を優先し、空き時間を補います。</string>
+    <string name="choose_stops_per_day">1日に何か所訪れますか？</string>
+    <string name="stops_per_day_value">1日%1$dか所</string>
+    <string name="stops_per_day_notice">3〜7か所から選べます。多いほど移動が忙しくなります。</string>
+    <string name="saved_my_courses">保存したMyコース</string>
+    <string name="saved_my_courses_desc">自分で場所と日程を調整して保存した旅行</string>
+    <string name="create_my_course">新しいMyコースを作成</string>
+    <string name="no_saved_my_courses">保存したMyコースはまだありません。＋を押して地図で作成しましょう。</string>
+    <string name="save_my_course">Myコースを保存</string><string name="course_name">コース名</string>
+    <string name="my_course_default_name">私の旅行 %1$d</string><string name="my_course_saved">Myコースを保存しました。</string>
+    <string name="saved_my_course_summary">%1$d日・%2$dか所</string>
+    <string name="apply_course_to_map">地図とMy Planに適用</string>
+    <string name="save">保存</string><string name="cancel">キャンセル</string>
+    <string name="login_welcome_title">An-Sikへようこそ</string>
+    <string name="login_welcome_description">健康設定と保存した旅行コースを\nどの端末からでも安全に利用できます。</string>
+    <string name="login_with_kakao">Kakaoで続ける</string>
+    <string name="login_with_naver">NAVERで続ける</string>
+    <string name="login_with_google">Googleで続ける</string>
+    <string name="login_in_progress">ログイン情報を確認しています…</string>
+    <string name="continue_without_login">ログインせずに見る</string>
+    <string name="login_terms_notice">続行すると、利用規約とプライバシーポリシーに同意したものとみなされます。</string>
+    <string name="guest_user">ゲストユーザー</string>
+    <string name="guest_account_description">ログインすると、健康設定と旅行コースを安全に同期できます。</string>
+    <string name="signed_in_with">%1$sアカウントでログイン中</string>
+    <string name="sign_in">ログイン</string>
+    <string name="sign_out">ログアウト</string>
 </resources>

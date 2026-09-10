@@ -4,30 +4,34 @@ import androidx.compose.ui.graphics.Color
 
 object AppColors {
 
-    val PrimaryDark = Color(0xFF0A6E60)
-    val Primary = Color(0xFF0FA98E)
-    val PrimaryLight = Color(0xFF6EE7C9)
-    val PrimarySoft = Color(0xFFE6F3F0)
+    val PrimaryDark = Color(0xFF46A302)
+    val Primary = Color(0xFF58CC02)
+    val PrimaryLight = Color(0xFF89E219)
+    val PrimarySoft = Color(0xFFE8F7D5)
 
-    val Accent = Color(0xFFFF6B5B)
-    val AccentLight = Color(0xFFFF8A65)
+    val Accent = Color(0xFFFFC800)
+    val AccentLight = Color(0xFFFFD900)
 
-    val Background = Color(0xFFFAFAF6)
+    val Background = Color(0xFFF7F7F7)
     val Surface = Color(0xFFFFFFFF)
-    val SurfaceMuted = Color(0xFFF2F3EE)
+    val SurfaceMuted = Color(0xFFF1F1F1)
 
-    val TextPrimary = Color(0xFF1C1F1E)
-    val TextSecondary = Color(0xFF7A8079)
-    val Divider = Color(0xFFEAEBE6)
+    val TextPrimary = Color(0xFF4B4B4B)
+    val TextSecondary = Color(0xFF777777)
+    val Divider = Color(0xFFE5E5E5)
+    val BorderStrong = Color(0xFFD7D7D7)
 
-    val Success = Color(0xFF2E7D32)
-    val SuccessSoft = Color(0xFFE8F5E9)
+    val Success = Primary
+    val SuccessDark = PrimaryDark
+    val SuccessSoft = PrimarySoft
 
-    val Info = Color(0xFF1976D2)
+    val Info = Color(0xFF1CB0F6)
+    val InfoDark = Color(0xFF1899D6)
 
-    val Warning = Color(0xFFFBC02D)
+    val Warning = Color(0xFFFFC800)
 
-    val Danger = Color(0xFFE53935)
+    val Danger = Color(0xFFFF4B4B)
+    val DangerDark = Color(0xFFEA2B2B)
 }
 
 private val DayColorPalette = listOf(

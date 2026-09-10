@@ -1,14 +1,37 @@
 package com.kmj.ansik.ui
 
 import com.kmj.ansik.BuildConfig
+import com.kmj.ansik.auth.AuthResponse
+import com.kmj.ansik.auth.AuthSessionStore
+import com.kmj.ansik.auth.AuthUser
+import com.kmj.ansik.auth.LogoutRequest
+import com.kmj.ansik.auth.RefreshRequest
+import com.kmj.ansik.auth.SocialLoginRequest
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.GET
 import retrofit2.http.Query
+import retrofit2.http.Body
+import retrofit2.http.POST
 import okhttp3.OkHttpClient
 import java.util.concurrent.TimeUnit
 
 interface ApiService {
+
+    @POST("api/auth/social")
+    suspend fun socialLogin(@Body request: SocialLoginRequest): AuthResponse
+
+    @POST("api/auth/refresh")
+    suspend fun refreshLogin(@Body request: RefreshRequest): AuthResponse
+
+    @POST("api/auth/logout")
+    suspend fun logout(@Body request: LogoutRequest)
+
+    @GET("api/auth/me")
+    suspend fun currentUser(): AuthUser
+
+    @POST("api/ai/course")
+    suspend fun createAiCourse(@Body request: AiCourseRequest): AiCourse
 
     @GET("api/place")
     suspend fun searchPlace(
@@ -39,7 +62,8 @@ interface ApiService {
         @Query("restaurantName") restaurantName: String,
         @Query("address") address: String,
         @Query("lang") language: String,
-        @Query("menuHints") menuHints: List<String> = emptyList()
+        @Query("menuHints") menuHints: List<String> = emptyList(),
+        @Query("healthConditions") healthConditions: List<String> = emptyList()
     ): RestaurantMenuGuide
 
     @GET("api/tour/menu-images")
@@ -84,6 +108,20 @@ interface ApiService {
 object RetrofitClient {
     private val BASE_URL = BuildConfig.SERVER_URL
     private val httpClient = OkHttpClient.Builder()
+        .addInterceptor { chain ->
+            val originalRequest = chain.request()
+            val token = AuthSessionStore.accessToken()
+            val isAnonymousMapSearch =
+                originalRequest.url.encodedPath == "/api/restaurants/nearby"
+            val request = if (token.isNullOrBlank() || isAnonymousMapSearch) {
+                originalRequest
+            } else {
+                originalRequest.newBuilder()
+                    .header("Authorization", "Bearer $token")
+                    .build()
+            }
+            chain.proceed(request)
+        }
         .connectTimeout(10, TimeUnit.SECONDS)
         .readTimeout(45, TimeUnit.SECONDS)
         .writeTimeout(15, TimeUnit.SECONDS)

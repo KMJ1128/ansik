@@ -35,12 +35,13 @@ internal fun NaverMapContent(
     viewModel: MainViewModel,
     cameraPositionState: CameraPositionState,
     scheduleListState: LazyListState,
+    restaurantListState: LazyListState,
     highlightedPlaceId: String?,
+    highlightedRestaurantId: String?,
     onHighlightPlace: (String?) -> Unit,
-    onShowDetail: () -> Unit
+    onHighlightRestaurant: (String?) -> Unit
 ) {
     val coroutineScope = rememberCoroutineScope()
-    val restaurantMarker = rememberRestaurantMarker()
 
     LaunchedEffect(viewModel.selectedPlace.value) {
         viewModel.selectedPlace.value?.let { place ->
@@ -61,16 +62,22 @@ internal fun NaverMapContent(
             )
             true
         },
-        onMapClick = { _, _ -> viewModel.clearSelectedPlace() }
+        onMapClick = { _, _ ->
+            viewModel.clearSelectedPlace()
+            onHighlightRestaurant(null)
+        }
     ) {
-        viewModel.currentUserLocation.value?.let { currentLocation ->
+        viewModel.restaurantSearchCenter.value?.let { searchCenter ->
             CircleOverlay(
-                center = currentLocation,
+                center = searchCenter,
                 radius = viewModel.searchRadius.intValue.toDouble(),
                 color = Color(0x2234A853),
                 outlineColor = Color(0xAA34A853),
                 outlineWidth = 2.dp
             )
+        }
+
+        viewModel.currentUserLocation.value?.let { currentLocation ->
             LocationOverlay(
                 position = currentLocation,
                 circleColor = Color(0x333A86FF),
@@ -147,22 +154,34 @@ internal fun NaverMapContent(
             val lng = restaurant.longitude
 
             if (lat != 0.0 && lng != 0.0) {
-                Marker(
-                    state = MarkerState(position = LatLng(lat, lng)),
-                    icon = restaurantMarker,
-                    captionText = restaurant.title,
-                    onClick = {
-                        coroutineScope.launch {
-                            cameraPositionState.animate(
-                                CameraUpdate.scrollTo(LatLng(lat, lng))
-                                    .animate(CameraAnimation.Easing)
-                            )
+                key("restaurant_${restaurant.id}") {
+                    val isSelected = highlightedRestaurantId == restaurant.id
+                    Marker(
+                        state = MarkerState(position = LatLng(lat, lng)),
+                        icon = rememberRestaurantMarker(isSelected),
+                        captionText = restaurant.title,
+                        onClick = {
+                            coroutineScope.launch {
+                                val restaurantIndex = viewModel.nearbyRestaurants
+                                    .indexOfFirst { it.id == restaurant.id }
+
+                                onHighlightRestaurant(restaurant.id)
+                                launch {
+                                    cameraPositionState.animate(
+                                        CameraUpdate.scrollTo(LatLng(lat, lng))
+                                            .animate(CameraAnimation.Easing)
+                                    )
+                                }
+                                if (restaurantIndex >= 0) {
+                                    launch {
+                                        restaurantListState.animateScrollToItem(restaurantIndex)
+                                    }
+                                }
+                            }
+                            true
                         }
-                        viewModel.fetchRestaurantDetail(restaurant)
-                        onShowDetail()
-                        true
-                    }
-                )
+                    )
+                }
             }
         }
     }
@@ -212,11 +231,16 @@ private fun rememberNumberedMarker(
 }
 
 @Composable
-private fun rememberRestaurantMarker(): OverlayImage {
-    return remember {
-        val size = 50
+private fun rememberRestaurantMarker(isSelected: Boolean): OverlayImage {
+    return remember(isSelected) {
+        val size = if (isSelected) 68 else 50
         val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
+        val markerColor = if (isSelected) {
+            android.graphics.Color.rgb(88, 204, 2)
+        } else {
+            android.graphics.Color.rgb(25, 118, 210)
+        }
 
         canvas.drawCircle(
             size / 2f,
@@ -224,7 +248,7 @@ private fun rememberRestaurantMarker(): OverlayImage {
             size / 2f,
             Paint().apply {
                 isAntiAlias = true
-                color = android.graphics.Color.rgb(25, 118, 210)
+                color = markerColor
             }
         )
         canvas.drawCircle(
@@ -239,12 +263,26 @@ private fun rememberRestaurantMarker(): OverlayImage {
         canvas.drawCircle(
             size / 2f,
             size / 2f,
-            10f,
+            if (isSelected) 15f else 10f,
             Paint().apply {
                 isAntiAlias = true
-                color = android.graphics.Color.rgb(25, 118, 210)
+                color = markerColor
             }
         )
+
+        if (isSelected) {
+            canvas.drawCircle(
+                size / 2f,
+                size / 2f,
+                (size / 2f) - 2f,
+                Paint().apply {
+                    isAntiAlias = true
+                    color = android.graphics.Color.WHITE
+                    style = Paint.Style.STROKE
+                    strokeWidth = 5f
+                }
+            )
+        }
 
         OverlayImage.fromBitmap(bitmap)
     }

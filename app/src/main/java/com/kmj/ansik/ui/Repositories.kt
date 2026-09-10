@@ -89,7 +89,8 @@ class RestaurantRepository(
 
     suspend fun getRestaurantDetail(
         restaurant: RestaurantSummary,
-        language: String
+        language: String,
+        healthConditions: List<String>
     ): RestaurantDetailState = coroutineScope {
         val contentId = restaurant.tourContentId
 
@@ -121,7 +122,8 @@ class RestaurantRepository(
                     restaurantName = restaurant.title,
                     address = restaurant.address,
                     language = language,
-                    menuHints = menuHints
+                    menuHints = menuHints,
+                    healthConditions = healthConditions
                 )
             }.getOrNull()
         }
@@ -189,4 +191,11 @@ class ReviewRepository(
             start = start
         )
     }
+}
+
+class AiCourseRepository(
+    private val api: ApiService = RetrofitClient.api
+) {
+    suspend fun createCourse(request: AiCourseRequest): AiCourse =
+        withContext(Dispatchers.IO) { api.createAiCourse(request) }
 }

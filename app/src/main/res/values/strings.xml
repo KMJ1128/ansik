@@ -9,6 +9,8 @@
     <string name="religion_belief_diet">🙏 종교 및 신념 기반 식단</string>
     <string name="go_to_travel_route">여행 동선 짜러 가기 🗺️</string>
     <string name="expand">확장</string>
+    <string name="collapse_restaurant_list">식당 목록 접기</string>
+    <string name="expand_restaurant_list">식당 목록 펼치기</string>
     <string name="enter_custom_other">기타 직접 입력</string>
     <string name="add">추가</string>
 
@@ -35,7 +37,10 @@
     <string name="add_schedule">일정 추가</string>
     <string name="find_restaurant">식당 찾기</string>
     <string name="loading_public_data">공공데이터 불러오는 중...</string>
-    <string name="find_nearby_safe_restaurants">관광공사 등록 식당 찾기</string>
+    <string name="searching_places">장소를 찾고 있어요...</string>
+    <string name="loading_selected_place">장소 정보를 불러오고 있어요...</string>
+    <string name="loading_nearby_restaurants">가까운 식당을 찾고 있어요...</string>
+    <string name="find_nearby_safe_restaurants">주변 식당 찾기</string>
     <string name="settings">설정</string>
 
 
@@ -106,10 +111,10 @@
     <string name="current_selected_conditions">현재 선택된 조건</string>
 
     <string name="my_schedule_short">내\n일정</string>
-    <string name="restaurant_list_title">한국관광공사 등록 식당</string>
-    <string name="restaurant_list_desc">현재 위치 주변 %1$s TourAPI 등록 식당</string>
+    <string name="restaurant_list_title">주변 식당</string>
+    <string name="restaurant_list_desc">지도 중심에서 %1$s 이내</string>
     <string name="search_radius">검색 반경</string>
-    <string name="no_restaurants_found">검색 반경 내에 한국관광공사에 등록된 식당이 없습니다.</string>
+    <string name="no_restaurants_found">이 근처에서는 식당 정보를 찾지 못했어요.</string>
     <string name="restaurant_main_menu">대표 메뉴</string>
     <string name="restaurant_treat_menu">취급 메뉴</string>
     <string name="restaurant_all_menus">전체 메뉴</string>
@@ -140,13 +145,13 @@
     <string name="naver_blog_reviews">식당명·주소가 일치하는 관련 웹 후기</string>
     <string name="no_reviews">이 식당과 일치하는 후기를 찾지 못했습니다.</string>
     <string name="my_location">내 위치</string>
-    <string name="find_restaurants_from_my_location">내 위치 주변 관광공사 식당 찾기</string>
+    <string name="find_restaurants_from_my_location">지도 중심에서 찾기</string>
     <string name="getting_current_location">현재 위치를 확인하는 중입니다.</string>
     <string name="loading_restaurant_details">식당 정보와 메뉴를 확인하는 중...</string>
     <string name="loading_menu_details">음식 설명과 사진을 준비하는 중...</string>
     <string name="open_original">원문 보기 &gt;</string>
 
-    <string name="source_tour_api">TourAPI</string>
+    <string name="source_tour_api">출처: ⓒ한국관광공사</string>
     <string name="source_kakao">Kakao</string>
     <string name="korean_original_data">한국어 원문</string>
     <string name="menu_image_title">메뉴 이미지</string>
@@ -168,5 +173,76 @@
     <string name="menu_sodium_value">나트륨 %1$.0f mg</string>
     <string name="menu_nutrition_source">출처: 식품의약품안전처 K-FIND</string>
     <string name="menu_general_disclaimer">일반적인 음식 정보입니다. 실제 식당의 조리법·식재료·제공량·영양성분은 다를 수 있으며, 알레르기 성분은 반드시 식당에 확인하세요.</string>
+    <string name="health_profile_needed">내 정보에서 건강·알레르기·식단 조건을 선택하면 메뉴별 주의사항을 알려드려요.</string>
+    <string name="health_menu_analysis_title">나에게 맞는 메뉴 살펴보기</string>
+    <string name="health_menu_analysis_counts">피하기 %1$d · 확인 필요 %2$d · 괜찮아 보임 %3$d</string>
+    <string name="health_analysis_unavailable">판단에 필요한 메뉴 정보가 부족해요. 식당에 직접 확인해 주세요.</string>
+    <string name="health_risk_avoid">피하기</string>
+    <string name="health_risk_caution">확인 필요</string>
+    <string name="health_risk_safe">괜찮아 보임</string>
+    <string name="health_risk_unknown">정보 부족</string>
+    <string name="health_match_result">맞춤 건강 가이드</string>
+    <string name="questions_for_restaurant">식당에 이렇게 물어보세요</string>
+    <string name="health_analysis_disclaimer">AI가 일반 조리법을 기준으로 안내한 참고 정보이며 의료 진단이 아닙니다. 실제 재료와 교차오염 여부는 식당에 확인하세요.</string>
+    <string name="ai_course_step">%1$d / %2$d 단계</string>
+    <string name="choose_destination">어디로 여행할까요?</string>
+    <string name="choose_trip_length">여행 기간을 골라주세요</string>
+    <string name="choose_travel_preferences">어떤 여행을 좋아하세요?</string>
+    <string name="ai_course_length_notice">최대 7일까지 만들 수 있어요.</string>
+    <string name="preference_optional">선택하지 않아도 괜찮고 여러 개를 고를 수 있어요.</string>
+    <string name="previous">이전</string>
+    <string name="next">다음</string>
+    <string name="create_course">코스 만들기</string>
+    <string name="creating_ai_course">여행 취향을 반영해 코스를 만드는 중...</string>
+    <string name="saved_ai_courses">저장된 AI 코스</string>
+    <string name="why_this_course">이렇게 선정한 이유</string>
+    <string name="touring_tips">여행하는 방법과 팁</string>
+    <string name="tap_course_to_apply">카드를 누르면 이 코스를 지도와 My Plan에 적용합니다.</string>
+    <string name="ai_course_error_not_configured">AI 연결 설정이 필요합니다.</string>
+    <string name="ai_course_error_no_places">이 지역에서 코스를 구성할 관광 장소가 충분하지 않습니다.</string>
+    <string name="ai_course_error_network">서버에 연결하지 못했습니다. 서버 실행과 네트워크를 확인해주세요.</string>
+    <string name="ai_course_error_general">코스를 만들지 못했습니다. 잠시 후 다시 시도해주세요.</string>
+    <string name="course_category_attraction">관광지</string><string name="course_category_culture">문화시설</string>
+    <string name="course_category_festival">축제</string><string name="course_category_leisure">체험·레저</string>
+    <string name="course_category_shopping">쇼핑</string><string name="course_category_restaurant">음식점</string>
+    <string-array name="ai_course_cities">
+        <item>서울</item><item>부산</item><item>제주도</item><item>인천</item><item>대구</item><item>대전</item><item>광주</item>
+        <item>울산</item><item>세종</item><item>경주</item><item>강릉</item><item>전주</item><item>여수</item><item>속초</item>
+    </string-array>
+    <string-array name="ai_course_preferences">
+        <item>유적지·역사</item><item>맛집</item><item>자연·풍경</item><item>문화·예술</item>
+        <item>휴식·힐링</item><item>체험·액티비티</item><item>쇼핑</item><item>가족 여행</item>
+    </string-array>
 
+    <string name="existing_schedule_question">이미 정리한 일정이 있나요?</string>
+    <string name="no_schedule">없어요</string><string name="have_schedule">있어요</string>
+    <string name="schedule_paste_hint">예: 서울 2박 3일\n1일차 오전 경복궁, 18시 공연 예약...</string>
+    <string name="schedule_required">일정 내용을 입력해주세요.</string>
+    <string name="schedule_city_required">여행 지역이나 경복궁·해운대처럼 지역을 알 수 있는 장소를 하나 이상 적어주세요.</string>
+    <string name="schedule_paste_notice">예약 시간과 꼭 가고 싶은 장소를 적으면 우선 반영하고 빈 시간을 채워드려요.</string>
+    <string name="choose_stops_per_day">하루에 몇 곳을 방문할까요?</string>
+    <string name="stops_per_day_value">하루 %1$d곳</string>
+    <string name="stops_per_day_notice">3~7곳 중 선택하세요. 많이 고를수록 이동이 바빠질 수 있어요.</string>
+    <string name="saved_my_courses">저장된 내 코스</string>
+    <string name="saved_my_courses_desc">직접 장소와 날짜를 조절해 만든 일정</string>
+    <string name="create_my_course">새 내 코스 만들기</string>
+    <string name="no_saved_my_courses">아직 직접 저장한 코스가 없어요. +를 눌러 지도에서 만들어보세요.</string>
+    <string name="save_my_course">내 코스 저장</string><string name="course_name">코스 이름</string>
+    <string name="my_course_default_name">나의 여행 %1$d</string><string name="my_course_saved">내 코스를 저장했어요.</string>
+    <string name="saved_my_course_summary">%1$d일 · %2$d곳</string>
+    <string name="apply_course_to_map">지도와 My Plan에 적용</string>
+    <string name="save">저장</string><string name="cancel">취소</string>
+    <string name="login_welcome_title">안식에 오신 것을 환영해요</string>
+    <string name="login_welcome_description">내 건강정보와 저장한 여행 코스를\n어느 기기에서든 안전하게 이어가세요.</string>
+    <string name="login_with_kakao">카카오로 계속하기</string>
+    <string name="login_with_naver">네이버로 계속하기</string>
+    <string name="login_with_google">Google로 계속하기</string>
+    <string name="login_in_progress">로그인 정보를 확인하고 있어요…</string>
+    <string name="continue_without_login">로그인 없이 둘러보기</string>
+    <string name="login_terms_notice">계속하면 서비스 이용약관과 개인정보 처리방침에 동의하게 됩니다.</string>
+    <string name="guest_user">게스트 사용자</string>
+    <string name="guest_account_description">로그인하면 건강 설정과 여행 코스를 안전하게 동기화할 수 있어요.</string>
+    <string name="signed_in_with">%1$s 계정으로 로그인됨</string>
+    <string name="sign_in">로그인</string>
+    <string name="sign_out">로그아웃</string>
 </resources>

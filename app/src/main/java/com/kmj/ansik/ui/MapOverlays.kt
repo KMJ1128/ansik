@@ -8,6 +8,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -33,6 +34,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Tune
@@ -52,6 +55,11 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -108,7 +116,13 @@ internal fun BoxScope.TopSearchLayout(
                 )
             },
             trailingIcon = {
-                if (viewModel.searchQuery.value.isNotEmpty()) {
+                if (viewModel.isSearchingPlaces.value) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(22.dp),
+                        color = AppColors.Success,
+                        strokeWidth = 3.dp
+                    )
+                } else if (viewModel.searchQuery.value.isNotEmpty()) {
                     IconButton(onClick = viewModel::clearSearch) {
                         Icon(
                             imageVector = Icons.Default.Close,
@@ -120,16 +134,12 @@ internal fun BoxScope.TopSearchLayout(
             },
             modifier = Modifier
                 .fillMaxWidth()
-                .shadow(
-                    elevation = 12.dp,
-                    shape = RoundedCornerShape(50),
-                    spotColor = Color(0x26000000)
-                ),
-            shape = RoundedCornerShape(50),
+                .border(3.dp, AppColors.Divider, RoundedCornerShape(18.dp)),
+            shape = RoundedCornerShape(18.dp),
             colors = OutlinedTextFieldDefaults.colors(
-                focusedContainerColor = Color.White.copy(alpha = 0.98f),
-                unfocusedContainerColor = Color.White.copy(alpha = 0.95f),
-                focusedBorderColor = Color.Transparent,
+                focusedContainerColor = AppColors.Surface,
+                unfocusedContainerColor = AppColors.Surface,
+                focusedBorderColor = AppColors.Primary,
                 unfocusedBorderColor = Color.Transparent
             ),
             singleLine = true
@@ -137,18 +147,43 @@ internal fun BoxScope.TopSearchLayout(
 
         AnimatedVisibility(
             visible = viewModel.isSearchActive.value &&
-                viewModel.recommendedPlaces.isNotEmpty()
+                (viewModel.isSearchingPlaces.value || viewModel.recommendedPlaces.isNotEmpty())
         ) {
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
                     .heightIn(max = 280.dp)
                     .padding(top = 12.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(8.dp)
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = AppColors.Surface),
+                border = androidx.compose.foundation.BorderStroke(3.dp, AppColors.Divider),
+                elevation = CardDefaults.cardElevation(0.dp)
             ) {
                 LazyColumn(contentPadding = PaddingValues(8.dp)) {
+                    if (viewModel.isSearchingPlaces.value) {
+                        item {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(14.dp),
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(20.dp),
+                                    color = AppColors.Success,
+                                    strokeWidth = 3.dp
+                                )
+                                Spacer(modifier = Modifier.width(10.dp))
+                                Text(
+                                    text = stringResource(id = R.string.searching_places),
+                                    color = AppColors.TextSecondary,
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            }
+                        }
+                    }
                     items(
                         items = viewModel.recommendedPlaces,
                         key = { "${it.id}_${it.latitude}_${it.longitude}" }
@@ -224,6 +259,7 @@ internal fun BoxScope.ScheduleDrawer(
     viewModel: MainViewModel,
     isExpanded: Boolean,
     onToggleExpand: (Boolean) -> Unit,
+    onSaveMyCourse: () -> Unit,
     listState: LazyListState,
     highlightedPlaceId: String?
 ) {
@@ -235,11 +271,12 @@ internal fun BoxScope.ScheduleDrawer(
         if (!isExpanded) {
             Card(
                 modifier = Modifier.clickable { onToggleExpand(true) },
-                shape = RoundedCornerShape(18.dp),
+                shape = RoundedCornerShape(20.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = Color.White.copy(alpha = 0.95f)
+                    containerColor = AppColors.Surface
                 ),
-                elevation = CardDefaults.cardElevation(8.dp)
+                border = androidx.compose.foundation.BorderStroke(3.dp, AppColors.Divider),
+                elevation = CardDefaults.cardElevation(0.dp)
             ) {
                 Column(
                     modifier = Modifier.padding(vertical = 12.dp, horizontal = 14.dp),
@@ -277,11 +314,12 @@ internal fun BoxScope.ScheduleDrawer(
                 modifier = Modifier
                     .width(330.dp)
                     .fillMaxHeight(0.7f),
-                shape = RoundedCornerShape(24.dp),
+                shape = RoundedCornerShape(26.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = Color.White.copy(alpha = 0.97f)
+                    containerColor = AppColors.Surface
                 ),
-                elevation = CardDefaults.cardElevation(12.dp)
+                border = androidx.compose.foundation.BorderStroke(3.dp, AppColors.Divider),
+                elevation = CardDefaults.cardElevation(0.dp)
             ) {
                 Column(modifier = Modifier.fillMaxHeight()) {
                     Row(
@@ -347,6 +385,22 @@ internal fun BoxScope.ScheduleDrawer(
                     }
 
                     HorizontalDivider()
+
+                    if (viewModel.isBuildingMyCourse.value && viewModel.travelRoute.isNotEmpty()) {
+                        PlayfulButton(
+                            onClick = onSaveMyCourse,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 10.dp)
+                        ) {
+                            Text(
+                                text = stringResource(id = R.string.save_my_course),
+                                color = Color.White,
+                                fontWeight = FontWeight.ExtraBold
+                            )
+                        }
+                        HorizontalDivider()
+                    }
 
                     val reorderableState = rememberReorderableLazyListState(listState) {
                             from,
@@ -494,12 +548,21 @@ internal fun BoxScope.ScheduleDrawer(
 internal fun BoxScope.BottomCards(
     viewModel: MainViewModel,
     cameraPositionState: CameraPositionState,
+    restaurantListState: androidx.compose.foundation.lazy.LazyListState,
+    highlightedRestaurantId: String?,
     onShowRadiusDialog: () -> Unit,
     onShowDetailPopup: () -> Unit,
     onShowViewer: (List<String>) -> Unit
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
+    var isRestaurantListExpanded by remember { mutableStateOf(true) }
+
+    LaunchedEffect(viewModel.isFetchingRestaurants.value) {
+        if (viewModel.isFetchingRestaurants.value) {
+            isRestaurantListExpanded = true
+        }
+    }
 
     AnimatedVisibility(
         visible = viewModel.selectedPlace.value != null,
@@ -511,9 +574,10 @@ internal fun BoxScope.BottomCards(
     ) {
         viewModel.selectedPlace.value?.let { place ->
             Card(
-                shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(20.dp)
+                shape = RoundedCornerShape(26.dp),
+                colors = CardDefaults.cardColors(containerColor = AppColors.Surface),
+                border = androidx.compose.foundation.BorderStroke(3.dp, AppColors.Divider),
+                elevation = CardDefaults.cardElevation(0.dp)
             ) {
                 Column(modifier = Modifier.padding(18.dp)) {
                     Row {
@@ -577,20 +641,16 @@ internal fun BoxScope.BottomCards(
                             )
                         }
 
-                        Button(
+                        PlayfulButton(
                             onClick = { viewModel.addPlaceToRoute(place) },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = AppColors.Success
-                            ),
                             modifier = Modifier
                                 .weight(1f)
-                                .height(46.dp),
-                            shape = RoundedCornerShape(12.dp)
                         ) {
                             Text(
                                 text = stringResource(id = R.string.add_schedule),
                                 fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold
+                                fontWeight = FontWeight.ExtraBold,
+                                color = Color.White
                             )
                         }
                     }
@@ -601,27 +661,25 @@ internal fun BoxScope.BottomCards(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Button(
+                        PlayfulButton(
                             onClick = {
                                 viewModel.searchNearbyRestaurants(
                                     place.latitude,
                                     place.longitude
                                 )
                             },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = AppColors.Info
-                            ),
                             modifier = Modifier
-                                .weight(1f)
-                                .height(46.dp),
-                            shape = RoundedCornerShape(12.dp)
+                                .weight(1f),
+                            containerColor = AppColors.Info,
+                            shadowColor = AppColors.InfoDark
                         ) {
                             Text(
                                 text = stringResource(
                                     id = R.string.find_nearby_safe_restaurants
                                 ),
                                 fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold
+                                fontWeight = FontWeight.ExtraBold,
+                                color = Color.White
                             )
                         }
 
@@ -674,9 +732,10 @@ internal fun BoxScope.BottomCards(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp),
-            shape = RoundedCornerShape(20.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
-            elevation = CardDefaults.cardElevation(8.dp)
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(containerColor = AppColors.Surface),
+            border = androidx.compose.foundation.BorderStroke(3.dp, AppColors.Divider),
+            elevation = CardDefaults.cardElevation(0.dp)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Row(
@@ -689,53 +748,89 @@ internal fun BoxScope.BottomCards(
                         fontSize = 17.sp,
                         fontWeight = FontWeight.Bold
                     )
-                    IconButton(
-                        onClick = viewModel::clearNearbyRestaurants,
-                        modifier = Modifier.size(24.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Close,
-                            contentDescription = null
-                        )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        IconButton(
+                            onClick = {
+                                isRestaurantListExpanded = !isRestaurantListExpanded
+                            },
+                            modifier = Modifier.size(36.dp)
+                        ) {
+                            Icon(
+                                imageVector = if (isRestaurantListExpanded) {
+                                    Icons.Default.KeyboardArrowDown
+                                } else {
+                                    Icons.Default.KeyboardArrowUp
+                                },
+                                contentDescription = stringResource(
+                                    if (isRestaurantListExpanded) {
+                                        R.string.collapse_restaurant_list
+                                    } else {
+                                        R.string.expand_restaurant_list
+                                    }
+                                ),
+                                tint = AppColors.Info
+                            )
+                        }
+                        IconButton(
+                            onClick = viewModel::clearNearbyRestaurants,
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = null
+                            )
+                        }
                     }
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
+                AnimatedVisibility(visible = isRestaurantListExpanded) {
+                    Column {
+                        Spacer(modifier = Modifier.height(12.dp))
 
-                if (viewModel.isFetchingRestaurants.value) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(120.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator(color = AppColors.Success)
-                    }
-                } else if (viewModel.nearbyRestaurants.isEmpty()) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(120.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = stringResource(id = R.string.no_restaurants_found),
-                            color = AppColors.TextSecondary,
-                            fontSize = 13.sp,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.padding(horizontal = 24.dp)
-                        )
-                    }
-                } else {
-                    LazyRow(
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        items(
-                            items = viewModel.nearbyRestaurants,
-                            key = { it.id }
-                        ) { restaurant ->
-                            RestaurantHorizontalCard(
+                        if (viewModel.isFetchingRestaurants.value) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(120.dp),
+                                verticalArrangement = Arrangement.Center,
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                CircularProgressIndicator(color = AppColors.Success)
+                                Spacer(modifier = Modifier.height(10.dp))
+                                Text(
+                                    text = stringResource(id = R.string.loading_nearby_restaurants),
+                                    color = AppColors.TextSecondary,
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            }
+                        } else if (viewModel.nearbyRestaurants.isEmpty()) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(120.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = stringResource(id = R.string.no_restaurants_found),
+                                    color = AppColors.TextSecondary,
+                                    fontSize = 13.sp,
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.padding(horizontal = 24.dp)
+                                )
+                            }
+                        } else {
+                            LazyRow(
+                                state = restaurantListState,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                items(
+                                    items = viewModel.nearbyRestaurants,
+                                    key = { it.id }
+                                ) { restaurant ->
+                                    RestaurantHorizontalCard(
                                 restaurant = restaurant,
+                                isHighlighted = highlightedRestaurantId == restaurant.id,
                                 onCardClick = {
                                     val lat = restaurant.latitude
                                     val lng = restaurant.longitude
@@ -772,7 +867,9 @@ internal fun BoxScope.BottomCards(
                                     )
                                     onShowDetailPopup()
                                 }
-                            )
+                                    )
+                                }
+                            }
                         }
                     }
                 }

@@ -75,6 +75,7 @@ import com.kmj.ansik.R
 @Composable
 internal fun RestaurantHorizontalCard(
     restaurant: RestaurantSummary,
+    isHighlighted: Boolean = false,
     onCardClick: () -> Unit,
     onImageClick: () -> Unit,
     onReviewClick: () -> Unit,
@@ -88,9 +89,12 @@ internal fun RestaurantHorizontalCard(
         modifier = Modifier
             .width(230.dp)
             .clickable(onClick = onCardClick),
-        shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFF9F9F9)),
-        border = BorderStroke(1.dp, Color(0xFFEEEEEE))
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = AppColors.Surface),
+        border = BorderStroke(
+            3.dp,
+            if (isHighlighted) AppColors.Info else AppColors.Divider
+        )
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
             AsyncImage(
@@ -99,7 +103,7 @@ internal fun RestaurantHorizontalCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(110.dp)
-                    .clip(RoundedCornerShape(8.dp))
+                    .clip(RoundedCornerShape(14.dp))
                     .clickable(onClick = onImageClick),
                 contentScale = ContentScale.Crop
             )
@@ -270,7 +274,7 @@ internal fun AppDialogs(
             onDismissRequest = onDismissDetailPopup,
             confirmButton = {},
             containerColor = Color.White,
-            shape = RoundedCornerShape(20.dp),
+            shape = RoundedCornerShape(24.dp),
             title = {
                 Text(
                     text = stringResource(id = R.string.loading_restaurant_details),
@@ -301,7 +305,7 @@ internal fun AppDialogs(
         AlertDialog(
             onDismissRequest = onDismissDetailPopup,
             containerColor = Color.White,
-            shape = RoundedCornerShape(20.dp),
+            shape = RoundedCornerShape(24.dp),
             title = {
                 Column {
                     Text(
@@ -333,6 +337,27 @@ internal fun AppDialogs(
                             distanceMeters = detailState.restaurant.distanceMeters,
                             koreanFallback = detailState.restaurant.koreanFallback
                         )
+                    }
+
+                    if (viewModel.selectedConditions.value.isNotEmpty()) {
+                        item {
+                            MenuHealthOverview(researchedMenus)
+                        }
+                    } else {
+                        item {
+                            Surface(
+                                color = AppColors.SurfaceMuted,
+                                shape = RoundedCornerShape(14.dp)
+                            ) {
+                                Text(
+                                    text = stringResource(id = R.string.health_profile_needed),
+                                    modifier = Modifier.padding(12.dp),
+                                    fontSize = 12.sp,
+                                    lineHeight = 17.sp,
+                                    color = AppColors.TextSecondary
+                                )
+                            }
+                        }
                     }
 
                     if (menuNames.isNotEmpty()) {
@@ -373,19 +398,28 @@ internal fun AppDialogs(
                                             viewModel.fetchMenuDetail(menuName)
                                         }
                                     },
-                                color = if (isSelected) Color(0xFFE8F5E9) else Color(0xFFF7F7F7),
-                                shape = RoundedCornerShape(12.dp),
+                                color = if (isSelected) AppColors.PrimarySoft else AppColors.Surface,
+                                shape = RoundedCornerShape(16.dp),
                                 border = BorderStroke(
-                                    1.dp,
-                                    if (isSelected) Color(0xFF81C784) else Color(0xFFE0E0E0)
+                                    3.dp,
+                                    if (isSelected) AppColors.Primary else AppColors.Divider
                                 )
                             ) {
-                                Text(
-                                    text = menuName,
+                                Row(
                                     modifier = Modifier.padding(horizontal = 14.dp, vertical = 11.dp),
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Text(
+                                        text = menuName,
+                                        modifier = Modifier.weight(1f),
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    researchedMenu
+                                        ?.takeIf { it.healthRiskSummary.isNotBlank() }
+                                        ?.let { MenuRiskBadge(it.healthRiskLevel) }
+                                }
                             }
 
                             if (isSelected) {
@@ -482,9 +516,9 @@ private fun MenuDetailCard(
     var imageIndex by remember(candidates) { mutableIntStateOf(0) }
     val imageUrl = candidates.getOrNull(imageIndex)
     Card(
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFF7FBF7)),
-        shape = RoundedCornerShape(16.dp),
-        border = BorderStroke(1.dp, Color(0xFFC8E6C9))
+        colors = CardDefaults.cardColors(containerColor = AppColors.Surface),
+        shape = RoundedCornerShape(20.dp),
+        border = BorderStroke(3.dp, AppColors.PrimaryLight)
     ) {
         Column(modifier = Modifier.padding(14.dp)) {
             Text(
@@ -563,6 +597,10 @@ private fun MenuDetailCard(
                 MenuTextSection(stringResource(id = R.string.menu_possible_allergens), it.joinToString(" · "))
             }
 
+            profile?.takeIf {
+                it.healthRiskSummary.isNotBlank() || it.healthRiskReasons.isNotEmpty()
+            }?.let { HealthAssessmentCard(it) }
+
             profile?.nutrition?.let { nutrition ->
                 Spacer(modifier = Modifier.height(12.dp))
                 HorizontalDivider(color = Color(0xFFDDEBDD))
@@ -613,6 +651,135 @@ private fun MenuDetailCard(
                     )
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun MenuHealthOverview(menus: List<RestaurantMenuItem>) {
+    val assessed = menus.filter { it.healthRiskSummary.isNotBlank() }
+    val avoid = assessed.count { it.healthRiskLevel.equals("avoid", ignoreCase = true) }
+    val caution = assessed.count { it.healthRiskLevel.equals("caution", ignoreCase = true) }
+    val safe = assessed.count { it.healthRiskLevel.equals("safe", ignoreCase = true) }
+    val background = when {
+        avoid > 0 -> Color(0xFFFFE5E5)
+        caution > 0 -> Color(0xFFFFF5CC)
+        assessed.isNotEmpty() -> AppColors.SuccessSoft
+        else -> AppColors.SurfaceMuted
+    }
+    val accent = when {
+        avoid > 0 -> AppColors.DangerDark
+        caution > 0 -> Color(0xFF9A6B00)
+        assessed.isNotEmpty() -> AppColors.SuccessDark
+        else -> AppColors.TextSecondary
+    }
+
+    Surface(color = background, shape = RoundedCornerShape(16.dp)) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Text(
+                text = stringResource(id = R.string.health_menu_analysis_title),
+                fontSize = 13.sp,
+                fontWeight = FontWeight.ExtraBold,
+                color = accent
+            )
+            Text(
+                text = if (assessed.isEmpty()) {
+                    stringResource(id = R.string.health_analysis_unavailable)
+                } else {
+                    stringResource(id = R.string.health_menu_analysis_counts, avoid, caution, safe)
+                },
+                fontSize = 12.sp,
+                lineHeight = 17.sp,
+                color = AppColors.TextPrimary
+            )
+        }
+    }
+}
+
+@Composable
+private fun MenuRiskBadge(level: String) {
+    val (label, foreground, background) = when (level.lowercase()) {
+        "avoid" -> Triple(R.string.health_risk_avoid, AppColors.DangerDark, Color(0xFFFFE5E5))
+        "caution" -> Triple(R.string.health_risk_caution, Color(0xFF8A6200), Color(0xFFFFF1B8))
+        "safe" -> Triple(R.string.health_risk_safe, AppColors.SuccessDark, AppColors.SuccessSoft)
+        else -> Triple(R.string.health_risk_unknown, AppColors.TextSecondary, AppColors.SurfaceMuted)
+    }
+    Surface(color = background, shape = RoundedCornerShape(50)) {
+        Text(
+            text = stringResource(id = label),
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+            fontSize = 10.sp,
+            fontWeight = FontWeight.ExtraBold,
+            color = foreground
+        )
+    }
+}
+
+@Composable
+private fun HealthAssessmentCard(profile: MenuProfile) {
+    val (foreground, background) = when (profile.healthRiskLevel.lowercase()) {
+        "avoid" -> AppColors.DangerDark to Color(0xFFFFE5E5)
+        "caution" -> Color(0xFF8A6200) to Color(0xFFFFF5CC)
+        "safe" -> AppColors.SuccessDark to AppColors.SuccessSoft
+        else -> AppColors.TextSecondary to AppColors.SurfaceMuted
+    }
+    Spacer(modifier = Modifier.height(12.dp))
+    Surface(color = background, shape = RoundedCornerShape(14.dp)) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = stringResource(id = R.string.health_match_result),
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = foreground
+                )
+                MenuRiskBadge(profile.healthRiskLevel)
+            }
+            if (profile.healthRiskSummary.isNotBlank()) {
+                Text(
+                    text = profile.healthRiskSummary,
+                    modifier = Modifier.padding(top = 6.dp),
+                    fontSize = 13.sp,
+                    lineHeight = 18.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+            profile.healthRiskReasons.forEach { reason ->
+                Text(
+                    text = "• $reason",
+                    modifier = Modifier.padding(top = 4.dp),
+                    fontSize = 12.sp,
+                    lineHeight = 17.sp
+                )
+            }
+            if (profile.questionsForRestaurant.isNotEmpty()) {
+                Text(
+                    text = stringResource(id = R.string.questions_for_restaurant),
+                    modifier = Modifier.padding(top = 9.dp),
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = foreground
+                )
+                profile.questionsForRestaurant.forEach { question ->
+                    Text(
+                        text = "• $question",
+                        modifier = Modifier.padding(top = 3.dp),
+                        fontSize = 12.sp,
+                        lineHeight = 17.sp
+                    )
+                }
+            }
+            Text(
+                text = stringResource(id = R.string.health_analysis_disclaimer),
+                modifier = Modifier.padding(top = 8.dp),
+                fontSize = 10.sp,
+                lineHeight = 14.sp,
+                color = AppColors.TextSecondary
+            )
         }
     }
 }
@@ -811,9 +978,9 @@ internal fun ReviewBottomSheet(viewModel: MainViewModel) {
                                         )
                                     },
                                 colors = CardDefaults.cardColors(
-                                    containerColor = Color(0xFFF9F9F9)
+                                    containerColor = AppColors.Surface
                                 ),
-                                border = BorderStroke(1.dp, Color(0xFFEEEEEE))
+                                border = BorderStroke(3.dp, AppColors.Divider)
                             ) {
                                 Column(modifier = Modifier.padding(16.dp)) {
                                     Text(
@@ -994,7 +1161,7 @@ private fun RestaurantInfoRow(
         )
         HorizontalDivider(
             modifier = Modifier.padding(top = 6.dp),
-            color = Color(0xFFEEEEEE)
+            color = AppColors.Divider
         )
     }
 }

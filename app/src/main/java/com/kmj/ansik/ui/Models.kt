@@ -157,7 +157,11 @@ data class RestaurantMenuItem(
     val possibleAllergens: List<String> = emptyList(),
     val imageUrls: List<String> = emptyList(),
     val sourceUrls: List<String> = emptyList(),
-    val confidence: String = "medium"
+    val confidence: String = "medium",
+    val healthRiskLevel: String = "unknown",
+    val healthRiskSummary: String = "",
+    val healthRiskReasons: List<String> = emptyList(),
+    val questionsForRestaurant: List<String> = emptyList()
 )
 
 data class MenuDetailState(
@@ -177,7 +181,11 @@ data class MenuProfile(
     val matchStatus: String = "UNMATCHED",
     val descriptionSource: String = "",
     val descriptionSourceUrl: String = "",
-    val disclaimer: String = ""
+    val disclaimer: String = "",
+    val healthRiskLevel: String = "unknown",
+    val healthRiskSummary: String = "",
+    val healthRiskReasons: List<String> = emptyList(),
+    val questionsForRestaurant: List<String> = emptyList()
 )
 
 data class MenuNutrition(
@@ -196,4 +204,60 @@ data class BlogReview(
     val title: String = "",
     val description: String = "",
     val link: String = ""
+)
+
+data class AiCourseRequest(
+    val cityCode: String,
+    val cityName: String,
+    val nights: Int,
+    val days: Int,
+    val stopsPerDay: Int,
+    val existingSchedule: String,
+    val preferences: List<String>,
+    val healthConditions: List<String>,
+    val language: String
+)
+
+data class SavedMyCourse(
+    val id: String = UUID.randomUUID().toString(),
+    val title: String = "",
+    val nights: Int = 0,
+    val days: Int = 1,
+    val places: List<PlaceInfo> = emptyList()
+)
+
+data class AiCourse(
+    val id: String = "",
+    val title: String = "",
+    val cityCode: String = "",
+    val cityName: String = "",
+    val nights: Int = 0,
+    val days: Int = 1,
+    val preferences: List<String> = emptyList(),
+    val summary: String = "",
+    val selectionReason: String = "",
+    val travelTips: List<String> = emptyList(),
+    val itinerary: List<AiCourseDay> = emptyList(),
+    val status: String = "",
+    val generatedBy: String = ""
+)
+
+data class AiCourseDay(
+    val day: Int = 1,
+    val theme: String = "",
+    val stops: List<AiCourseStop> = emptyList()
+)
+
+data class AiCourseStop(
+    val id: String = "",
+    val name: String = "",
+    val address: String = "",
+    val category: String = "",
+    val imageUrl: String = "",
+    val latitude: Double = 0.0,
+    val longitude: Double = 0.0,
+    val recommendedTime: String = "",
+    val reason: String = "",
+    val visitTip: String = "",
+    val healthNote: String = ""
 )
