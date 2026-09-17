@@ -42,10 +42,7 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
                         provider = provider,
                         providerToken = providerToken,
                         deviceId = AuthSessionStore.deviceId(),
-                        language = currentLanguage(),
-                        termsAccepted = true,
-                        privacyCollectionAccepted = true,
-                        consentVersion = PrivacyConsentStore.CONSENT_VERSION
+                        language = currentLanguage()
                     )
                 )
             }.onSuccess { response ->
@@ -123,7 +120,7 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
 
     private fun friendlyMessage(error: Throwable): String = when (error) {
         is HttpException -> when (error.code()) {
-            400 -> "필수 동의 항목을 확인해 주세요."
+            400 -> "요청 정보를 확인해 주세요."
             401 -> "소셜 로그인 확인에 실패했습니다. 다시 로그인해 주세요."
             429 -> "로그인 요청이 너무 많습니다. 잠시 후 다시 시도해 주세요."
             else -> "서버에서 로그인을 완료하지 못했습니다. (${error.code()})"
