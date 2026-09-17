@@ -15,4 +15,5 @@
     <string name="health_sensitive_agree">동의하고 사용하기</string>
     <string name="privacy_policy_title">개인정보 처리방침</string>
     <string name="privacy_policy_body">안식은 서비스 제공에 필요한 범위에서 개인정보를 처리합니다. 소셜 로그인 시 제공자 식별자, 이메일(제공 시), 닉네임, 프로필 이미지, 기기 식별자 및 언어 설정을 처리하며 인증 토큰은 로그인 유지와 보안을 위해 사용합니다. 건강·알레르기·식단 조건은 사용자가 맞춤 기능을 선택한 경우에만 해당 기능 수행 목적으로 처리합니다. 위치 정보는 주변 식당 검색과 지도 기능 수행에 필요한 범위에서 사용합니다.</string>
+    <string name="cancel">취소</string>
 </resources>
