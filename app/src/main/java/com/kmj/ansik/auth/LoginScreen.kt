@@ -18,8 +18,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -67,8 +69,7 @@ fun LoginScreen(
     val allRequiredAccepted = termsAccepted && privacyAccepted
 
     LaunchedEffect(Unit) {
-        val keyHash = Utility.getKeyHash(context)
-        Log.d("KAKAO_KEY_HASH", "KEY HASH = $keyHash")
+        Log.d("KAKAO_KEY_HASH", "KEY HASH = ${Utility.getKeyHash(context)}")
     }
 
     LaunchedEffect(state.isAuthenticated) {
@@ -97,25 +98,23 @@ fun LoginScreen(
         )
     }
 
-    Surface(
-        color = AppColors.Background,
-        modifier = Modifier.fillMaxSize()
-    ) {
+    Surface(color = AppColors.Background, modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 24.dp, vertical = 28.dp),
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 24.dp, vertical = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(modifier = Modifier.weight(0.35f))
+            Spacer(modifier = Modifier.height(20.dp))
 
             Image(
                 painter = painterResource(R.drawable.ansik_logo_final),
                 contentDescription = stringResource(R.string.app_name),
-                modifier = Modifier.size(108.dp)
+                modifier = Modifier.size(96.dp)
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
             Text(
                 text = stringResource(R.string.login_welcome_title),
@@ -134,7 +133,7 @@ fun LoginScreen(
                 lineHeight = 21.sp
             )
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(18.dp))
 
             Surface(
                 modifier = Modifier.fillMaxWidth(),
@@ -212,9 +211,7 @@ fun LoginScreen(
                                 privacyCollectionAccepted = privacyAccepted
                             )
                         }
-                        .onFailure { error ->
-                            viewModel.showProviderError(error.message)
-                        }
+                        .onFailure { error -> viewModel.showProviderError(error.message) }
                 }
             }
 
@@ -244,7 +241,7 @@ fun LoginScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.weight(1f))
+            Spacer(modifier = Modifier.height(28.dp))
 
             Text(
                 text = stringResource(R.string.continue_without_login),
@@ -262,6 +259,8 @@ fun LoginScreen(
                     fontSize = 12.sp
                 )
             }
+
+            Spacer(modifier = Modifier.height(24.dp))
         }
     }
 }
@@ -283,11 +282,7 @@ private fun SocialLoginButton(
             .fillMaxWidth()
             .height(56.dp)
             .then(
-                if (border != null) {
-                    Modifier.border(width = 1.dp, color = border, shape = shape)
-                } else {
-                    Modifier
-                }
+                if (border != null) Modifier.border(1.dp, border, shape) else Modifier
             )
             .background(
                 color = if (enabled) background else background.copy(alpha = 0.45f),
@@ -300,7 +295,7 @@ private fun SocialLoginButton(
         Box(
             modifier = Modifier
                 .size(28.dp)
-                .background(color = foreground.copy(alpha = 0.10f), shape = CircleShape),
+                .background(foreground.copy(alpha = 0.10f), CircleShape),
             contentAlignment = Alignment.Center
         ) {
             Text(
@@ -318,14 +313,12 @@ private fun SocialLoginButton(
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center
         )
-
         Spacer(modifier = Modifier.size(28.dp))
     }
 }
 
-private tailrec fun Context.findActivity(): ComponentActivity? =
-    when (this) {
-        is ComponentActivity -> this
-        is ContextWrapper -> baseContext.findActivity()
-        else -> null
-    }
+private tailrec fun Context.findActivity(): ComponentActivity? = when (this) {
+    is ComponentActivity -> this
+    is ContextWrapper -> baseContext.findActivity()
+    else -> null
+}
