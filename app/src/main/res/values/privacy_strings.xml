@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="consent_all_required">필수 약관에 모두 동의합니다</string>
+    <string name="consent_terms_required">[필수] 서비스 이용약관 동의</string>
+    <string name="consent_privacy_required">[필수] 개인정보 수집·이용 동의</string>
+    <string name="consent_view_details">상세보기</string>
+    <string name="consent_required_notice">필수 약관에 동의한 후 로그인할 수 있습니다.</string>
+    <string name="terms_title">서비스 이용약관</string>
+    <string name="terms_body">안식은 여행지와 식당 탐색, 맞춤 메뉴 안내 및 여행 코스 추천 기능을 제공합니다. 서비스 내 건강·영양·알레르기 관련 안내는 참고 정보이며 실제 조리법·식재료·교차오염 여부는 식당 또는 전문가에게 직접 확인해야 합니다. 서비스의 비정상적 이용, 타인의 권리 침해, 시스템에 위해를 주는 행위는 제한될 수 있습니다.</string>
+    <string name="privacy_collection_title">개인정보 수집·이용 동의</string>
+    <string name="privacy_collection_body_corrected">1. 수집 항목\n- 소셜 로그인 제공자 및 제공자 사용자 식별자\n- 이메일(소셜 제공자가 제공하는 경우)\n- 닉네임, 프로필 이미지\n- 앱에서 생성한 기기 식별자, 언어 설정\n- 로그인·세션 토큰 정보\n\n2. 이용 목적\n- 회원 식별 및 소셜 로그인 처리\n- 로그인 상태 유지 및 계정 보안\n- 사용자 설정과 서비스 이용 환경 제공\n\n3. 보유 및 이용기간\n- 회원 탈퇴 또는 계정 삭제 시까지. 단, 관계 법령에 따라 보존이 필요한 경우 해당 기간 동안 보관할 수 있습니다.\n\n4. 동의 거부 권리\n- 개인정보 수집·이용 동의를 거부할 수 있습니다. 다만 필수 항목에 동의하지 않으면 회원 로그인 및 계정 기반 기능을 이용할 수 없습니다. 로그인 없이 둘러보기는 계속 이용할 수 있습니다.</string>
+    <string name="health_sensitive_title">건강·알레르기·종교/신념 정보 처리 동의</string>
+    <string name="health_sensitive_summary">선택한 건강·알레르기·식단·종교/신념 조건을 맞춤 기능에 사용합니다.</string>
+    <string name="health_sensitive_body">사용자가 선택하거나 입력한 건강 관리 항목, 알레르기, 식단 조건 및 종교·신념 기반 식단 조건은 맞춤 메뉴 안내와 여행 코스 추천에 사용됩니다. 선택값은 기기에 저장될 수 있으며 맞춤 기능 사용 시 안식 서버로 전송되고 AI 기반 분석 처리에 사용될 수 있습니다. 동의하지 않아도 일반적인 여행지와 식당 탐색 기능은 이용할 수 있습니다.</string>
+    <string name="health_sensitive_agree">동의하고 사용하기</string>
+    <string name="privacy_policy_title">개인정보 처리방침</string>
+    <string name="privacy_policy_body">안식은 서비스 제공에 필요한 범위에서 개인정보를 처리합니다. 소셜 로그인 시 제공자 식별자, 이메일(제공 시), 닉네임, 프로필 이미지, 기기 식별자 및 언어 설정을 처리하며 인증 토큰은 로그인 유지와 보안을 위해 사용합니다. 건강·알레르기·식단·종교/신념 기반 식단 조건은 사용자가 맞춤 기능을 선택한 경우에만 해당 기능 수행 목적으로 처리합니다. 위치 정보는 주변 식당 검색과 지도 기능 수행에 필요한 범위에서 사용합니다. 사용자는 설정에서 계정을 삭제하여 서버에 저장된 회원 계정과 연결 데이터를 삭제할 수 있습니다.</string>
+    <string name="location_permission_title">위치 접근 권한 안내</string>
+    <string name="location_permission_body">현재 위치로 지도를 이동하기 위해 위치 권한을 사용합니다. 위치 권한은 선택 사항이며 거부해도 지도 검색과 장소·식당 탐색 기능을 사용할 수 있습니다. 현재 위치는 기기에서 지도 표시를 위해 사용되며, 주변 식당 검색은 사용자가 선택한 지도 중심 좌표를 기준으로 요청합니다.</string>
+    <string name="location_permission_continue">위치 권한 요청</string>
+    <string name="delete_account">계정 삭제</string>
+    <string name="delete_account_title">계정을 삭제할까요?</string>
+    <string name="delete_account_body">계정을 삭제하면 서버에 저장된 회원정보, 소셜 계정 연결정보, 로그인 세션 및 계정에 연결된 저장 데이터가 삭제됩니다. 이 작업은 되돌릴 수 없습니다.</string>
+    <string name="delete_account_confirm">영구 삭제</string>
+</resources>

@@ -30,6 +30,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kmj.ansik.R
+import com.kmj.ansik.privacy.PrivacyConsentStore
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -38,11 +39,51 @@ fun ProfileScreen(
     onNavigateToMap: () -> Unit
 ) {
     val selectedConditions by viewModel.selectedConditions
+    var pendingCondition by remember { mutableStateOf<String?>(null) }
+    var showSensitiveConsent by remember { mutableStateOf(false) }
 
-    val handleToggle = remember {
-        { condition: String ->
+    val handleToggle: (String) -> Unit = { condition ->
+        val removingExisting = selectedConditions.contains(condition)
+        if (removingExisting || PrivacyConsentStore.hasSensitiveInfoConsent()) {
             viewModel.toggleCondition(condition)
+        } else {
+            pendingCondition = condition
+            showSensitiveConsent = true
         }
+    }
+
+    if (showSensitiveConsent) {
+        AlertDialog(
+            onDismissRequest = {
+                showSensitiveConsent = false
+                pendingCondition = null
+            },
+            title = { Text(stringResource(R.string.health_sensitive_title), fontWeight = FontWeight.Bold) },
+            text = {
+                Text(
+                    text = stringResource(R.string.health_sensitive_body),
+                    lineHeight = 20.sp
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    PrivacyConsentStore.acceptSensitiveInfoConsent()
+                    pendingCondition?.let(viewModel::toggleCondition)
+                    pendingCondition = null
+                    showSensitiveConsent = false
+                }) {
+                    Text(stringResource(R.string.health_sensitive_agree))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    pendingCondition = null
+                    showSensitiveConsent = false
+                }) {
+                    Text(stringResource(R.string.cancel))
+                }
+            }
+        )
     }
 
     val basicConditions = stringArrayResource(id = R.array.basic_conditions).toList()
@@ -60,15 +101,11 @@ fun ProfileScreen(
                         color = AppColors.PrimaryDark
                     )
                 },
-                // 설정 아이콘 삭제됨
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = AppColors.PrimarySoft
-                )
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = AppColors.PrimarySoft)
             )
         },
         containerColor = AppColors.Background
     ) { paddingValues ->
-
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
@@ -78,20 +115,23 @@ fun ProfileScreen(
         ) {
             item {
                 Spacer(modifier = Modifier.height(24.dp))
-
                 Text(
                     text = stringResource(id = R.string.health_management_title),
                     fontSize = 22.sp,
                     fontWeight = FontWeight.ExtraBold,
                     color = AppColors.TextPrimary
                 )
-
                 Spacer(modifier = Modifier.height(8.dp))
-
                 Text(
                     text = stringResource(id = R.string.health_management_desc),
                     color = AppColors.TextSecondary,
                     fontSize = 13.sp
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = stringResource(id = R.string.health_sensitive_summary),
+                    color = AppColors.TextSecondary,
+                    fontSize = 12.sp
                 )
             }
 
@@ -102,9 +142,7 @@ fun ProfileScreen(
                     fontSize = 16.sp,
                     color = AppColors.PrimaryDark
                 )
-
                 Spacer(modifier = Modifier.height(12.dp))
-
                 FlowRow(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -149,11 +187,9 @@ fun ProfileScreen(
 
             item {
                 Spacer(modifier = Modifier.height(24.dp))
-
                 PlayfulButton(
                     onClick = onNavigateToMap,
-                    modifier = Modifier
-                        .fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(
                         text = stringResource(id = R.string.go_to_travel_route),
@@ -162,7 +198,6 @@ fun ProfileScreen(
                         color = Color.White
                     )
                 }
-
                 Spacer(modifier = Modifier.height(48.dp))
             }
         }
@@ -180,13 +215,11 @@ fun AnimatedChip(
         animationSpec = tween(durationMillis = 200),
         label = "bgColor"
     )
-
     val textColor by animateColorAsState(
         targetValue = if (isSelected) Color.White else AppColors.TextPrimary,
         animationSpec = tween(durationMillis = 200),
         label = "textColor"
     )
-
     val scale by animateFloatAsState(
         targetValue = if (isSelected) 1.05f else 1f,
         animationSpec = tween(durationMillis = 150),
@@ -196,25 +229,17 @@ fun AnimatedChip(
     Box(
         modifier = Modifier
             .scale(scale)
-            .shadow(
-                if (isSelected) 4.dp else 0.dp,
-                RoundedCornerShape(20.dp)
-            )
-            .background(
-                backgroundColor,
-                RoundedCornerShape(20.dp)
-            )
+            .shadow(if (isSelected) 4.dp else 0.dp, RoundedCornerShape(20.dp))
+            .background(backgroundColor, RoundedCornerShape(20.dp))
             .border(
-                width = if (isSelected) 3.dp else 3.dp,
+                width = 3.dp,
                 color = if (isSelected) AppColors.PrimaryDark else AppColors.Divider,
                 shape = RoundedCornerShape(20.dp)
             )
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null
-            ) {
-                onToggle(label)
-            }
+            ) { onToggle(label) }
             .padding(horizontal = 16.dp, vertical = 10.dp),
         contentAlignment = Alignment.Center
     ) {
@@ -244,15 +269,9 @@ fun ExpandableCategorySection(
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null
-            ) {
-                isExpanded = !isExpanded
-            },
-        colors = CardDefaults.cardColors(
-            containerColor = AppColors.Surface
-        ),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = 0.dp
-        ),
+            ) { isExpanded = !isExpanded },
+        colors = CardDefaults.cardColors(containerColor = AppColors.Surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         border = BorderStroke(3.dp, AppColors.Divider),
         shape = RoundedCornerShape(20.dp)
     ) {
@@ -260,10 +279,7 @@ fun ExpandableCategorySection(
             modifier = Modifier
                 .fillMaxWidth()
                 .animateContentSize(
-                    animationSpec = tween(
-                        durationMillis = 250,
-                        easing = LinearOutSlowInEasing
-                    )
+                    animationSpec = tween(durationMillis = 250, easing = LinearOutSlowInEasing)
                 )
                 .padding(20.dp)
         ) {
@@ -272,12 +288,7 @@ fun ExpandableCategorySection(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = title,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp
-                )
-
+                Text(text = title, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 Icon(
                     imageVector = if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
                     contentDescription = stringResource(id = R.string.expand),
@@ -286,9 +297,7 @@ fun ExpandableCategorySection(
             }
 
             if (isExpanded) {
-                Column(
-                    modifier = Modifier.padding(top = 16.dp)
-                ) {
+                Column(modifier = Modifier.padding(top = 16.dp)) {
                     FlowRow(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -301,7 +310,6 @@ fun ExpandableCategorySection(
                                 onToggle = onToggle
                             )
                         }
-
                         customItems.forEach { customItem ->
                             AnimatedChip(
                                 label = customItem,
@@ -310,9 +318,7 @@ fun ExpandableCategorySection(
                             )
                         }
                     }
-
                     Spacer(modifier = Modifier.height(16.dp))
-
                     CustomInputRow(
                         onAddCustomItem = { newCustom ->
                             if (!customItems.contains(newCustom)) {
@@ -328,22 +334,15 @@ fun ExpandableCategorySection(
 }
 
 @Composable
-fun CustomInputRow(
-    onAddCustomItem: (String) -> Unit
-) {
+fun CustomInputRow(onAddCustomItem: (String) -> Unit) {
     var customInput by remember { mutableStateOf("") }
 
-    Row(
-        verticalAlignment = Alignment.CenterVertically
-    ) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
         OutlinedTextField(
             value = customInput,
             onValueChange = { customInput = it },
             placeholder = {
-                Text(
-                    text = stringResource(id = R.string.enter_custom_other),
-                    fontSize = 14.sp
-                )
+                Text(text = stringResource(id = R.string.enter_custom_other), fontSize = 14.sp)
             },
             modifier = Modifier
                 .weight(1f)
@@ -366,10 +365,7 @@ fun CustomInputRow(
             },
             modifier = Modifier
                 .size(56.dp)
-                .background(
-                    AppColors.PrimarySoft,
-                    RoundedCornerShape(8.dp)
-                )
+                .background(AppColors.PrimarySoft, RoundedCornerShape(8.dp))
         ) {
             Icon(
                 Icons.Default.Add,

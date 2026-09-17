@@ -2,42 +2,27 @@ package com.kmj.ansik.ui
 
 import android.content.Context
 import androidx.appcompat.app.AppCompatDelegate
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.core.os.LocaleListCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
@@ -50,7 +35,6 @@ import com.kmj.ansik.auth.LoginScreen
 
 @Composable
 fun AnsikApp() {
-
     val context = LocalContext.current
     val rootNavController = rememberNavController()
     val viewModel: MainViewModel = viewModel()
@@ -61,10 +45,7 @@ fun AnsikApp() {
         Context.MODE_PRIVATE
     )
 
-    val isFirstLaunch = sharedPref.getBoolean(
-        "isFirstLaunch",
-        true
-    )
+    val isFirstLaunch = sharedPref.getBoolean("isFirstLaunch", true)
     val hasGuestSession = sharedPref.getBoolean("continueAsGuest", false)
     val initialRoute = when {
         isFirstLaunch -> "language"
@@ -89,9 +70,7 @@ fun AnsikApp() {
                         sharedPref.getBoolean("continueAsGuest", false)
                     ) "main" else "login"
                     rootNavController.navigate(nextRoute) {
-                        popUpTo("language") {
-                            inclusive = true
-                        }
+                        popUpTo("language") { inclusive = true }
                     }
                 }
             )
@@ -140,7 +119,6 @@ private fun MainTabScreen(
     onNavigateToLanguage: () -> Unit,
     onNavigateToLogin: () -> Unit
 ) {
-
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route ?: "map"
@@ -167,9 +145,7 @@ private fun MainTabScreen(
 
                 NavigationBarItem(
                     selected = currentRoute == "ai",
-                    onClick = {
-                        navController.navigate("ai") { launchSingleTop = true }
-                    },
+                    onClick = { navController.navigate("ai") { launchSingleTop = true } },
                     icon = { Icon(Icons.Default.AutoAwesome, contentDescription = stringResource(id = R.string.tab_ai_course)) },
                     label = { Text(stringResource(id = R.string.tab_ai_course), fontWeight = FontWeight.Bold) },
                     colors = playfulNavigationColors()
@@ -177,9 +153,7 @@ private fun MainTabScreen(
 
                 NavigationBarItem(
                     selected = currentRoute == "profile",
-                    onClick = {
-                        navController.navigate("profile") { launchSingleTop = true }
-                    },
+                    onClick = { navController.navigate("profile") { launchSingleTop = true } },
                     icon = { Icon(Icons.Default.Person, contentDescription = stringResource(id = R.string.tab_profile)) },
                     label = { Text(stringResource(id = R.string.tab_profile), fontWeight = FontWeight.Bold) },
                     colors = playfulNavigationColors()
@@ -187,9 +161,7 @@ private fun MainTabScreen(
 
                 NavigationBarItem(
                     selected = currentRoute == "settings",
-                    onClick = {
-                        navController.navigate("settings") { launchSingleTop = true }
-                    },
+                    onClick = { navController.navigate("settings") { launchSingleTop = true } },
                     icon = { Icon(Icons.Default.Settings, contentDescription = stringResource(id = R.string.settings)) },
                     label = { Text(stringResource(id = R.string.settings), fontWeight = FontWeight.Bold) },
                     colors = playfulNavigationColors()
@@ -238,6 +210,12 @@ private fun MainTabScreen(
                         onLogin = onNavigateToLogin,
                         onLogout = {
                             authViewModel.logout(onNavigateToLogin)
+                        },
+                        onDeleteAccount = { onFailure ->
+                            authViewModel.deleteAccount(
+                                onComplete = onNavigateToLogin,
+                                onFailure = onFailure
+                            )
                         }
                     )
                 }

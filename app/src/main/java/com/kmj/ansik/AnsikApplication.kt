@@ -4,6 +4,7 @@ import android.app.Application
 import android.util.Log
 import com.kakao.sdk.common.KakaoSdk
 import com.kmj.ansik.auth.AuthSessionStore
+import com.kmj.ansik.privacy.PrivacyConsentStore
 import com.navercorp.nid.NidOAuth
 import com.navercorp.nid.core.data.datastore.NidOAuthInitializingCallback
 
@@ -12,6 +13,7 @@ class AnsikApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         AuthSessionStore.initialize(this)
+        PrivacyConsentStore.initialize(this)
 
         if (BuildConfig.KAKAO_NATIVE_APP_KEY.isNotBlank()) {
             KakaoSdk.init(this, BuildConfig.KAKAO_NATIVE_APP_KEY)

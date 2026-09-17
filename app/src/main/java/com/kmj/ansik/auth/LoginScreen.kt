@@ -18,15 +18,22 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -39,6 +46,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kakao.sdk.common.util.Utility
 import com.kmj.ansik.R
+import com.kmj.ansik.privacy.ConsentDetailDialog
+import com.kmj.ansik.privacy.RequiredConsentRow
 import com.kmj.ansik.ui.AppColors
 
 @Composable
@@ -51,253 +60,207 @@ fun LoginScreen(
     val context = LocalContext.current
     val activity = context.findActivity()
 
-    // 현재 설치된 APK의 실제 카카오 Key Hash 출력
-    LaunchedEffect(Unit) {
-        val keyHash = Utility.getKeyHash(context)
+    var termsAccepted by remember { mutableStateOf(false) }
+    var privacyAccepted by remember { mutableStateOf(false) }
+    var showTerms by remember { mutableStateOf(false) }
+    var showPrivacyCollection by remember { mutableStateOf(false) }
+    var showPrivacyPolicy by remember { mutableStateOf(false) }
 
-        Log.e(
-            "KAKAO_KEY_HASH",
-            "========================================"
-        )
-        Log.e(
-            "KAKAO_KEY_HASH",
-            "KEY HASH = $keyHash"
-        )
-        Log.e(
-            "KAKAO_KEY_HASH",
-            "========================================"
-        )
+    val allRequiredAccepted = termsAccepted && privacyAccepted
+
+    LaunchedEffect(Unit) {
+        Log.d("KAKAO_KEY_HASH", "KEY HASH = ${Utility.getKeyHash(context)}")
     }
 
     LaunchedEffect(state.isAuthenticated) {
-        if (state.isAuthenticated) {
-            onAuthenticated()
-        }
+        if (state.isAuthenticated) onAuthenticated()
     }
 
-    Surface(
-        color = AppColors.Background,
-        modifier = Modifier.fillMaxSize()
-    ) {
+    if (showTerms) {
+        ConsentDetailDialog(
+            title = stringResource(R.string.terms_title),
+            body = stringResource(R.string.terms_body),
+            onDismiss = { showTerms = false }
+        )
+    }
+    if (showPrivacyCollection) {
+        ConsentDetailDialog(
+            title = stringResource(R.string.privacy_collection_title),
+            body = stringResource(R.string.privacy_collection_body_corrected),
+            onDismiss = { showPrivacyCollection = false }
+        )
+    }
+    if (showPrivacyPolicy) {
+        ConsentDetailDialog(
+            title = stringResource(R.string.privacy_policy_title),
+            body = stringResource(R.string.privacy_policy_body),
+            onDismiss = { showPrivacyPolicy = false }
+        )
+    }
+
+    Surface(color = AppColors.Background, modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(
-                    horizontal = 24.dp,
-                    vertical = 34.dp
-                ),
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 24.dp, vertical = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-
-            Spacer(
-                modifier = Modifier.weight(0.6f)
-            )
+            Spacer(modifier = Modifier.height(20.dp))
 
             Image(
-                painter = painterResource(
-                    R.drawable.ansik_logo_final
-                ),
-                contentDescription = stringResource(
-                    R.string.app_name
-                ),
-                modifier = Modifier.size(122.dp)
+                painter = painterResource(R.drawable.ansik_logo_final),
+                contentDescription = stringResource(R.string.app_name),
+                modifier = Modifier.size(96.dp)
             )
 
-            Spacer(
-                modifier = Modifier.height(22.dp)
-            )
+            Spacer(modifier = Modifier.height(14.dp))
 
             Text(
-                text = stringResource(
-                    R.string.login_welcome_title
-                ),
+                text = stringResource(R.string.login_welcome_title),
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Black,
                 color = AppColors.TextPrimary,
                 textAlign = TextAlign.Center
             )
 
-            Spacer(
-                modifier = Modifier.height(10.dp)
-            )
+            Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = stringResource(
-                    R.string.login_welcome_description
-                ),
+                text = stringResource(R.string.login_welcome_description),
                 color = AppColors.TextSecondary,
                 textAlign = TextAlign.Center,
                 lineHeight = 21.sp
             )
 
-            Spacer(
-                modifier = Modifier.height(34.dp)
-            )
+            Spacer(modifier = Modifier.height(18.dp))
 
-            /*
-             * ==========================
-             * 카카오 로그인
-             * ==========================
-             */
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                color = AppColors.Surface
+            ) {
+                Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                val next = !allRequiredAccepted
+                                termsAccepted = next
+                                privacyAccepted = next
+                            },
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Checkbox(
+                            checked = allRequiredAccepted,
+                            onCheckedChange = { checked ->
+                                termsAccepted = checked
+                                privacyAccepted = checked
+                            }
+                        )
+                        Text(
+                            text = stringResource(R.string.consent_all_required),
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+
+                    RequiredConsentRow(
+                        checked = termsAccepted,
+                        label = stringResource(R.string.consent_terms_required),
+                        onCheckedChange = { termsAccepted = it },
+                        onDetails = { showTerms = true }
+                    )
+                    RequiredConsentRow(
+                        checked = privacyAccepted,
+                        label = stringResource(R.string.consent_privacy_required),
+                        onCheckedChange = { privacyAccepted = it },
+                        onDetails = { showPrivacyCollection = true }
+                    )
+                }
+            }
+
+            if (!allRequiredAccepted) {
+                Text(
+                    text = stringResource(R.string.consent_required_notice),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 6.dp),
+                    color = AppColors.TextSecondary,
+                    fontSize = 11.sp
+                )
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
             SocialLoginButton(
-                label = stringResource(
-                    R.string.login_with_kakao
-                ),
+                label = stringResource(R.string.login_with_kakao),
                 badge = "K",
                 background = Color(0xFFFEE500),
                 foreground = Color(0xFF191919),
-                enabled = !state.isLoading
+                enabled = !state.isLoading && allRequiredAccepted
             ) {
-                if (activity == null) {
-                    return@SocialLoginButton
-                }
-
+                if (activity == null || !allRequiredAccepted) return@SocialLoginButton
                 viewModel.clearError()
-
                 SocialLoginManager.kakao(activity) { result ->
-
                     result
                         .onSuccess { accessToken ->
-
                             viewModel.exchangeProviderToken(
-                                "KAKAO",
-                                accessToken
+                                provider = "KAKAO",
+                                providerToken = accessToken,
+                                termsAccepted = termsAccepted,
+                                privacyCollectionAccepted = privacyAccepted
                             )
                         }
-                        .onFailure { error ->
-
-                            viewModel.showProviderError(
-                                error.message
-                            )
-                        }
+                        .onFailure { error -> viewModel.showProviderError(error.message) }
                 }
             }
 
-            /*
-             * 네이버 로그인은 네이버 검수 완료 전까지
-             * 원스토어 심사에서 노출되지 않도록 제거.
-             *
-             * 검수 통과 후 아래 코드를 다시 활성화하면 됨.
-             */
-
-            /*
-            Spacer(
-                modifier = Modifier.height(12.dp)
-            )
-
-            SocialLoginButton(
-                label = stringResource(
-                    R.string.login_with_naver
-                ),
-                badge = "N",
-                background = Color(0xFF03C75A),
-                foreground = Color.White,
-                enabled = !state.isLoading
-            ) {
-                if (activity == null) {
-                    return@SocialLoginButton
-                }
-
-                viewModel.clearError()
-
-                SocialLoginManager.naver(activity) { result ->
-
-                    result
-                        .onSuccess { accessToken ->
-
-                            viewModel.exchangeProviderToken(
-                                "NAVER",
-                                accessToken
-                            )
-                        }
-                        .onFailure { error ->
-
-                            viewModel.showProviderError(
-                                error.message
-                            )
-                        }
-                }
-            }
-            */
-
-            /*
-             * ==========================
-             * 로그인 진행 상태
-             * ==========================
-             */
             if (state.isLoading) {
-
                 Row(
-                    modifier = Modifier.padding(
-                        top = 18.dp
-                    ),
+                    modifier = Modifier.padding(top = 14.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(
-                        10.dp
-                    )
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-
                     CircularProgressIndicator(
                         modifier = Modifier.size(20.dp),
                         strokeWidth = 2.5.dp,
                         color = AppColors.Primary
                     )
-
                     Text(
-                        text = stringResource(
-                            R.string.login_in_progress
-                        ),
+                        text = stringResource(R.string.login_in_progress),
                         color = AppColors.TextSecondary
                     )
                 }
-
-            } else if (
-                !state.errorMessage.isNullOrBlank()
-            ) {
-
+            } else if (!state.errorMessage.isNullOrBlank()) {
                 Text(
                     text = state.errorMessage.orEmpty(),
-                    modifier = Modifier.padding(
-                        top = 16.dp
-                    ),
+                    modifier = Modifier.padding(top = 12.dp),
                     color = Color(0xFFB3261E),
                     textAlign = TextAlign.Center,
                     fontSize = 13.sp
                 )
             }
 
-            Spacer(
-                modifier = Modifier.weight(1f)
-            )
+            Spacer(modifier = Modifier.height(28.dp))
 
-            /*
-             * ==========================
-             * 비회원 이용
-             * ==========================
-             */
             Text(
-                text = stringResource(
-                    R.string.continue_without_login
-                ),
+                text = stringResource(R.string.continue_without_login),
                 modifier = Modifier
-                    .clickable(
-                        enabled = !state.isLoading,
-                        onClick = onContinueAsGuest
-                    )
-                    .padding(14.dp),
+                    .clickable(enabled = !state.isLoading, onClick = onContinueAsGuest)
+                    .padding(10.dp),
                 color = AppColors.TextSecondary,
                 fontWeight = FontWeight.Bold
             )
 
-            Text(
-                text = stringResource(
-                    R.string.login_terms_notice
-                ),
-                color = Color(0xFF8A938C),
-                textAlign = TextAlign.Center,
-                fontSize = 11.sp,
-                lineHeight = 16.sp
-            )
+            TextButton(onClick = { showPrivacyPolicy = true }) {
+                Text(
+                    text = stringResource(R.string.privacy_policy_title),
+                    color = AppColors.TextSecondary,
+                    fontSize = 12.sp
+                )
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
         }
     }
 }
@@ -312,7 +275,6 @@ private fun SocialLoginButton(
     border: Color? = null,
     onClick: () -> Unit
 ) {
-
     val shape = RoundedCornerShape(16.dp)
 
     Row(
@@ -320,48 +282,22 @@ private fun SocialLoginButton(
             .fillMaxWidth()
             .height(56.dp)
             .then(
-                if (border != null) {
-                    Modifier.border(
-                        width = 1.dp,
-                        color = border,
-                        shape = shape
-                    )
-                } else {
-                    Modifier
-                }
+                if (border != null) Modifier.border(1.dp, border, shape) else Modifier
             )
             .background(
-                color = if (enabled) {
-                    background
-                } else {
-                    background.copy(
-                        alpha = 0.55f
-                    )
-                },
+                color = if (enabled) background else background.copy(alpha = 0.45f),
                 shape = shape
             )
-            .clickable(
-                enabled = enabled,
-                onClick = onClick
-            )
-            .padding(
-                horizontal = 18.dp
-            ),
+            .clickable(enabled = enabled, onClick = onClick)
+            .padding(horizontal = 18.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-
         Box(
             modifier = Modifier
                 .size(28.dp)
-                .background(
-                    color = foreground.copy(
-                        alpha = 0.10f
-                    ),
-                    shape = CircleShape
-                ),
+                .background(foreground.copy(alpha = 0.10f), CircleShape),
             contentAlignment = Alignment.Center
         ) {
-
             Text(
                 text = badge,
                 color = foreground,
@@ -373,24 +309,16 @@ private fun SocialLoginButton(
         Text(
             text = label,
             modifier = Modifier.weight(1f),
-            color = foreground,
+            color = foreground.copy(alpha = if (enabled) 1f else 0.55f),
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center
         )
-
-        Spacer(
-            modifier = Modifier.size(28.dp)
-        )
+        Spacer(modifier = Modifier.size(28.dp))
     }
 }
 
-private tailrec fun Context.findActivity(): ComponentActivity? =
-    when (this) {
-
-        is ComponentActivity -> this
-
-        is ContextWrapper ->
-            baseContext.findActivity()
-
-        else -> null
-    }
+private tailrec fun Context.findActivity(): ComponentActivity? = when (this) {
+    is ComponentActivity -> this
+    is ContextWrapper -> baseContext.findActivity()
+    else -> null
+}

@@ -7,6 +7,29 @@ plugins {
     alias(libs.plugins.compose.compiler)
 }
 
+val localProperties = Properties().apply {
+    val file = rootProject.file("local.properties")
+    if (file.exists()) load(FileInputStream(file))
+}
+
+fun normalizedUrl(value: String?): String? = value
+    ?.trim()
+    ?.takeIf { it.isNotBlank() }
+    ?.let { if (it.endsWith("/")) it else "$it/" }
+
+val debugServerUrl = normalizedUrl(localProperties.getProperty("SERVER_URL"))
+    ?: "http://34.50.8.4:8088/"
+val releaseServerUrl = normalizedUrl(localProperties.getProperty("RELEASE_SERVER_URL"))
+    ?: debugServerUrl
+
+val socialLoginProperties = Properties().apply {
+    val file = rootProject.file("social-login.properties")
+    if (file.exists()) load(FileInputStream(file))
+}
+val kakaoNativeAppKey = socialLoginProperties.getProperty("KAKAO_NATIVE_APP_KEY").orEmpty()
+val naverLoginClientId = socialLoginProperties.getProperty("NAVER_LOGIN_CLIENT_ID").orEmpty()
+val naverLoginClientSecret = socialLoginProperties.getProperty("NAVER_LOGIN_CLIENT_SECRET").orEmpty()
+
 android {
     namespace = "com.kmj.ansik"
     compileSdk = 36
@@ -20,34 +43,10 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        // ========================================================
-        // local.properties에서 SERVER_URL을 읽어 BuildConfig 필드로 주입
-        // ========================================================
-        val localProperties = Properties()
-        val localPropertiesFile = rootProject.file("local.properties")
-        if (localPropertiesFile.exists()) {
-            localProperties.load(FileInputStream(localPropertiesFile))
-        }
-        val serverUrl = localProperties.getProperty("SERVER_URL")
-            ?.trim()
-            ?.let { if (it.endsWith("/")) it else "$it/" }
-            ?: "http://34.50.8.4:8088/"
-        // Local test alternatives for local.properties:
-        // Emulator: SERVER_URL=http://10.0.2.2:8088/
-        // Device:   SERVER_URL=http://<PC LAN IP>:8088/
-
-        val socialLoginProperties = Properties()
-        val socialLoginPropertiesFile = rootProject.file("social-login.properties")
-        if (socialLoginPropertiesFile.exists()) {
-            socialLoginProperties.load(FileInputStream(socialLoginPropertiesFile))
-        }
-        val kakaoNativeAppKey = socialLoginProperties.getProperty("KAKAO_NATIVE_APP_KEY").orEmpty()
-        val naverLoginClientId = socialLoginProperties.getProperty("NAVER_LOGIN_CLIENT_ID").orEmpty()
-        val naverLoginClientSecret = socialLoginProperties.getProperty("NAVER_LOGIN_CLIENT_SECRET").orEmpty()
-
         manifestPlaceholders["KAKAO_NATIVE_APP_KEY"] = kakaoNativeAppKey
+        manifestPlaceholders["USES_CLEARTEXT_TRAFFIC"] = "true"
 
-        buildConfigField("String", "SERVER_URL", "\"$serverUrl\"")
+        buildConfigField("String", "SERVER_URL", "\"$debugServerUrl\"")
         buildConfigField("String", "KAKAO_NATIVE_APP_KEY", "\"$kakaoNativeAppKey\"")
         buildConfigField("String", "NAVER_LOGIN_CLIENT_ID", "\"$naverLoginClientId\"")
         buildConfigField("String", "NAVER_LOGIN_CLIENT_SECRET", "\"$naverLoginClientSecret\"")
@@ -55,12 +54,18 @@ android {
 
     buildFeatures {
         compose = true
-        buildConfig = true   // ⭐ 이거 꼭 추가해야 BuildConfig 필드 생성됨
+        buildConfig = true
     }
 
     buildTypes {
+        debug {
+            buildConfigField("String", "SERVER_URL", "\"$debugServerUrl\"")
+            manifestPlaceholders["USES_CLEARTEXT_TRAFFIC"] = "true"
+        }
         release {
             isMinifyEnabled = false
+            buildConfigField("String", "SERVER_URL", "\"$releaseServerUrl\"")
+            manifestPlaceholders["USES_CLEARTEXT_TRAFFIC"] = "false"
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -78,6 +83,18 @@ android {
     }
 }
 
+afterEvaluate {
+    tasks.matching { task ->
+        task.name == "preReleaseBuild" || task.name == "assembleRelease" || task.name == "bundleRelease"
+    }.configureEach {
+        doFirst {
+            check(releaseServerUrl.startsWith("https://", ignoreCase = true)) {
+                "Release builds require RELEASE_SERVER_URL=https://... in local.properties. " +
+                    "Plain HTTP is not allowed for production because authentication and user data are transmitted."
+            }
+        }
+    }
+}
 
 dependencies {
     implementation(libs.androidx.core.ktx)
@@ -90,41 +107,26 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
 
     implementation("androidx.navigation:navigation-compose:2.7.7")
-
-    // 💡 수정된 부분: Compose BOM 버전을 올려서 터치(clickable) 충돌 해결
     implementation(platform("androidx.compose:compose-bom:2024.09.00"))
-
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
 
-    // 서버 통신용 Retrofit & JSON 파싱
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
 
     implementation("com.naver.maps:map-sdk:3.23.3")
-    // 🗺️ 네이버 지도 Compose SDK
     implementation("io.github.fornewid:naver-map-compose:1.5.7")
-
-    // 🖼️ 웹 이미지 로딩 라이브러리
     implementation("io.coil-kt:coil-compose:2.6.0")
-
     implementation("sh.calvin.reorderable:reorderable:2.4.3")
 
-    // Activity & ViewModel for Compose
     implementation("androidx.activity:activity-compose:1.8.2")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
-
-    // Tooling Preview용
     debugImplementation("androidx.compose.ui:ui-tooling")
-
     implementation("androidx.appcompat:appcompat:1.7.1")
-
-    // 확장 아이콘 (수정된 BOM에 의해 자동으로 알맞은 버전이 적용됨)
     implementation("androidx.compose.material:material-icons-extended")
 
-    // Social login
     implementation("com.kakao.sdk:v2-user:2.25.0")
     implementation("com.navercorp.nid:oauth:5.12.0")
     implementation("androidx.security:security-crypto:1.1.0-alpha06")

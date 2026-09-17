@@ -7,10 +7,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -26,8 +29,33 @@ fun SettingsScreen(
     onNavigateBack: () -> Unit,
     onNavigateToLanguage: () -> Unit,
     onLogin: () -> Unit,
-    onLogout: () -> Unit
+    onLogout: () -> Unit,
+    onDeleteAccount: ((String) -> Unit) -> Unit
 ) {
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    var deleteError by remember { mutableStateOf<String?>(null) }
+
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title = { Text(stringResource(R.string.delete_account_title), fontWeight = FontWeight.Bold) },
+            text = { Text(stringResource(R.string.delete_account_body)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    deleteError = null
+                    onDeleteAccount { message -> deleteError = message }
+                }) {
+                    Text(stringResource(R.string.delete_account_confirm))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteDialog = false }) {
+                    Text(stringResource(R.string.cancel))
+                }
+            }
+        )
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -42,9 +70,7 @@ fun SettingsScreen(
                         )
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = AppColors.Background
-                )
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = AppColors.Background)
             )
         },
         containerColor = AppColors.Background
@@ -91,19 +117,46 @@ fun SettingsScreen(
                             fontWeight = FontWeight.Bold
                         )
                     }
+                    if (authUser != null) {
+                        Spacer(Modifier.height(8.dp))
+                        TextButton(onClick = { showDeleteDialog = true }) {
+                            Text(stringResource(R.string.delete_account))
+                        }
+                        deleteError?.let {
+                            Text(text = it, color = MaterialTheme.colorScheme.error, fontSize = 12.sp)
+                        }
+                    }
                 }
             }
 
             Spacer(Modifier.height(24.dp))
             Text(stringResource(R.string.settings_menu), fontWeight = FontWeight.Bold)
-            ListItem(headlineContent = { Text(stringResource(R.string.settings_daily_stops), fontSize = 14.sp) },
-                supportingContent = { Text(stringResource(R.string.stops_per_day_value, viewModel.defaultStopsPerDay.intValue)) })
-            Slider(value = viewModel.defaultStopsPerDay.intValue.toFloat(),
-                onValueChange = { viewModel.updateDefaultStops(it.toInt()) }, valueRange = 3f..7f, steps = 3)
-            ListItem(headlineContent = { Text(stringResource(R.string.settings_original_menu), fontSize = 14.sp) },
-                supportingContent = { Text(stringResource(R.string.settings_original_menu_hint), fontSize = 12.sp, lineHeight = 17.sp) },
-                trailingContent = { Switch(checked = viewModel.showOriginalMenuNames.value,
-                    onCheckedChange = viewModel::updateMenuPreferences) })
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.settings_daily_stops), fontSize = 14.sp) },
+                supportingContent = { Text(stringResource(R.string.stops_per_day_value, viewModel.defaultStopsPerDay.intValue)) }
+            )
+            Slider(
+                value = viewModel.defaultStopsPerDay.intValue.toFloat(),
+                onValueChange = { viewModel.updateDefaultStops(it.toInt()) },
+                valueRange = 3f..7f,
+                steps = 3
+            )
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.settings_original_menu), fontSize = 14.sp) },
+                supportingContent = {
+                    Text(
+                        stringResource(R.string.settings_original_menu_hint),
+                        fontSize = 12.sp,
+                        lineHeight = 17.sp
+                    )
+                },
+                trailingContent = {
+                    Switch(
+                        checked = viewModel.showOriginalMenuNames.value,
+                        onCheckedChange = viewModel::updateMenuPreferences
+                    )
+                }
+            )
             Spacer(Modifier.height(14.dp))
 
             Surface(
