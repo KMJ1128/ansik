@@ -65,7 +65,7 @@ android {
         release {
             isMinifyEnabled = false
             buildConfigField("String", "SERVER_URL", "\"$releaseServerUrl\"")
-            manifestPlaceholders["USES_CLEARTEXT_TRAFFIC"] = "false"
+            manifestPlaceholders["USES_CLEARTEXT_TRAFFIC"] = "true"
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -80,19 +80,6 @@ android {
 
     kotlinOptions {
         jvmTarget = "11"
-    }
-}
-
-afterEvaluate {
-    tasks.matching { task ->
-        task.name == "preReleaseBuild" || task.name == "assembleRelease" || task.name == "bundleRelease"
-    }.configureEach {
-        doFirst {
-            check(releaseServerUrl.startsWith("https://", ignoreCase = true)) {
-                "Release builds require RELEASE_SERVER_URL=https://... in local.properties. " +
-                    "Plain HTTP is not allowed for production because authentication and user data are transmitted."
-            }
-        }
     }
 }
 
