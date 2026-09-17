@@ -37,7 +37,6 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Remove
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.rounded.Menu
 import androidx.compose.material.icons.rounded.Search
@@ -260,6 +259,8 @@ internal fun BoxScope.ScheduleDrawer(
     isExpanded: Boolean,
     onToggleExpand: (Boolean) -> Unit,
     onSaveMyCourse: () -> Unit,
+    onInspectMeals: () -> Unit,
+    onPlaceClick: (PlaceInfo) -> Unit,
     listState: LazyListState,
     highlightedPlaceId: String?
 ) {
@@ -278,9 +279,9 @@ internal fun BoxScope.ScheduleDrawer(
                 border = androidx.compose.foundation.BorderStroke(3.dp, AppColors.Divider),
                 elevation = CardDefaults.cardElevation(0.dp)
             ) {
-                Column(
-                    modifier = Modifier.padding(vertical = 12.dp, horizontal = 14.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                Row(
+                    modifier = Modifier.padding(vertical = 10.dp, horizontal = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.Menu,
@@ -288,13 +289,13 @@ internal fun BoxScope.ScheduleDrawer(
                         tint = AppColors.Success,
                         modifier = Modifier.size(24.dp)
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = stringResource(id = R.string.my_schedule_short),
-                        fontSize = 12.sp,
+                        fontSize = 13.sp,
                         fontWeight = FontWeight.Bold
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
                     Surface(
                         color = AppColors.SuccessSoft,
                         shape = CircleShape
@@ -386,18 +387,21 @@ internal fun BoxScope.ScheduleDrawer(
 
                     HorizontalDivider()
 
-                    if (viewModel.isBuildingMyCourse.value && viewModel.travelRoute.isNotEmpty()) {
+                    if (viewModel.travelRoute.isNotEmpty()) {
                         PlayfulButton(
-                            onClick = onSaveMyCourse,
+                            onClick = onInspectMeals,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(horizontal = 16.dp, vertical = 10.dp)
                         ) {
                             Text(
-                                text = stringResource(id = R.string.save_my_course),
+                                text = stringResource(id = R.string.course_meal_check),
                                 color = Color.White,
                                 fontWeight = FontWeight.ExtraBold
                             )
+                        }
+                        androidx.compose.material3.TextButton(onClick = onSaveMyCourse) {
+                            Text(stringResource(R.string.save_my_course))
                         }
                         HorizontalDivider()
                     }
@@ -427,6 +431,7 @@ internal fun BoxScope.ScheduleDrawer(
                                 Card(
                                     modifier = Modifier
                                         .fillMaxWidth()
+                                        .clickable { onPlaceClick(place) }
                                         .shadow(
                                             elevation = if (isDragging || isHighlighted) 10.dp else 2.dp,
                                             shape = RoundedCornerShape(14.dp)
@@ -452,10 +457,9 @@ internal fun BoxScope.ScheduleDrawer(
 
                                             Spacer(modifier = Modifier.width(8.dp))
 
-                                            AsyncImage(
-                                                model = place.imageUrl,
+                                            PlaceThumbnail(
+                                                urls = listOf(place.imageUrl) + place.imageUrls,
                                                 contentDescription = null,
-                                                contentScale = ContentScale.Crop,
                                                 modifier = Modifier
                                                     .size(48.dp)
                                                     .clip(RoundedCornerShape(10.dp))
@@ -557,6 +561,9 @@ internal fun BoxScope.BottomCards(
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     var isRestaurantListExpanded by remember { mutableStateOf(true) }
+    LaunchedEffect(viewModel.activeRestaurantPin.value) {
+        isRestaurantListExpanded = viewModel.activeRestaurantPin.value == null
+    }
 
     LaunchedEffect(viewModel.isFetchingRestaurants.value) {
         if (viewModel.isFetchingRestaurants.value) {
@@ -581,10 +588,9 @@ internal fun BoxScope.BottomCards(
             ) {
                 Column(modifier = Modifier.padding(18.dp)) {
                     Row {
-                        AsyncImage(
-                            model = place.imageUrl,
+                        PlaceThumbnail(
+                            urls = listOf(place.imageUrl) + place.imageUrls,
                             contentDescription = stringResource(id = R.string.place_image),
-                            contentScale = ContentScale.Crop,
                             modifier = Modifier
                                 .size(82.dp)
                                 .clip(RoundedCornerShape(14.dp))
@@ -617,25 +623,31 @@ internal fun BoxScope.BottomCards(
 
                     Spacer(modifier = Modifier.height(14.dp))
 
+                    PlaceStoryEntry(place)
+
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         OutlinedButton(
                             onClick = {
-                                val url = "https://m.map.naver.com/search.naver?query=" +
-                                    Uri.encode(place.name)
+                                val url = "https://www.google.com/maps/dir/?api=1&destination=" +
+                                    Uri.encode("${place.latitude},${place.longitude}")
                                 context.startActivity(
                                     Intent(Intent.ACTION_VIEW, Uri.parse(url))
                                 )
                             },
                             modifier = Modifier
                                 .weight(1f)
-                                .height(46.dp),
+                                .heightIn(min = 54.dp),
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp),
                             shape = RoundedCornerShape(12.dp)
                         ) {
                             Text(
-                                text = stringResource(id = R.string.directions_roadview),
+                                text = "Google Maps",
+                                maxLines = 2,
+                                lineHeight = 16.sp,
+                                textAlign = TextAlign.Center,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold
                             )
@@ -680,21 +692,6 @@ internal fun BoxScope.BottomCards(
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.ExtraBold,
                                 color = Color.White
-                            )
-                        }
-
-                        OutlinedButton(
-                            onClick = {
-                                viewModel.fetchPlaceReviews(place.name, place.address)
-                            },
-                            modifier = Modifier.size(46.dp),
-                            shape = RoundedCornerShape(12.dp),
-                            contentPadding = PaddingValues(0.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Star,
-                                contentDescription = null,
-                                tint = AppColors.Warning
                             )
                         }
 
@@ -745,6 +742,9 @@ internal fun BoxScope.BottomCards(
                 ) {
                     Text(
                         text = stringResource(id = R.string.restaurant_list_title),
+                        modifier = Modifier.weight(1f),
+                        maxLines = 2,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                         fontSize = 17.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -752,6 +752,7 @@ internal fun BoxScope.BottomCards(
                         IconButton(
                             onClick = {
                                 isRestaurantListExpanded = !isRestaurantListExpanded
+                                if (isRestaurantListExpanded) viewModel.activeRestaurantPin.value = null
                             },
                             modifier = Modifier.size(36.dp)
                         ) {
@@ -783,6 +784,31 @@ internal fun BoxScope.BottomCards(
                     }
                 }
 
+                AnimatedVisibility(visible = !isRestaurantListExpanded && viewModel.activeRestaurantPin.value != null) {
+                    viewModel.activeRestaurantPin.value?.let { restaurant ->
+                        val added = viewModel.travelRoute.any { it.id == "restaurant:${restaurant.id}" ||
+                            (it.isRestaurant && it.name == restaurant.title && it.address == restaurant.address) }
+                        Column(Modifier.fillMaxWidth().padding(top = 8.dp)) {
+                            Text(restaurant.title, maxLines = 2,
+                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                                fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                androidx.compose.material3.TextButton(onClick = {
+                                    viewModel.fetchRestaurantDetail(restaurant)
+                                    onShowDetailPopup()
+                                }) { Text(stringResource(R.string.detail_view)) }
+                                Spacer(Modifier.weight(1f))
+                                androidx.compose.material3.Button(enabled = !added, onClick = {
+                                    viewModel.addRestaurantToRoute(restaurant)
+                                }) {
+                                    Text(if (added) stringResource(R.string.restaurant_added_to_plan)
+                                        else stringResource(R.string.restaurant_add_to_day, viewModel.currentSelectedDay.value),
+                                        maxLines = 2)
+                                }
+                            }
+                        }
+                    }
+                }
                 AnimatedVisibility(visible = isRestaurantListExpanded) {
                     Column {
                         Spacer(modifier = Modifier.height(12.dp))
@@ -803,6 +829,16 @@ internal fun BoxScope.BottomCards(
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.SemiBold
                                 )
+                            }
+                        } else if (viewModel.restaurantSearchFailed.value) {
+                            Column(Modifier.fillMaxWidth().padding(vertical = 16.dp)) {
+                                Text(stringResource(R.string.ai_course_error_network),
+                                    color = AppColors.TextSecondary)
+                                androidx.compose.material3.TextButton(onClick = {
+                                    viewModel.restaurantSearchCenter.value?.let {
+                                        viewModel.searchNearbyRestaurants(it.latitude, it.longitude)
+                                    }
+                                }) { Text(stringResource(R.string.course_analysis_retry)) }
                             }
                         } else if (viewModel.nearbyRestaurants.isEmpty()) {
                             Box(
@@ -832,6 +868,7 @@ internal fun BoxScope.BottomCards(
                                 restaurant = restaurant,
                                 isHighlighted = highlightedRestaurantId == restaurant.id,
                                 onCardClick = {
+                                    viewModel.activeRestaurantPin.value = null
                                     val lat = restaurant.latitude
                                     val lng = restaurant.longitude
 
@@ -853,12 +890,6 @@ internal fun BoxScope.BottomCards(
                                                 }
                                             )
                                         }
-                                    )
-                                },
-                                onReviewClick = {
-                                    viewModel.fetchPlaceReviews(
-                                        restaurant.title,
-                                        restaurant.address
                                     )
                                 },
                                 onDetailClick = {

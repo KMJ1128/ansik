@@ -247,6 +247,7 @@ internal fun AiRecommendationScreen(
     if (showWizard) {
         AiCourseWizard(
             cityNames = cityNames,
+            defaultStops = viewModel.defaultStopsPerDay.intValue,
             isCreating = viewModel.isCreatingAiCourse.value,
             error = viewModel.aiCourseError.value,
             onDismiss = {
@@ -274,6 +275,7 @@ internal fun AiRecommendationScreen(
 @Composable
 private fun AiCourseWizard(
     cityNames: List<String>,
+    defaultStops: Int,
     isCreating: Boolean,
     error: String?,
     onDismiss: () -> Unit,
@@ -282,7 +284,7 @@ private fun AiCourseWizard(
     var step by remember { mutableIntStateOf(0) }
     var selectedCity by remember { mutableIntStateOf(0) }
     var days by remember { mutableIntStateOf(3) }
-    var stopsPerDay by remember { mutableIntStateOf(4) }
+    var stopsPerDay by remember { mutableIntStateOf(defaultStops.coerceIn(3, 7)) }
     var hasExistingSchedule by remember { mutableStateOf(false) }
     var existingSchedule by remember { mutableStateOf("") }
     var scheduleValidationError by remember { mutableStateOf<String?>(null) }
@@ -680,6 +682,9 @@ private fun AiCourseCard(course: AiCourse, onApply: () -> Unit) {
                 )
             }
             if (expanded) {
+                Text(text = stringResource(R.string.course_timing_disclaimer),
+                    fontSize = 12.sp, color = AppColors.TextSecondary,
+                    modifier = Modifier.padding(top = 10.dp))
                 if (course.summary.isNotBlank()) {
                     Spacer(modifier = Modifier.height(10.dp))
                     Text(text = course.summary, fontSize = 13.sp, lineHeight = 18.sp)
@@ -715,6 +720,17 @@ private fun AiCourseCard(course: AiCourse, onApply: () -> Unit) {
                                 )
                                 if (stop.reason.isNotBlank()) {
                                     Text(text = stop.reason, fontSize = 11.sp, color = AppColors.TextSecondary)
+                                }
+                                if (stop.timingEstimated) {
+                                    Text(text = if (stop.estimatedTransferMinutes < 0)
+                                        stringResource(R.string.course_transfer_unknown)
+                                    else stringResource(R.string.course_timing_estimate,
+                                        stop.estimatedTransferMinutes, stop.suggestedStayMinutes),
+                                        fontSize = 12.sp, color = AppColors.TextSecondary)
+                                }
+                                if (stop.timingNeedsReview) {
+                                    Text(text = stringResource(R.string.course_timing_review),
+                                        fontSize = 12.sp, color = AppColors.DangerDark)
                                 }
                                 if (stop.visitTip.isNotBlank()) {
                                     Text(text = "↳ ${stop.visitTip}", fontSize = 10.sp, color = AppColors.InfoDark)

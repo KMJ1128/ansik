@@ -2,6 +2,9 @@ package com.kmj.ansik.ui
 
 import java.util.UUID
 
+data class PlaceStory(val title: String = "", val overview: String = "",
+    val images: List<String> = emptyList(), val language: String = "ko")
+
 data class TravelSpot(
     val id: String = UUID.randomUUID().toString(),
     val name: String
@@ -16,7 +19,9 @@ data class PlaceInfo(
     val imageUrls: List<String> = emptyList(),
     val latitude: Double,
     val longitude: Double,
-    var day: Int = 1
+    var day: Int = 1,
+    val tourContentId: String? = null,
+    val isRestaurant: Boolean = false
 )
 
 data class KakaoSearchResponse(
@@ -30,16 +35,6 @@ data class KakaoPlace(
     val category_group_name: String = "",
     val x: String = "",
     val y: String = ""
-)
-
-data class NaverImageResponse(
-    val items: List<NaverImageItem> = emptyList()
-)
-
-data class NaverImageItem(
-    val title: String = "",
-    val link: String = "",
-    val thumbnail: String = ""
 )
 
 data class TourApiResponse<T>(
@@ -119,15 +114,6 @@ enum class RiskStatus {
     UNKNOWN
 }
 
-enum class MenuEvidenceType {
-    TOUR_MAIN_MENU,
-    TOUR_TREAT_MENU,
-    TOUR_MENU_IMAGE,
-    OFFICIAL_MENU,
-    USER_MENU_IMAGE,
-    UNKNOWN
-}
-
 data class RestaurantDetailState(
     val restaurant: RestaurantSummary,
     val tourDetail: TourRestaurantDetail? = null,
@@ -151,11 +137,11 @@ data class RestaurantMenuGuide(
 
 data class RestaurantMenuItem(
     val name: String = "",
+    val displayName: String = "",
     val description: String = "",
     val tasteTags: List<String> = emptyList(),
     val typicalIngredients: List<String> = emptyList(),
     val possibleAllergens: List<String> = emptyList(),
-    val imageUrls: List<String> = emptyList(),
     val sourceUrls: List<String> = emptyList(),
     val confidence: String = "medium",
     val healthRiskLevel: String = "unknown",
@@ -166,8 +152,7 @@ data class RestaurantMenuItem(
 
 data class MenuDetailState(
     val menuName: String,
-    val profile: MenuProfile? = null,
-    val imageUrls: List<String> = emptyList()
+    val profile: MenuProfile? = null
 )
 
 data class MenuProfile(
@@ -198,12 +183,6 @@ data class MenuNutrition(
     val sugarG: Double? = null,
     val sodiumMg: Double? = null,
     val sourceName: String = ""
-)
-
-data class BlogReview(
-    val title: String = "",
-    val description: String = "",
-    val link: String = ""
 )
 
 data class AiCourseRequest(
@@ -259,5 +238,9 @@ data class AiCourseStop(
     val recommendedTime: String = "",
     val reason: String = "",
     val visitTip: String = "",
-    val healthNote: String = ""
+    val healthNote: String = "",
+    val estimatedTransferMinutes: Int = 0,
+    val suggestedStayMinutes: Int = 0,
+    val timingEstimated: Boolean = false,
+    val timingNeedsReview: Boolean = false
 )

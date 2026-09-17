@@ -16,6 +16,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Typography
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.unit.sp
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -53,7 +57,14 @@ private val AnsikShapes = Shapes(
 fun AnsikTheme(content: @Composable () -> Unit) {
     MaterialTheme(
         colorScheme = AnsikColorScheme,
-        typography = Typography(),
+        typography = Typography(
+            headlineSmall = TextStyle(fontSize = 24.sp, lineHeight = 32.sp, fontWeight = FontWeight.Bold),
+            titleLarge = TextStyle(fontSize = 22.sp, lineHeight = 30.sp, fontWeight = FontWeight.SemiBold),
+            titleMedium = TextStyle(fontSize = 17.sp, lineHeight = 24.sp, fontWeight = FontWeight.SemiBold),
+            bodyLarge = TextStyle(fontSize = 16.sp, lineHeight = 25.sp),
+            bodyMedium = TextStyle(fontSize = 14.sp, lineHeight = 22.sp),
+            bodySmall = TextStyle(fontSize = 12.sp, lineHeight = 19.sp)
+        ),
         shapes = AnsikShapes,
         content = content
     )
@@ -67,28 +78,13 @@ fun PlayfulButton(
     shadowColor: Color = AppColors.PrimaryDark,
     content: @Composable RowScope.() -> Unit
 ) {
-    Box(
-        modifier = modifier
-            .height(54.dp)
-            .background(shadowColor, RoundedCornerShape(17.dp))
-            .clickable(onClick = onClick)
-    ) {
-        Surface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(49.dp),
-            color = containerColor,
-            shape = RoundedCornerShape(17.dp),
-            border = BorderStroke(2.dp, containerColor)
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 18.dp),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically,
-                content = content
-            )
-        }
-    }
+    Button(
+        onClick = onClick,
+        modifier = modifier.height(54.dp),
+        shape = RoundedCornerShape(18.dp),
+        colors = ButtonDefaults.buttonColors(containerColor = containerColor, contentColor = Color.White),
+        border = BorderStroke(1.dp, shadowColor.copy(alpha = 0.25f)),
+        elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp, pressedElevation = 0.dp),
+        content = content
+    )
 }

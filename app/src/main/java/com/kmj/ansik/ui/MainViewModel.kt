@@ -22,10 +22,10 @@ class MainViewModel(
     application: Application
 ) : AndroidViewModel(application) {
 
-    private val context = application.applicationContext
+    private val context: Context
+        get() = getApplication<Application>().applicationContext
     private val placeRepository = PlaceRepository()
     private val restaurantRepository = RestaurantRepository()
-    private val reviewRepository = ReviewRepository()
     private val aiCourseRepository = AiCourseRepository()
 
     private val sharedPreferences = context.getSharedPreferences(
@@ -33,6 +33,31 @@ class MainViewModel(
         Context.MODE_PRIVATE
     )
     private val gson = Gson()
+    val showOriginalMenuNames = mutableStateOf(sharedPreferences.getBoolean("showOriginalMenus", true))
+    val defaultStopsPerDay = mutableIntStateOf(sharedPreferences.getInt("defaultStopsPerDay", 4).coerceIn(3, 7))
+    fun updateDefaultStops(value: Int) {
+        defaultStopsPerDay.intValue = value.coerceIn(3, 7)
+        sharedPreferences.edit().putInt("defaultStopsPerDay", defaultStopsPerDay.intValue).apply()
+    }
+
+    fun updateMenuPreferences(originals: Boolean) {
+        showOriginalMenuNames.value = originals
+        sharedPreferences.edit().putBoolean("showOriginalMenus", originals)
+            .apply()
+    }
+
+    fun addRestaurantToRoute(restaurant: RestaurantSummary) {
+        if (travelRoute.any { it.isRestaurant &&
+                (it.id == "restaurant:${restaurant.id}" ||
+                    (it.name == restaurant.title && it.address == restaurant.address)) }) return
+        travelRoute.add(PlaceInfo(id = "restaurant:${restaurant.id}", name = restaurant.title,
+            address = restaurant.address, tag = "Restaurant", imageUrl = restaurant.imageUrl,
+            imageUrls = restaurant.imageUrls, latitude = restaurant.latitude,
+            longitude = restaurant.longitude, day = currentSelectedDay.value,
+            tourContentId = restaurant.tourContentId, isRestaurant = true))
+        travelRoute.sortBy { it.day }
+        // Keep the results visible so more restaurants can be added without repeating a search.
+    }
 
     var selectedConditions = mutableStateOf(
         sharedPreferences.getStringSet(KEY_SELECTED_CONDITIONS, emptySet())
@@ -72,8 +97,11 @@ class MainViewModel(
         private set
 
     var searchRadius = mutableIntStateOf(
-        sharedPreferences.getInt(KEY_SEARCH_RADIUS, DEFAULT_SEARCH_RADIUS)
+        sharedPreferences.getInt(KEY_SEARCH_RADIUS, DEFAULT_SEARCH_RADIUS).coerceIn(100, 2000)
     )
+        private set
+
+    var restaurantSearchRadius = mutableIntStateOf(searchRadius.intValue)
         private set
 
     var searchQuery = mutableStateOf("")
@@ -90,6 +118,8 @@ class MainViewModel(
 
     var selectedPlace = mutableStateOf<PlaceInfo?>(null)
         private set
+    val activeRestaurantPin = mutableStateOf<RestaurantSummary?>(null)
+    val restaurantSearchFailed = mutableStateOf(false)
 
     val nearbyRestaurants = mutableStateListOf<RestaurantSummary>()
 
@@ -117,25 +147,8 @@ class MainViewModel(
     var isFetchingMenuDetail = mutableStateOf(false)
         private set
 
-    var showReviewSheet = mutableStateOf(false)
-        private set
-
-    val selectedPlaceReviews = mutableStateListOf<BlogReview>()
-
-    var isFetchingReviews = mutableStateOf(false)
-        private set
-
-    var hasMoreReviews = mutableStateOf(true)
-        private set
-
-    var currentReviewPlaceName = ""
-        private set
-
-    var currentReviewAddress = ""
-        private set
-
-    private var reviewStartPage = 1
     private var searchJob: Job? = null
+    private var courseImageJob: Job? = null
     private var mapSelectionJob: Job? = null
     private var mapSelectionRequestId = 0L
     private var menuDetailJob: Job? = null
@@ -263,11 +276,17 @@ class MainViewModel(
 
     fun clearSelectedPlace() {
         selectedPlace.value = null
+        activeRestaurantPin.value = null
     }
 
     fun searchNearbyRestaurants(lat: Double, lng: Double) {
+        if (isFetchingRestaurants.value) return
+        restaurantSearchFailed.value = false
+        isFetchingRestaurants.value = true
+        clearSelectedPlace()
         viewModelScope.launch {
             restaurantSearchCenter.value = LatLng(lat, lng)
+            restaurantSearchRadius.intValue = searchRadius.intValue
             isFetchingRestaurants.value = true
             hasSearchedRestaurants.value = false
             clearRestaurantDetail()
@@ -276,7 +295,7 @@ class MainViewModel(
                 val restaurants = restaurantRepository.getNearbyRestaurants(
                     longitude = lng,
                     latitude = lat,
-                    radius = searchRadius.intValue,
+                    radius = restaurantSearchRadius.intValue,
                     language = currentLanguageTag()
                 )
 
@@ -287,8 +306,12 @@ class MainViewModel(
                 clearSelectedPlace()
                 clearSearch()
             } catch (e: retrofit2.HttpException) {
+                restaurantSearchFailed.value = true
+                hasSearchedRestaurants.value = true
                 Log.e("TourAPI", "HTTP 오류 코드 = ${e.code()}", e)
             } catch (e: Exception) {
+                restaurantSearchFailed.value = true
+                hasSearchedRestaurants.value = true
                 Log.e("TourAPI", "주변 식당 검색 실패", e)
             } finally {
                 isFetchingRestaurants.value = false
@@ -301,6 +324,7 @@ class MainViewModel(
     }
 
     fun clearNearbyRestaurants() {
+        activeRestaurantPin.value = null
         nearbyRestaurants.clear()
         hasSearchedRestaurants.value = false
         restaurantSearchCenter.value = null
@@ -382,7 +406,7 @@ class MainViewModel(
         selectedMenuDetail.value = MenuDetailState(
             menuName = menu.name,
             profile = MenuProfile(
-                menuName = menu.name,
+                menuName = menu.displayName.takeIf { !it.isNullOrBlank() } ?: menu.name,
                 canonicalKoreanName = menu.name,
                 description = menu.description,
                 tasteTags = menu.tasteTags,
@@ -396,8 +420,7 @@ class MainViewModel(
                 healthRiskSummary = menu.healthRiskSummary,
                 healthRiskReasons = menu.healthRiskReasons,
                 questionsForRestaurant = menu.questionsForRestaurant
-            ),
-            imageUrls = menu.imageUrls
+            )
         )
     }
 
@@ -408,56 +431,10 @@ class MainViewModel(
         isFetchingMenuDetail.value = false
     }
 
-    fun fetchPlaceReviews(
-        placeName: String,
-        address: String,
-        isLoadMore: Boolean = false
-    ) {
-        if (isFetchingReviews.value) return
-
-        if (!isLoadMore) {
-            selectedPlaceReviews.clear()
-            reviewStartPage = 1
-            hasMoreReviews.value = true
-            currentReviewPlaceName = placeName
-            currentReviewAddress = address
-            showReviewSheet.value = true
-        }
-
-        if (!hasMoreReviews.value) return
-
-        viewModelScope.launch {
-            isFetchingReviews.value = true
-
-            try {
-                val reviews = reviewRepository.getPlaceReviews(
-                    placeName = currentReviewPlaceName,
-                    address = currentReviewAddress,
-                    start = reviewStartPage
-                )
-
-                if (reviews.isEmpty()) {
-                    hasMoreReviews.value = false
-                } else {
-                    selectedPlaceReviews.addAll(reviews)
-                    reviewStartPage += REVIEW_PAGE_SIZE
-                }
-            } catch (e: Exception) {
-                Log.e("Reviews", "리뷰 불러오기 실패", e)
-            } finally {
-                isFetchingReviews.value = false
-            }
-        }
-    }
-
-    fun dismissReviewSheet() {
-        showReviewSheet.value = false
-    }
-
     fun updateSearchRadius(radius: Int) {
-        searchRadius.intValue = radius
+        searchRadius.intValue = radius.coerceIn(100, 2000)
         sharedPreferences.edit()
-            .putInt(KEY_SEARCH_RADIUS, radius)
+            .putInt(KEY_SEARCH_RADIUS, searchRadius.intValue)
             .apply()
     }
 
@@ -600,7 +577,9 @@ class MainViewModel(
                         imageUrls = listOfNotNull(stop.imageUrl.takeIf { it.isNotBlank() }),
                         latitude = stop.latitude,
                         longitude = stop.longitude,
-                        day = day.day
+                        day = day.day,
+                        tourContentId = stop.id.takeIf { it.all(Char::isDigit) },
+                        isRestaurant = stop.category == "RESTAURANT"
                     )
                 }
             }
@@ -610,6 +589,20 @@ class MainViewModel(
         isBuildingMyCourse.value = false
         travelRoute.clear()
         travelRoute.addAll(route)
+        courseImageJob?.cancel()
+        courseImageJob = viewModelScope.launch {
+            for (place in route) {
+                if (place.imageUrl.isNotBlank() && place.imageUrl != RestaurantRepository.DEFAULT_IMAGE_URL) continue
+                val images = placeRepository.fetchExactImages(
+                    tourId = place.tourContentId, title = place.name,
+                    mapX = place.longitude, mapY = place.latitude, language = "ko"
+                )
+                val index = travelRoute.indexOfFirst { it.id == place.id }
+                if (index >= 0 && images.isNotEmpty()) {
+                    travelRoute[index] = travelRoute[index].copy(imageUrl = images.first(), imageUrls = images)
+                }
+            }
+        }
         days.value = course.days.coerceIn(1, MAX_TRAVEL_DAYS)
         nights.value = course.nights.coerceIn(0, days.value - 1)
         currentSelectedDay.value = 1
@@ -621,6 +614,7 @@ class MainViewModel(
     }
 
     fun startNewMyCourse() {
+        courseImageJob?.cancel()
         travelRoute.clear()
         nights.value = 0
         days.value = 1
@@ -656,6 +650,7 @@ class MainViewModel(
 
     fun applyMyCourse(course: SavedMyCourse) {
         if (course.places.isEmpty()) return
+        courseImageJob?.cancel()
         travelRoute.clear()
         travelRoute.addAll(course.places.map { it.copy() })
         days.value = course.days.coerceIn(1, MAX_TRAVEL_DAYS)
@@ -734,6 +729,5 @@ class MainViewModel(
         private const val DEFAULT_SEARCH_RADIUS = 2000
         private const val MAX_TRAVEL_DAYS = 14
         private const val SEARCH_DEBOUNCE_MS = 400L
-        private const val REVIEW_PAGE_SIZE = 5
     }
 }

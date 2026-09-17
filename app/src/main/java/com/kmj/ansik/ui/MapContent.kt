@@ -70,7 +70,7 @@ internal fun NaverMapContent(
         viewModel.restaurantSearchCenter.value?.let { searchCenter ->
             CircleOverlay(
                 center = searchCenter,
-                radius = viewModel.searchRadius.intValue.toDouble(),
+                radius = viewModel.restaurantSearchRadius.intValue.toDouble(),
                 color = Color(0x2234A853),
                 outlineColor = Color(0xAA34A853),
                 outlineWidth = 2.dp
@@ -155,7 +155,7 @@ internal fun NaverMapContent(
 
             if (lat != 0.0 && lng != 0.0) {
                 key("restaurant_${restaurant.id}") {
-                    val isSelected = highlightedRestaurantId == restaurant.id
+                    val isSelected = viewModel.activeRestaurantPin.value?.id == restaurant.id
                     Marker(
                         state = MarkerState(position = LatLng(lat, lng)),
                         icon = rememberRestaurantMarker(isSelected),
@@ -166,6 +166,8 @@ internal fun NaverMapContent(
                                     .indexOfFirst { it.id == restaurant.id }
 
                                 onHighlightRestaurant(restaurant.id)
+                                viewModel.selectedPlace.value = null
+                                viewModel.activeRestaurantPin.value = restaurant
                                 launch {
                                     cameraPositionState.animate(
                                         CameraUpdate.scrollTo(LatLng(lat, lng))

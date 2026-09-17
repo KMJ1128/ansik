@@ -18,6 +18,11 @@ import java.util.concurrent.TimeUnit
 
 interface ApiService {
 
+    @GET("api/place/story")
+    suspend fun getPlaceStory(@Query("title") title: String,
+        @Query("mapX") longitude: Double, @Query("mapY") latitude: Double,
+        @Query("lang") language: String): PlaceStory
+
     @POST("api/auth/social")
     suspend fun socialLogin(@Body request: SocialLoginRequest): AuthResponse
 
@@ -66,12 +71,6 @@ interface ApiService {
         @Query("healthConditions") healthConditions: List<String> = emptyList()
     ): RestaurantMenuGuide
 
-    @GET("api/tour/menu-images")
-    suspend fun getTourMenuImages(
-        @Query("contentId") contentId: String,
-        @Query("lang") language: String
-    ): List<String>
-
     @GET("api/tour/location")
     suspend fun getNearbyRestaurants(
         @Query("mapX") lng: Double,
@@ -92,17 +91,6 @@ interface ApiService {
         @Query("lang") language: String
     ): MenuProfile
 
-    @GET("api/menu/images")
-    suspend fun getMenuImages(
-        @Query("menuName") menuName: String
-    ): List<String>
-
-    @GET("api/tour/reviews")
-    suspend fun getPlaceReviews(
-        @Query("placeName") placeName: String,
-        @Query("address") address: String,
-        @Query("start") start: Int
-    ): List<BlogReview>
 }
 
 object RetrofitClient {

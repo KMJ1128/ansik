@@ -103,7 +103,7 @@
     <string name="ai_course_button">创建AI推荐路线</string>
     <string name="current_selected_conditions">当前已选条件</string>
 
-    <string name="my_schedule_short">我的\n日程</string>
+    <string name="my_schedule_short">我的日程</string>
     <string name="restaurant_list_title">附近的餐厅</string>
     <string name="restaurant_list_desc">距地图中心%1$s以内</string>
     <string name="search_radius">搜索半径</string>
@@ -130,28 +130,21 @@
     <string name="radius_settings_title">搜索半径设置</string>
     <string name="confirm">确定</string>
 
-    <string name="review_view">查看评价</string>
     <string name="detail_view">查看详情</string>
     <string name="restaurant_detail_title">餐厅详细信息</string>
     <string name="close">关闭</string>
-    <string name="naver_blog_reviews">店名和地址匹配的相关网页内容</string>
-    <string name="no_reviews">未找到与该餐厅匹配的内容。</string>
     <string name="my_location">我的位置</string>
     <string name="find_restaurants_from_my_location">从地图中心查找</string>
     <string name="getting_current_location">正在获取当前位置。</string>
     <string name="loading_restaurant_details">正在核对餐厅信息和菜单...</string>
-    <string name="loading_menu_details">正在准备菜品说明和图片...</string>
-    <string name="open_original">查看原文 &gt;</string>
+    <string name="loading_menu_details">正在准备菜品说明...</string>
 
     <string name="source_tour_api">来源：©韩国旅游发展局</string>
     <string name="source_kakao">Kakao</string>
     <string name="korean_original_data">韩语原文</string>
-    <string name="menu_image_title">菜单图片</string>
     <string name="no_menu_evidence">目前没有可确认的菜单信息。该餐厅不会从候选结果中排除，并会标记为信息不足。</string>
-    <string name="menu_reference_photo">NAVER搜索参考图片（可能与餐厅实际菜品不同）</string>
     <string name="menu_knowledge_unavailable">暂未收录该菜品的一般介绍。</string>
-    <string name="menu_description_source_naver">NAVER搜索参考说明 · 查看来源</string>
-    <string name="menu_description_source_openai">OpenAI网页调查结果 · 查看依据</string>
+    <string name="menu_google_images">在Google图片中查看 ›</string>
     <string name="menu_taste">口味特点</string>
     <string name="menu_typical_ingredients">常用食材</string>
     <string name="menu_possible_allergens">可能需要注意的成分</string>
@@ -167,11 +160,11 @@
     <string name="menu_general_disclaimer">这是一般菜品信息。餐厅实际配方、食材、份量和营养成分可能不同，过敏原请务必向餐厅确认。</string>
     <string name="health_profile_needed">请在“我的信息”中选择健康、过敏或饮食条件，以查看每道菜的注意事项。</string>
     <string name="health_menu_analysis_title">查看适合您的菜单</string>
-    <string name="health_menu_analysis_counts">建议避免 %1$d · 需要确认 %2$d · 看起来适合 %3$d</string>
+    <string name="health_menu_analysis_counts">建议避免 %1$d · 需要确认 %2$d · 未识别出冲突 %3$d</string>
     <string name="health_analysis_unavailable">缺少足够的菜单信息，无法安全判断。请直接向餐厅确认。</string>
     <string name="health_risk_avoid">建议避免</string>
     <string name="health_risk_caution">需要确认</string>
-    <string name="health_risk_safe">看起来适合</string>
+    <string name="health_risk_safe">未识别出冲突</string>
     <string name="health_risk_unknown">信息不足</string>
     <string name="health_match_result">个性化健康指南</string>
     <string name="questions_for_restaurant">建议向餐厅询问</string>
@@ -227,7 +220,6 @@
     <string name="login_welcome_description">在不同设备上安全同步您的\n健康偏好和已保存的旅行路线。</string>
     <string name="login_with_kakao">使用 Kakao 继续</string>
     <string name="login_with_naver">使用 NAVER 继续</string>
-    <string name="login_with_google">使用 Google 继续</string>
     <string name="login_in_progress">正在验证登录信息…</string>
     <string name="continue_without_login">不登录，先看看</string>
     <string name="login_terms_notice">继续即表示您同意服务条款和隐私政策。</string>
@@ -236,4 +228,27 @@
     <string name="signed_in_with">已使用 %1$s 帐号登录</string>
     <string name="sign_in">登录</string>
     <string name="sign_out">退出登录</string>
+    <string name="course_meal_check">行程用餐检查</string>
+    <string name="course_no_restaurants">在行程中添加餐厅后即可查看菜品注意事项。</string>
+    <string name="course_analysis_waiting">正在等待分析…</string>
+    <string name="course_analysis_retry">重新分析</string>
+    <string name="menu_evidence_label">AI参考分析 · 做法未经确认</string>
+    <string name="menu_evidence_detail">这是常见食材信息，并非餐厅确认的食材清单。</string>
+    <string name="course_timing_disclaimer">时间仅供规划参考。交通方式、营业时间及休息日尚未核实，请在出行前确认。</string>
+    <string name="course_timing_estimate">距上一地点约%1$d分钟 · 建议停留%2$d分钟</string>
+    <string name="course_transfer_unknown">需要确认交通时间</string>
+    <string name="course_timing_review">预计移动距离较长或结束较晚，请检查景点数量及交通安排。</string>
+    <string name="settings_search">附近搜索</string>
+    <string name="settings_radius_value">搜索半径：%1$d m</string>
+    <string name="settings_menu">旅行与菜单显示</string>
+    <string name="settings_original_menu">同时显示韩文菜单名</string>
+    <string name="settings_original_menu_hint">在译名下方显示便于点餐的原名。</string>
+    <string name="restaurant_added_to_plan">已加入行程</string>
+    <string name="restaurant_add_to_day">加入第%1$d天</string>
+    <string name="settings_daily_stops">新AI路线每天默认访问数量</string>
+    <string name="place_story_open">阅读地点故事</string>
+    <string name="place_story_loading">正在查找这个地点的故事…</string>
+    <string name="place_story_close">关闭</string>
+    <string name="place_story_original">此故事仅提供韩语原文。</string>
+    <string name="place_story_source">介绍及照片：韩国旅游发展局</string>
 </resources>

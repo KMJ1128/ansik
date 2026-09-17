@@ -231,6 +231,7 @@ private fun MainTabScreen(
                 }
                 composable("settings") {
                     SettingsScreen(
+                        viewModel = viewModel,
                         authUser = authViewModel.uiState.value.user,
                         onNavigateBack = { navController.popBackStack() },
                         onNavigateToLanguage = { onNavigateToLanguage() },

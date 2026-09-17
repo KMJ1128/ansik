@@ -44,7 +44,6 @@ android {
         val kakaoNativeAppKey = socialLoginProperties.getProperty("KAKAO_NATIVE_APP_KEY").orEmpty()
         val naverLoginClientId = socialLoginProperties.getProperty("NAVER_LOGIN_CLIENT_ID").orEmpty()
         val naverLoginClientSecret = socialLoginProperties.getProperty("NAVER_LOGIN_CLIENT_SECRET").orEmpty()
-        val googleLoginWebClientId = socialLoginProperties.getProperty("GOOGLE_LOGIN_WEB_CLIENT_ID").orEmpty()
 
         manifestPlaceholders["KAKAO_NATIVE_APP_KEY"] = kakaoNativeAppKey
 
@@ -52,7 +51,6 @@ android {
         buildConfigField("String", "KAKAO_NATIVE_APP_KEY", "\"$kakaoNativeAppKey\"")
         buildConfigField("String", "NAVER_LOGIN_CLIENT_ID", "\"$naverLoginClientId\"")
         buildConfigField("String", "NAVER_LOGIN_CLIENT_SECRET", "\"$naverLoginClientSecret\"")
-        buildConfigField("String", "GOOGLE_LOGIN_WEB_CLIENT_ID", "\"$googleLoginWebClientId\"")
     }
 
     buildFeatures {
@@ -129,8 +127,5 @@ dependencies {
     // Social login
     implementation("com.kakao.sdk:v2-user:2.25.0")
     implementation("com.navercorp.nid:oauth:5.12.0")
-    implementation("androidx.credentials:credentials:1.7.0-alpha03")
-    implementation("androidx.credentials:credentials-play-services-auth:1.7.0-alpha03")
-    implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
     implementation("androidx.security:security-crypto:1.1.0-alpha06")
 }

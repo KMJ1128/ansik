@@ -15,3 +15,5 @@
 .cxx
 local.properties
 social-login.properties
+
+app/release/

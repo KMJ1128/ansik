@@ -7,6 +7,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
@@ -19,6 +21,7 @@ import com.kmj.ansik.auth.AuthUser
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
+    viewModel: MainViewModel,
     authUser: AuthUser?,
     onNavigateBack: () -> Unit,
     onNavigateToLanguage: () -> Unit,
@@ -50,6 +53,7 @@ fun SettingsScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
+                .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp, vertical = 12.dp)
         ) {
             Surface(
@@ -90,6 +94,16 @@ fun SettingsScreen(
                 }
             }
 
+            Spacer(Modifier.height(24.dp))
+            Text(stringResource(R.string.settings_menu), fontWeight = FontWeight.Bold)
+            ListItem(headlineContent = { Text(stringResource(R.string.settings_daily_stops), fontSize = 14.sp) },
+                supportingContent = { Text(stringResource(R.string.stops_per_day_value, viewModel.defaultStopsPerDay.intValue)) })
+            Slider(value = viewModel.defaultStopsPerDay.intValue.toFloat(),
+                onValueChange = { viewModel.updateDefaultStops(it.toInt()) }, valueRange = 3f..7f, steps = 3)
+            ListItem(headlineContent = { Text(stringResource(R.string.settings_original_menu), fontSize = 14.sp) },
+                supportingContent = { Text(stringResource(R.string.settings_original_menu_hint), fontSize = 12.sp, lineHeight = 17.sp) },
+                trailingContent = { Switch(checked = viewModel.showOriginalMenuNames.value,
+                    onCheckedChange = viewModel::updateMenuPreferences) })
             Spacer(Modifier.height(14.dp))
 
             Surface(

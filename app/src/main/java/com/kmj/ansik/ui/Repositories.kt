@@ -36,6 +36,8 @@ class PlaceRepository(
                 mapY = mapY,
                 language = language
             )
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e("PlaceRepository", "이미지 요청 실패: $title", e)
             emptyList()
@@ -144,21 +146,9 @@ class RestaurantRepository(
                 api.getMenuProfile(menuName = menuName, language = language)
             }.getOrNull()
         }.await()
-        val imageSearchName = profile?.canonicalKoreanName
-            ?.takeIf { it.isNotBlank() }
-            ?: menuName
-        val images = async(Dispatchers.IO) {
-            runCatching {
-                api.getMenuImages(menuName = imageSearchName)
-            }.getOrDefault(emptyList())
-        }.await()
-
         MenuDetailState(
             menuName = menuName,
-            profile = profile,
-            imageUrls = images
-                .filter { it.isNotBlank() }
-                .distinct()
+            profile = profile
         )
     }
 
@@ -166,30 +156,14 @@ class RestaurantRepository(
         urls: List<String>
     ): List<String> {
         return urls
-            .filter { it.isNotBlank() }
-            .map { it.replace("http://", "https://") }
+            .map(String::trim)
+            .filter { (it.startsWith("http://") || it.startsWith("https://")) && it != DEFAULT_IMAGE_URL }
             .distinct()
     }
 
     companion object {
         const val DEFAULT_IMAGE_URL =
             "https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=400"
-    }
-}
-
-class ReviewRepository(
-    private val api: ApiService = RetrofitClient.api
-) {
-    suspend fun getPlaceReviews(
-        placeName: String,
-        address: String,
-        start: Int
-    ): List<BlogReview> = withContext(Dispatchers.IO) {
-        api.getPlaceReviews(
-            placeName = placeName,
-            address = address,
-            start = start
-        )
     }
 }
 

@@ -1,6 +1,5 @@
 package com.kmj.ansik.ui
 
-import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -20,7 +19,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
@@ -30,25 +28,22 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -56,10 +51,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -71,6 +67,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import coil.compose.AsyncImage
 import com.kmj.ansik.R
+import java.util.Locale
 
 @Composable
 internal fun RestaurantHorizontalCard(
@@ -78,13 +75,8 @@ internal fun RestaurantHorizontalCard(
     isHighlighted: Boolean = false,
     onCardClick: () -> Unit,
     onImageClick: () -> Unit,
-    onReviewClick: () -> Unit,
     onDetailClick: () -> Unit
 ) {
-    val secureImageUrl = restaurant.imageUrl
-        .replace("http://", "https://")
-        .ifBlank { RestaurantRepository.DEFAULT_IMAGE_URL }
-
     Card(
         modifier = Modifier
             .width(230.dp)
@@ -97,16 +89,17 @@ internal fun RestaurantHorizontalCard(
         )
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
-            AsyncImage(
-                model = secureImageUrl,
+            Box {
+            PlaceThumbnail(
+                urls = listOf(restaurant.imageUrl) + restaurant.imageUrls,
                 contentDescription = stringResource(id = R.string.place_image),
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(110.dp)
                     .clip(RoundedCornerShape(14.dp))
                     .clickable(onClick = onImageClick),
-                contentScale = ContentScale.Crop
             )
+            }
 
             Spacer(modifier = Modifier.height(8.dp))
 
@@ -136,43 +129,21 @@ internal fun RestaurantHorizontalCard(
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(onClick = onDetailClick),
+                color = AppColors.SuccessSoft,
+                shape = RoundedCornerShape(6.dp)
             ) {
-                Surface(
-                    modifier = Modifier
-                        .weight(1f)
-                        .clickable(onClick = onReviewClick),
-                    color = Color(0xFFFFF9C4),
-                    shape = RoundedCornerShape(6.dp)
-                ) {
-                    Text(
-                        text = stringResource(id = R.string.review_view),
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFFF57F17),
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(vertical = 8.dp)
-                    )
-                }
-
-                Surface(
-                    modifier = Modifier
-                        .weight(1f)
-                        .clickable(onClick = onDetailClick),
-                    color = AppColors.SuccessSoft,
-                    shape = RoundedCornerShape(6.dp)
-                ) {
-                    Text(
-                        text = stringResource(id = R.string.detail_view),
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = AppColors.Success,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(vertical = 8.dp)
-                    )
-                }
+                Text(
+                    text = stringResource(id = R.string.detail_view),
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = AppColors.Success,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(vertical = 8.dp)
+                )
             }
         }
     }
@@ -185,7 +156,7 @@ internal fun AppDialogs(
     onDismissViewer: () -> Unit,
     showRadiusDialog: Boolean,
     onDismissRadiusDialog: () -> Unit,
-    onConfirmRadius: () -> Unit,
+    onConfirmRadius: (Int) -> Unit,
     showDetailPopup: Boolean,
     onDismissDetailPopup: () -> Unit
 ) {
@@ -197,6 +168,10 @@ internal fun AppDialogs(
     }
 
     if (showRadiusDialog) {
+        var tempRadius by remember(showRadiusDialog) {
+            mutableFloatStateOf(viewModel.searchRadius.intValue.toFloat())
+        }
+        val snappedRadius = ((tempRadius / 100).toInt() * 100).coerceIn(100, 2000)
         AlertDialog(
             onDismissRequest = onDismissRadiusDialog,
             title = {
@@ -208,15 +183,11 @@ internal fun AppDialogs(
             },
             text = {
                 Column {
-                    var tempRadius by remember {
-                        mutableFloatStateOf(viewModel.searchRadius.intValue.toFloat())
-                    }
-                    val snappedRadius = (tempRadius / 100).toInt() * 100
                     val radiusText = if (snappedRadius >= 1000) {
                         if (snappedRadius % 1000 == 0) {
                             "${snappedRadius / 1000}km"
                         } else {
-                            String.format("%.1fkm", snappedRadius / 1000f)
+                            String.format(Locale.getDefault(), "%.1fkm", snappedRadius / 1000f)
                         }
                     } else {
                         "${snappedRadius}m"
@@ -235,10 +206,7 @@ internal fun AppDialogs(
                     Slider(
                         value = tempRadius,
                         onValueChange = { tempRadius = it },
-                        onValueChangeFinished = {
-                            viewModel.updateSearchRadius(snappedRadius)
-                        },
-                        valueRange = 100f..3000f,
+                        valueRange = 100f..2000f,
                         colors = SliderDefaults.colors(
                             thumbColor = AppColors.Success,
                             activeTrackColor = AppColors.Success,
@@ -250,7 +218,7 @@ internal fun AppDialogs(
             confirmButton = {
                 TextButton(
                     onClick = {
-                        onConfirmRadius()
+                        onConfirmRadius(snappedRadius)
                         onDismissRadiusDialog()
                     }
                 ) {
@@ -387,6 +355,9 @@ internal fun AppDialogs(
                             val selectedDetail = viewModel.selectedMenuDetail.value
                             val isSelected = selectedDetail?.menuName == menuName
                             val researchedMenu = researchedMenus.firstOrNull { it.name == menuName }
+                            val translatedName = researchedMenu?.displayName?.takeIf { it.isNotBlank() }
+                                ?: selectedDetail?.takeIf { isSelected }?.profile?.menuName?.takeIf { it.isNotBlank() }
+                                ?: menuName
 
                             Surface(
                                 modifier = Modifier
@@ -405,15 +376,17 @@ internal fun AppDialogs(
                                     if (isSelected) AppColors.Primary else AppColors.Divider
                                 )
                             ) {
-                                Row(
+                                Column(
                                     modifier = Modifier.padding(horizontal = 14.dp, vertical = 11.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    verticalArrangement = Arrangement.spacedBy(6.dp)
                                 ) {
                                     Text(
-                                        text = menuName,
-                                        modifier = Modifier.weight(1f),
+                                        text = if (viewModel.showOriginalMenuNames.value && translatedName != menuName)
+                                            "$translatedName\n$menuName" else translatedName,
+                                        modifier = Modifier.fillMaxWidth(),
                                         fontSize = 14.sp,
+                                        maxLines = 3,
+                                        overflow = TextOverflow.Ellipsis,
                                         fontWeight = FontWeight.Bold
                                     )
                                     researchedMenu
@@ -432,7 +405,7 @@ internal fun AppDialogs(
                                     MenuDetailCard(
                                         menuName = menuName,
                                         profile = selectedDetail?.profile,
-                                        imageUrls = selectedDetail?.imageUrls.orEmpty()
+                                        showOriginal = viewModel.showOriginalMenuNames.value
                                     )
                                 }
                             }
@@ -507,14 +480,9 @@ internal fun AppDialogs(
 private fun MenuDetailCard(
     menuName: String,
     profile: MenuProfile?,
-    imageUrls: List<String>
+    showOriginal: Boolean
 ) {
     val uriHandler = LocalUriHandler.current
-    val candidates = remember(imageUrls) {
-        imageUrls.filter { it.isNotBlank() }.distinct()
-    }
-    var imageIndex by remember(candidates) { mutableIntStateOf(0) }
-    val imageUrl = candidates.getOrNull(imageIndex)
     Card(
         colors = CardDefaults.cardColors(containerColor = AppColors.Surface),
         shape = RoundedCornerShape(20.dp),
@@ -527,57 +495,15 @@ private fun MenuDetailCard(
                 color = AppColors.Success,
                 fontWeight = FontWeight.Bold
             )
-            Text(text = menuName, fontSize = 20.sp, fontWeight = FontWeight.ExtraBold)
-
-            imageUrl?.takeIf { it.isNotBlank() }?.let {
-                Spacer(modifier = Modifier.height(10.dp))
-                AsyncImage(
-                    model = it,
-                    contentDescription = stringResource(id = R.string.menu_reference_photo),
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(170.dp)
-                        .clip(RoundedCornerShape(12.dp)),
-                    onError = {
-                        if (imageIndex < candidates.lastIndex) imageIndex += 1
-                    }
-                )
-                Text(
-                    text = stringResource(id = R.string.menu_reference_photo),
-                    fontSize = 10.sp,
-                    color = AppColors.TextSecondary,
-                    modifier = Modifier.padding(top = 4.dp)
-                )
+            val displayName = profile?.menuName?.takeIf { it.isNotBlank() } ?: menuName
+            Text(text = displayName, fontSize = 20.sp, fontWeight = FontWeight.ExtraBold)
+            if (showOriginal && displayName != menuName) {
+                Text(text = menuName, fontSize = 13.sp, color = AppColors.TextSecondary)
             }
 
             if (!profile?.description.isNullOrBlank()) {
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(text = profile!!.description, fontSize = 14.sp, lineHeight = 20.sp)
-                if (profile.descriptionSource.startsWith("NAVER") ||
-                    profile.descriptionSource.startsWith("OPENAI")) {
-                    val sourceLabel = if (profile.descriptionSource.startsWith("OPENAI")) {
-                        stringResource(id = R.string.menu_description_source_openai)
-                    } else {
-                        stringResource(id = R.string.menu_description_source_naver)
-                    }
-                    Text(
-                        text = sourceLabel,
-                        fontSize = 10.sp,
-                        color = AppColors.Success,
-                        modifier = Modifier
-                            .padding(top = 5.dp)
-                            .then(
-                                if (profile.descriptionSourceUrl.isNotBlank()) {
-                                    Modifier.clickable {
-                                        uriHandler.openUri(profile.descriptionSourceUrl)
-                                    }
-                                } else {
-                                    Modifier
-                                }
-                            )
-                    )
-                }
             } else {
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(
@@ -586,6 +512,23 @@ private fun MenuDetailCard(
                     color = AppColors.TextSecondary
                 )
             }
+            val imageSearchName = profile?.canonicalKoreanName
+                ?.takeIf { it.isNotBlank() }
+                ?: menuName
+            Text(
+                text = stringResource(id = R.string.menu_google_images),
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold,
+                color = AppColors.Success,
+                modifier = Modifier
+                    .padding(top = 7.dp)
+                    .clickable {
+                        uriHandler.openUri(
+                            "https://www.google.com/search?tbm=isch&q=" +
+                                Uri.encode("$imageSearchName 음식")
+                        )
+                    }
+            )
 
             profile?.tasteTags?.takeIf { it.isNotEmpty() }?.let {
                 MenuTextSection(stringResource(id = R.string.menu_taste), it.joinToString(" · "))
@@ -701,7 +644,7 @@ private fun MenuRiskBadge(level: String) {
     val (label, foreground, background) = when (level.lowercase()) {
         "avoid" -> Triple(R.string.health_risk_avoid, AppColors.DangerDark, Color(0xFFFFE5E5))
         "caution" -> Triple(R.string.health_risk_caution, Color(0xFF8A6200), Color(0xFFFFF1B8))
-        "safe" -> Triple(R.string.health_risk_safe, AppColors.SuccessDark, AppColors.SuccessSoft)
+        "safe" -> Triple(R.string.health_risk_safe, AppColors.InfoDark, AppColors.SurfaceMuted)
         else -> Triple(R.string.health_risk_unknown, AppColors.TextSecondary, AppColors.SurfaceMuted)
     }
     Surface(color = background, shape = RoundedCornerShape(50)) {
@@ -717,19 +660,23 @@ private fun MenuRiskBadge(level: String) {
 
 @Composable
 private fun HealthAssessmentCard(profile: MenuProfile) {
+    Text(stringResource(R.string.menu_evidence_label),
+        fontSize = 12.sp, color = AppColors.InfoDark,
+        modifier = Modifier.padding(top = 12.dp))
+    Text(stringResource(R.string.menu_evidence_detail),
+        fontSize = 12.sp, color = AppColors.TextSecondary)
     val (foreground, background) = when (profile.healthRiskLevel.lowercase()) {
         "avoid" -> AppColors.DangerDark to Color(0xFFFFE5E5)
         "caution" -> Color(0xFF8A6200) to Color(0xFFFFF5CC)
-        "safe" -> AppColors.SuccessDark to AppColors.SuccessSoft
+        "safe" -> AppColors.InfoDark to AppColors.SurfaceMuted
         else -> AppColors.TextSecondary to AppColors.SurfaceMuted
     }
     Spacer(modifier = Modifier.height(12.dp))
     Surface(color = background, shape = RoundedCornerShape(14.dp)) {
         Column(modifier = Modifier.padding(12.dp)) {
-            Row(
+            Column(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 Text(
                     text = stringResource(id = R.string.health_match_result),
@@ -818,10 +765,9 @@ private fun RestaurantSourceRow(
     distanceMeters: Int,
     koreanFallback: Boolean = false
 ) {
-    Row(
+    Column(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-        verticalAlignment = Alignment.CenterVertically
+        verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         sources.distinct().forEach { source ->
             val label = when (source) {
@@ -831,6 +777,7 @@ private fun RestaurantSourceRow(
             }
 
             Surface(
+                modifier = Modifier.fillMaxWidth(),
                 color = if (source == "TOUR_API") {
                     AppColors.SuccessSoft
                 } else {
@@ -842,6 +789,9 @@ private fun RestaurantSourceRow(
                     text = label,
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                     fontSize = 10.sp,
+                    lineHeight = 14.sp,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
                     fontWeight = FontWeight.Bold,
                     color = if (source == "TOUR_API") {
                         AppColors.Success
@@ -852,8 +802,12 @@ private fun RestaurantSourceRow(
             }
         }
 
+        Row(modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically) {
         if (koreanFallback) {
             Surface(
+                modifier = Modifier.weight(1f),
                 color = Color(0xFFECEFF1),
                 shape = RoundedCornerShape(50)
             ) {
@@ -861,6 +815,9 @@ private fun RestaurantSourceRow(
                     text = stringResource(id = R.string.korean_original_data),
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                     fontSize = 10.sp,
+                    lineHeight = 14.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFF546E7A)
                 )
@@ -871,168 +828,22 @@ private fun RestaurantSourceRow(
             Text(
                 text = formatDistance(distanceMeters),
                 fontSize = 11.sp,
+                lineHeight = 15.sp,
+                maxLines = 1,
+                softWrap = false,
                 color = AppColors.TextSecondary
             )
         }
     }
 }
 
-private fun formatDistance(distanceMeters: Int): String {
-    return if (distanceMeters >= 1000) {
-        String.format("%.1f km", distanceMeters / 1000f)
-    } else {
-        "${distanceMeters} m"
-    }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-internal fun ReviewBottomSheet(viewModel: MainViewModel) {
-    val listState = rememberLazyListState()
-
-    val shouldLoadMore by remember {
-        derivedStateOf {
-            val totalItems = listState.layoutInfo.totalItemsCount
-            val lastVisibleItem = listState.layoutInfo.visibleItemsInfo
-                .lastOrNull()
-                ?.index
-                ?: 0
-
-            totalItems > 0 && lastVisibleItem >= totalItems - 1
-        }
-    }
-
-    LaunchedEffect(shouldLoadMore) {
-        if (
-            shouldLoadMore &&
-            viewModel.hasMoreReviews.value &&
-            !viewModel.isFetchingReviews.value
-        ) {
-            viewModel.fetchPlaceReviews(
-                viewModel.currentReviewPlaceName,
-                viewModel.currentReviewAddress,
-                isLoadMore = true
-            )
-        }
-    }
-
-    if (!viewModel.showReviewSheet.value) return
-
-    ModalBottomSheet(
-        onDismissRequest = viewModel::dismissReviewSheet,
-        containerColor = Color.White
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 8.dp)
-        ) {
-            Text(
-                text = stringResource(id = R.string.naver_blog_reviews),
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 16.dp)
-            )
-
-            when {
-                viewModel.isFetchingReviews.value &&
-                    viewModel.selectedPlaceReviews.isEmpty() -> {
-                    LoadingSkeleton(
-                        label = stringResource(id = R.string.loading_public_data),
-                        rows = 3
-                    )
-                }
-
-                viewModel.selectedPlaceReviews.isEmpty() -> {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(100.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = stringResource(id = R.string.no_reviews),
-                            color = Color.Gray
-                        )
-                    }
-                }
-
-                else -> {
-                    val context = LocalContext.current
-
-                    LazyColumn(
-                        state = listState,
-                        modifier = Modifier.padding(bottom = 24.dp)
-                    ) {
-                        items(viewModel.selectedPlaceReviews) { review ->
-                            Card(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(bottom = 12.dp)
-                                    .clickable {
-                                        context.startActivity(
-                                            Intent(
-                                                Intent.ACTION_VIEW,
-                                                Uri.parse(review.link)
-                                            )
-                                        )
-                                    },
-                                colors = CardDefaults.cardColors(
-                                    containerColor = AppColors.Surface
-                                ),
-                                border = BorderStroke(3.dp, AppColors.Divider)
-                            ) {
-                                Column(modifier = Modifier.padding(16.dp)) {
-                                    Text(
-                                        text = review.title,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 15.sp,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                        color = Color.Black
-                                    )
-
-                                    Spacer(modifier = Modifier.height(6.dp))
-
-                                    Text(
-                                        text = review.description,
-                                        fontSize = 13.sp,
-                                        color = Color.DarkGray,
-                                        maxLines = 2,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
-
-                                    Spacer(modifier = Modifier.height(8.dp))
-
-                                    Text(
-                                        text = stringResource(id = R.string.open_original),
-                                        fontSize = 12.sp,
-                                        color = AppColors.Success,
-                                        fontWeight = FontWeight.SemiBold
-                                    )
-                                }
-                            }
-                        }
-
-                        if (viewModel.isFetchingReviews.value) {
-                            item {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(16.dp),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    CircularProgressIndicator(
-                                        color = AppColors.Success,
-                                        modifier = Modifier.size(24.dp)
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
+private fun formatDistance(distanceMeters: Int): String {
+    return if (distanceMeters >= 1000) {
+        String.format(Locale.getDefault(), "%.1f km", distanceMeters / 1000f)
+    } else {
+        "${distanceMeters} m"
     }
 }
 

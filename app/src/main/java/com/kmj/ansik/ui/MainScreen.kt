@@ -119,8 +119,6 @@ fun MainScreen(
         mutableStateOf(false)
     }
 
-    var pendingMapCenterSearch by remember { mutableStateOf<LatLng?>(null) }
-
     var showDetailPopup by remember {
         mutableStateOf(false)
     }
@@ -130,6 +128,7 @@ fun MainScreen(
     }
 
     var showSaveMyCourseDialog by remember { mutableStateOf(false) }
+    var showMealCheck by remember { mutableStateOf(false) }
     var myCourseTitle by remember { mutableStateOf("") }
 
     LaunchedEffect(viewModel.appliedCourseVersion.intValue) {
@@ -159,11 +158,8 @@ fun MainScreen(
             showRadiusDialog =
                 false
         },
-        onConfirmRadius = {
-            pendingMapCenterSearch?.let { center ->
-                viewModel.searchNearbyRestaurants(center.latitude, center.longitude)
-            }
-            pendingMapCenterSearch = null
+        onConfirmRadius = { radius ->
+            viewModel.updateSearchRadius(radius)
         },
         showDetailPopup =
             showDetailPopup,
@@ -210,6 +206,17 @@ fun MainScreen(
         )
 
         ScheduleDrawer(
+            onInspectMeals = { showMealCheck = true },
+            onPlaceClick = { place ->
+                highlightedPlaceId = place.id
+                isScheduleExpanded = false
+                coroutineScope.launch {
+                    cameraPositionState.animate(
+                        CameraUpdate.scrollTo(LatLng(place.latitude, place.longitude))
+                            .animate(CameraAnimation.Easing)
+                    )
+                }
+            },
             viewModel =
                 viewModel,
             isExpanded =
@@ -241,7 +248,6 @@ fun MainScreen(
             highlightedRestaurantId =
                 highlightedRestaurantId,
             onShowRadiusDialog = {
-                pendingMapCenterSearch = cameraPositionState.position.target
                 showRadiusDialog =
                     true
             },
@@ -329,8 +335,8 @@ fun MainScreen(
                 onClick = {
                     // The GPS location remains on the device. Restaurant lookup uses
                     // only the map center explicitly chosen by the user.
-                    pendingMapCenterSearch = cameraPositionState.position.target
-                    showRadiusDialog = true
+                    val center = cameraPositionState.position.target
+                    viewModel.searchNearbyRestaurants(center.latitude, center.longitude)
                 },
                 modifier = Modifier.size(50.dp),
                 containerColor = AppColors.Success
@@ -344,9 +350,9 @@ fun MainScreen(
         }
     }
 
-    ReviewBottomSheet(
-        viewModel = viewModel
-    )
+    if (showMealCheck) {
+        CourseMealCheckSheet(viewModel, onDismiss = { showMealCheck = false })
+    }
 
     if (showSaveMyCourseDialog) {
         AlertDialog(
