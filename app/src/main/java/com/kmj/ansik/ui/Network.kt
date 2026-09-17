@@ -13,6 +13,7 @@ import retrofit2.http.GET
 import retrofit2.http.Query
 import retrofit2.http.Body
 import retrofit2.http.POST
+import retrofit2.http.DELETE
 import okhttp3.OkHttpClient
 import java.util.concurrent.TimeUnit
 
@@ -34,6 +35,9 @@ interface ApiService {
 
     @GET("api/auth/me")
     suspend fun currentUser(): AuthUser
+
+    @DELETE("api/auth/me")
+    suspend fun deleteAccount()
 
     @POST("api/ai/course")
     suspend fun createAiCourse(@Body request: AiCourseRequest): AiCourse
