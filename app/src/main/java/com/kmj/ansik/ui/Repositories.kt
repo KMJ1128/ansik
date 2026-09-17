@@ -1,6 +1,7 @@
 package com.kmj.ansik.ui
 
 import android.util.Log
+import com.kmj.ansik.privacy.PrivacyConsentStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -118,6 +119,12 @@ class RestaurantRepository(
             .filter { it.isNotBlank() }
             .distinct()
 
+        val consentedHealthConditions = if (PrivacyConsentStore.hasSensitiveInfoConsent()) {
+            healthConditions
+        } else {
+            emptyList()
+        }
+
         val menuGuide = withContext(Dispatchers.IO) {
             runCatching {
                 api.getRestaurantMenuGuide(
@@ -125,7 +132,7 @@ class RestaurantRepository(
                     address = restaurant.address,
                     language = language,
                     menuHints = menuHints,
-                    healthConditions = healthConditions
+                    healthConditions = consentedHealthConditions
                 )
             }.getOrNull()
         }
@@ -170,6 +177,12 @@ class RestaurantRepository(
 class AiCourseRepository(
     private val api: ApiService = RetrofitClient.api
 ) {
-    suspend fun createCourse(request: AiCourseRequest): AiCourse =
-        withContext(Dispatchers.IO) { api.createAiCourse(request) }
+    suspend fun createCourse(request: AiCourseRequest): AiCourse = withContext(Dispatchers.IO) {
+        val consentedRequest = if (PrivacyConsentStore.hasSensitiveInfoConsent()) {
+            request
+        } else {
+            request.copy(healthConditions = emptyList())
+        }
+        api.createAiCourse(consentedRequest)
+    }
 }
