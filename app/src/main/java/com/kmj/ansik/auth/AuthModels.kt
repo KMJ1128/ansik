@@ -4,10 +4,7 @@ data class SocialLoginRequest(
     val provider: String,
     val providerToken: String,
     val deviceId: String,
-    val language: String,
-    val termsAccepted: Boolean,
-    val privacyCollectionAccepted: Boolean,
-    val consentVersion: String
+    val language: String
 )
 
 data class RefreshRequest(
