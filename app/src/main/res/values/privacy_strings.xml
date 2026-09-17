@@ -14,6 +14,13 @@
     <string name="health_sensitive_body">사용자가 선택하거나 입력한 건강 관리 항목, 알레르기 및 식단 조건은 맞춤 메뉴 안내와 여행 코스 추천에 사용됩니다. 선택값은 기기에 저장될 수 있으며 맞춤 기능 사용 시 안식 서버로 전송되고 AI 기반 분석 처리에 사용될 수 있습니다. 동의하지 않아도 일반적인 여행지와 식당 탐색 기능은 이용할 수 있습니다.</string>
     <string name="health_sensitive_agree">동의하고 사용하기</string>
     <string name="privacy_policy_title">개인정보 처리방침</string>
-    <string name="privacy_policy_body">안식은 서비스 제공에 필요한 범위에서 개인정보를 처리합니다. 소셜 로그인 시 제공자 식별자, 이메일(제공 시), 닉네임, 프로필 이미지, 기기 식별자 및 언어 설정을 처리하며 인증 토큰은 로그인 유지와 보안을 위해 사용합니다. 건강·알레르기·식단 조건은 사용자가 맞춤 기능을 선택한 경우에만 해당 기능 수행 목적으로 처리합니다. 위치 정보는 주변 식당 검색과 지도 기능 수행에 필요한 범위에서 사용합니다.</string>
+    <string name="privacy_policy_body">안식은 서비스 제공에 필요한 범위에서 개인정보를 처리합니다. 소셜 로그인 시 제공자 식별자, 이메일(제공 시), 닉네임, 프로필 이미지, 기기 식별자 및 언어 설정을 처리하며 인증 토큰은 로그인 유지와 보안을 위해 사용합니다. 건강·알레르기·식단 조건은 사용자가 맞춤 기능을 선택한 경우에만 해당 기능 수행 목적으로 처리합니다. 위치 정보는 주변 식당 검색과 지도 기능 수행에 필요한 범위에서 사용합니다. 사용자는 설정에서 계정을 삭제하여 서버에 저장된 회원 계정과 연결 데이터를 삭제할 수 있습니다.</string>
+    <string name="location_permission_title">위치 접근 권한 안내</string>
+    <string name="location_permission_body">현재 위치로 지도를 이동하기 위해 위치 권한을 사용합니다. 위치 권한은 선택 사항이며 거부해도 지도 검색과 장소·식당 탐색 기능을 사용할 수 있습니다. 현재 위치는 기기에서 지도 표시를 위해 사용되며, 주변 식당 검색은 사용자가 선택한 지도 중심 좌표를 기준으로 요청합니다.</string>
+    <string name="location_permission_continue">위치 권한 요청</string>
+    <string name="delete_account">계정 삭제</string>
+    <string name="delete_account_title">계정을 삭제할까요?</string>
+    <string name="delete_account_body">계정을 삭제하면 서버에 저장된 회원정보, 소셜 계정 연결정보, 로그인 세션 및 계정에 연결된 저장 데이터가 삭제됩니다. 이 작업은 되돌릴 수 없습니다.</string>
+    <string name="delete_account_confirm">영구 삭제</string>
     <string name="cancel">취소</string>
 </resources>
