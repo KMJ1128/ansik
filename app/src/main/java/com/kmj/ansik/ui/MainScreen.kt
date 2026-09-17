@@ -43,6 +43,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.kmj.ansik.R
@@ -59,18 +60,50 @@ import kotlinx.coroutines.launch
 fun MainScreen(
     viewModel: MainViewModel
 ) {
-    val cameraPositionState =
-        rememberCameraPositionState()
+    val cameraPositionState = rememberCameraPositionState()
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     var locationPermissionGranted by remember {
         mutableStateOf(hasLocationPermission(context))
     }
+    var showLocationPermissionNotice by remember { mutableStateOf(false) }
+
     val locationPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
         locationPermissionGranted = permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
             permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
+    }
+
+    if (showLocationPermissionNotice) {
+        AlertDialog(
+            onDismissRequest = { showLocationPermissionNotice = false },
+            title = {
+                Text(
+                    text = stringResource(R.string.location_permission_title),
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = { Text(stringResource(R.string.location_permission_body)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    showLocationPermissionNotice = false
+                    locationPermissionLauncher.launch(
+                        arrayOf(
+                            Manifest.permission.ACCESS_FINE_LOCATION,
+                            Manifest.permission.ACCESS_COARSE_LOCATION
+                        )
+                    )
+                }) {
+                    Text(stringResource(R.string.location_permission_continue))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showLocationPermissionNotice = false }) {
+                    Text(stringResource(R.string.cancel))
+                }
+            }
+        )
     }
 
     DisposableEffect(locationPermissionGranted) {
@@ -91,42 +124,17 @@ fun MainScreen(
         onDispose { locationManager.removeUpdates(listener) }
     }
 
-    val focusManager =
-        LocalFocusManager.current
+    val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val scheduleListState = rememberLazyListState()
+    val restaurantListState = rememberLazyListState()
 
-    val keyboardController =
-        LocalSoftwareKeyboardController.current
-
-    val scheduleListState =
-        rememberLazyListState()
-
-    val restaurantListState =
-        rememberLazyListState()
-
-    var isScheduleExpanded by remember {
-        mutableStateOf(false)
-    }
-
-    var highlightedPlaceId by remember {
-        mutableStateOf<String?>(null)
-    }
-
-    var highlightedRestaurantId by remember {
-        mutableStateOf<String?>(null)
-    }
-
-    var showRadiusDialog by remember {
-        mutableStateOf(false)
-    }
-
-    var showDetailPopup by remember {
-        mutableStateOf(false)
-    }
-
-    var viewerImages by remember {
-        mutableStateOf<List<String>?>(null)
-    }
-
+    var isScheduleExpanded by remember { mutableStateOf(false) }
+    var highlightedPlaceId by remember { mutableStateOf<String?>(null) }
+    var highlightedRestaurantId by remember { mutableStateOf<String?>(null) }
+    var showRadiusDialog by remember { mutableStateOf(false) }
+    var showDetailPopup by remember { mutableStateOf(false) }
+    var viewerImages by remember { mutableStateOf<List<String>?>(null) }
     var showSaveMyCourseDialog by remember { mutableStateOf(false) }
     var showMealCheck by remember { mutableStateOf(false) }
     var myCourseTitle by remember { mutableStateOf("") }
@@ -147,62 +155,31 @@ fun MainScreen(
 
     AppDialogs(
         viewModel = viewModel,
-        viewerImages =
-            viewerImages,
-        onDismissViewer = {
-            viewerImages = null
-        },
-        showRadiusDialog =
-            showRadiusDialog,
-        onDismissRadiusDialog = {
-            showRadiusDialog =
-                false
-        },
-        onConfirmRadius = { radius ->
-            viewModel.updateSearchRadius(radius)
-        },
-        showDetailPopup =
-            showDetailPopup,
-        onDismissDetailPopup = {
-            showDetailPopup =
-                false
-        }
+        viewerImages = viewerImages,
+        onDismissViewer = { viewerImages = null },
+        showRadiusDialog = showRadiusDialog,
+        onDismissRadiusDialog = { showRadiusDialog = false },
+        onConfirmRadius = { radius -> viewModel.updateSearchRadius(radius) },
+        showDetailPopup = showDetailPopup,
+        onDismissDetailPopup = { showDetailPopup = false }
     )
 
-    Box(
-        modifier =
-            Modifier.fillMaxSize()
-    ) {
+    Box(modifier = Modifier.fillMaxSize()) {
         NaverMapContent(
-            viewModel =
-                viewModel,
-            cameraPositionState =
-                cameraPositionState,
-            scheduleListState =
-                scheduleListState,
-            restaurantListState =
-                restaurantListState,
-            highlightedPlaceId =
-                highlightedPlaceId,
-            highlightedRestaurantId =
-                highlightedRestaurantId,
-            onHighlightPlace = {
-                highlightedPlaceId =
-                    it
-            },
-            onHighlightRestaurant = {
-                highlightedRestaurantId =
-                    it
-            }
+            viewModel = viewModel,
+            cameraPositionState = cameraPositionState,
+            scheduleListState = scheduleListState,
+            restaurantListState = restaurantListState,
+            highlightedPlaceId = highlightedPlaceId,
+            highlightedRestaurantId = highlightedRestaurantId,
+            onHighlightPlace = { highlightedPlaceId = it },
+            onHighlightRestaurant = { highlightedRestaurantId = it }
         )
 
         TopSearchLayout(
-            viewModel =
-                viewModel,
-            focusManager =
-                focusManager,
-            keyboardController =
-                keyboardController
+            viewModel = viewModel,
+            focusManager = focusManager,
+            keyboardController = keyboardController
         )
 
         ScheduleDrawer(
@@ -217,14 +194,9 @@ fun MainScreen(
                     )
                 }
             },
-            viewModel =
-                viewModel,
-            isExpanded =
-                isScheduleExpanded,
-            onToggleExpand = {
-                isScheduleExpanded =
-                    it
-            },
+            viewModel = viewModel,
+            isExpanded = isScheduleExpanded,
+            onToggleExpand = { isScheduleExpanded = it },
             onSaveMyCourse = {
                 myCourseTitle = context.getString(
                     R.string.my_course_default_name,
@@ -232,33 +204,18 @@ fun MainScreen(
                 )
                 showSaveMyCourseDialog = true
             },
-            listState =
-                scheduleListState,
-            highlightedPlaceId =
-                highlightedPlaceId
+            listState = scheduleListState,
+            highlightedPlaceId = highlightedPlaceId
         )
 
         BottomCards(
-            viewModel =
-                viewModel,
-            cameraPositionState =
-                cameraPositionState,
-            restaurantListState =
-                restaurantListState,
-            highlightedRestaurantId =
-                highlightedRestaurantId,
-            onShowRadiusDialog = {
-                showRadiusDialog =
-                    true
-            },
-            onShowDetailPopup = {
-                showDetailPopup =
-                    true
-            },
-            onShowViewer = {
-                viewerImages =
-                    it
-            }
+            viewModel = viewModel,
+            cameraPositionState = cameraPositionState,
+            restaurantListState = restaurantListState,
+            highlightedRestaurantId = highlightedRestaurantId,
+            onShowRadiusDialog = { showRadiusDialog = true },
+            onShowDetailPopup = { showDetailPopup = true },
+            onShowViewer = { viewerImages = it }
         )
 
         if (viewModel.isResolvingMapSelection.value) {
@@ -298,12 +255,7 @@ fun MainScreen(
             FloatingActionButton(
                 onClick = {
                     if (!locationPermissionGranted) {
-                        locationPermissionLauncher.launch(
-                            arrayOf(
-                                Manifest.permission.ACCESS_FINE_LOCATION,
-                                Manifest.permission.ACCESS_COARSE_LOCATION
-                            )
-                        )
+                        showLocationPermissionNotice = true
                     } else {
                         viewModel.currentUserLocation.value?.let { location ->
                             coroutineScope.launch {
@@ -333,8 +285,6 @@ fun MainScreen(
 
             FloatingActionButton(
                 onClick = {
-                    // The GPS location remains on the device. Restaurant lookup uses
-                    // only the map center explicitly chosen by the user.
                     val center = cameraPositionState.position.target
                     viewModel.searchNearbyRestaurants(center.latitude, center.longitude)
                 },
