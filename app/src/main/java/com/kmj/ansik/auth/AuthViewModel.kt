@@ -85,6 +85,30 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun deleteAccount(onComplete: () -> Unit, onFailure: (String) -> Unit) {
+        if (!uiState.value.isAuthenticated || uiState.value.isLoading) return
+        uiState.value = uiState.value.copy(isLoading = true, errorMessage = null)
+        viewModelScope.launch {
+            runCatching { RetrofitClient.api.deleteAccount() }
+                .onSuccess {
+                    AuthSessionStore.clear()
+                    PrivacyConsentStore.revokeSensitiveInfoConsent()
+                    uiState.value = AuthUiState()
+                    onComplete()
+                }
+                .onFailure { error ->
+                    uiState.value = uiState.value.copy(isLoading = false)
+                    onFailure(
+                        if (error is HttpException) {
+                            "계정 삭제를 완료하지 못했습니다. (${error.code()})"
+                        } else {
+                            "서버에 연결할 수 없어 계정을 삭제하지 못했습니다."
+                        }
+                    )
+                }
+        }
+    }
+
     private fun currentLanguage(): String {
         val tag = AppCompatDelegate.getApplicationLocales().toLanguageTags()
             .substringBefore(',')
