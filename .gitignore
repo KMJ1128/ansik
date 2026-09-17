@@ -16,4 +16,9 @@
 local.properties
 social-login.properties
 
+# Never commit signing/keystore material.
+/key
+*.jks
+*.keystore
+
 app/release/
