@@ -105,7 +105,7 @@
 
     <string name="my_schedule_short">旅程</string>
     <string name="restaurant_list_title">近くのレストラン</string>
-    <string name="restaurant_list_desc">地図の中心から%1$s以内</string>
+    <string name="restaurant_list_desc">選択した場所から%1$s以内</string>
     <string name="search_radius">検索範囲</string>
     <string name="no_restaurants_found">この周辺ではレストラン情報が見つかりませんでした。</string>
     <string name="restaurant_main_menu">代表メニュー</string>
@@ -134,7 +134,7 @@
     <string name="restaurant_detail_title">レストラン詳細情報</string>
     <string name="close">閉じる</string>
     <string name="my_location">現在地</string>
-    <string name="find_restaurants_from_my_location">地図の中心から探す</string>
+    <string name="find_restaurants_from_my_location">日程周辺の飲食店を探す</string>
     <string name="getting_current_location">現在地を確認しています。</string>
     <string name="loading_restaurant_details">店舗情報とメニューを確認しています...</string>
     <string name="loading_menu_details">料理説明を準備しています...</string>
@@ -251,4 +251,14 @@
     <string name="place_story_close">閉じる</string>
     <string name="place_story_original">この物語は韓国語の原文で提供されます。</string>
     <string name="place_story_source">説明・写真提供：韓国観光公社</string>
+    <string name="itinerary_restaurant_search_title">日程周辺の飲食店を探す</string>
+    <string name="itinerary_restaurant_search_body">日程内の%1$dか所を基準に、それぞれ半径%2$d m以内の飲食店を探して地図にまとめて表示します。現在地は検索に使用せず、サーバーにも送信しません。</string>
+    <string name="itinerary_restaurant_search_empty">先に日程へ場所を1つ以上追加してください。</string>
+    <string name="itinerary_restaurant_search_start">検索を開始</string>
+    <string name="loading_itinerary_restaurants">%1$d/%2$d · %3$s周辺の飲食店を読み込み中…</string>
+    <string name="itinerary_restaurant_list_title">日程周辺の飲食店</string>
+    <string name="itinerary_restaurant_result_summary">日程%1$dか所 · 半径%2$d m · 飲食店%3$d件</string>
+    <string name="restaurant_near_schedule_stop">日程の%1$s周辺</string>
+    <string name="settings_radius_hint">日程の各場所に適用されます。100 m単位で最大2 kmまで設定できます。</string>
+    <string name="app_version">アプリバージョン %1$s</string>
 </resources>

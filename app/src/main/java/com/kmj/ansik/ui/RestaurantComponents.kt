@@ -68,6 +68,7 @@ import androidx.compose.ui.window.DialogProperties
 import coil.compose.AsyncImage
 import com.kmj.ansik.R
 import java.util.Locale
+import kotlin.math.roundToInt
 
 @Composable
 internal fun RestaurantHorizontalCard(
@@ -118,6 +119,18 @@ internal fun RestaurantHorizontalCard(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
+
+            restaurant.searchOriginName?.takeIf { it.isNotBlank() }?.let { originName ->
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = stringResource(R.string.restaurant_near_schedule_stop, originName),
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = AppColors.Success,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
 
             Spacer(modifier = Modifier.height(8.dp))
 
@@ -171,7 +184,7 @@ internal fun AppDialogs(
         var tempRadius by remember(showRadiusDialog) {
             mutableFloatStateOf(viewModel.searchRadius.intValue.toFloat())
         }
-        val snappedRadius = ((tempRadius / 100).toInt() * 100).coerceIn(100, 2000)
+        val snappedRadius = ((tempRadius / 100f).roundToInt() * 100).coerceIn(100, 2000)
         AlertDialog(
             onDismissRequest = onDismissRadiusDialog,
             title = {
@@ -205,8 +218,12 @@ internal fun AppDialogs(
 
                     Slider(
                         value = tempRadius,
-                        onValueChange = { tempRadius = it },
+                        onValueChange = {
+                            tempRadius = ((it / 100f).roundToInt() * 100f)
+                                .coerceIn(100f, 2000f)
+                        },
                         valueRange = 100f..2000f,
+                        steps = 18,
                         colors = SliderDefaults.colors(
                             thumbColor = AppColors.Success,
                             activeTrackColor = AppColors.Success,

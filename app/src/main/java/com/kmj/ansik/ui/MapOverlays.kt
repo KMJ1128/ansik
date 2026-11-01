@@ -48,6 +48,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -741,7 +742,13 @@ internal fun BoxScope.BottomCards(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = stringResource(id = R.string.restaurant_list_title),
+                        text = stringResource(
+                            id = if (viewModel.isItineraryRestaurantSearch.value) {
+                                R.string.itinerary_restaurant_list_title
+                            } else {
+                                R.string.restaurant_list_title
+                            }
+                        ),
                         modifier = Modifier.weight(1f),
                         maxLines = 2,
                         overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
@@ -784,6 +791,23 @@ internal fun BoxScope.BottomCards(
                     }
                 }
 
+                if (
+                    viewModel.isItineraryRestaurantSearch.value &&
+                    viewModel.hasSearchedRestaurants.value &&
+                    !viewModel.isFetchingRestaurants.value
+                ) {
+                    Text(
+                        text = stringResource(
+                            R.string.itinerary_restaurant_result_summary,
+                            viewModel.restaurantSearchTotal.intValue,
+                            viewModel.restaurantSearchRadius.intValue,
+                            viewModel.nearbyRestaurants.size
+                        ),
+                        color = AppColors.TextSecondary,
+                        fontSize = 12.sp
+                    )
+                }
+
                 AnimatedVisibility(visible = !isRestaurantListExpanded && viewModel.activeRestaurantPin.value != null) {
                     viewModel.activeRestaurantPin.value?.let { restaurant ->
                         val added = viewModel.travelRoute.any { it.id == "restaurant:${restaurant.id}" ||
@@ -817,28 +841,54 @@ internal fun BoxScope.BottomCards(
                             Column(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .height(120.dp),
+                                    .height(132.dp),
                                 verticalArrangement = Arrangement.Center,
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
-                                CircularProgressIndicator(color = AppColors.Success)
+                                if (viewModel.isItineraryRestaurantSearch.value) {
+                                    val total = viewModel.restaurantSearchTotal.intValue.coerceAtLeast(1)
+                                    val progress = viewModel.restaurantSearchProgress.intValue
+                                        .coerceIn(0, total)
+                                    LinearProgressIndicator(
+                                        progress = { progress.toFloat() / total.toFloat() },
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(horizontal = 22.dp),
+                                        color = AppColors.Success,
+                                        trackColor = AppColors.SuccessSoft
+                                    )
+                                } else {
+                                    CircularProgressIndicator(color = AppColors.Success)
+                                }
                                 Spacer(modifier = Modifier.height(10.dp))
                                 Text(
-                                    text = stringResource(id = R.string.loading_nearby_restaurants),
+                                    text = if (
+                                        viewModel.isItineraryRestaurantSearch.value &&
+                                        viewModel.restaurantSearchPlaceName.value.isNotBlank()
+                                    ) {
+                                        stringResource(
+                                            R.string.loading_itinerary_restaurants,
+                                            viewModel.restaurantSearchProgress.intValue,
+                                            viewModel.restaurantSearchTotal.intValue,
+                                            viewModel.restaurantSearchPlaceName.value
+                                        )
+                                    } else {
+                                        stringResource(id = R.string.loading_nearby_restaurants)
+                                    },
                                     color = AppColors.TextSecondary,
                                     fontSize = 13.sp,
-                                    fontWeight = FontWeight.SemiBold
+                                    fontWeight = FontWeight.SemiBold,
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.padding(horizontal = 16.dp)
                                 )
                             }
                         } else if (viewModel.restaurantSearchFailed.value) {
                             Column(Modifier.fillMaxWidth().padding(vertical = 16.dp)) {
                                 Text(stringResource(R.string.ai_course_error_network),
                                     color = AppColors.TextSecondary)
-                                androidx.compose.material3.TextButton(onClick = {
-                                    viewModel.restaurantSearchCenter.value?.let {
-                                        viewModel.searchNearbyRestaurants(it.latitude, it.longitude)
-                                    }
-                                }) { Text(stringResource(R.string.course_analysis_retry)) }
+                                androidx.compose.material3.TextButton(
+                                    onClick = viewModel::retryRestaurantSearch
+                                ) { Text(stringResource(R.string.course_analysis_retry)) }
                             }
                         } else if (viewModel.nearbyRestaurants.isEmpty()) {
                             Box(

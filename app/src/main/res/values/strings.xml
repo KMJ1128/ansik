@@ -112,7 +112,7 @@
 
     <string name="my_schedule_short">내 일정</string>
     <string name="restaurant_list_title">주변 식당</string>
-    <string name="restaurant_list_desc">지도 중심에서 %1$s 이내</string>
+    <string name="restaurant_list_desc">선택한 장소에서 %1$s 이내</string>
     <string name="search_radius">검색 반경</string>
     <string name="no_restaurants_found">이 근처에서는 식당 정보를 찾지 못했어요.</string>
     <string name="restaurant_main_menu">대표 메뉴</string>
@@ -142,7 +142,7 @@
     <string name="restaurant_detail_title">식당 상세 정보</string>
     <string name="close">닫기</string>
     <string name="my_location">내 위치</string>
-    <string name="find_restaurants_from_my_location">지도 중심에서 찾기</string>
+    <string name="find_restaurants_from_my_location">일정 주변 맛집 찾기</string>
     <string name="getting_current_location">현재 위치를 확인하는 중입니다.</string>
     <string name="loading_restaurant_details">식당 정보와 메뉴를 확인하는 중...</string>
     <string name="loading_menu_details">음식 설명을 준비하는 중...</string>
@@ -260,4 +260,14 @@
     <string name="place_story_close">닫기</string>
     <string name="place_story_original">한국어 원문으로 제공되는 이야기예요.</string>
     <string name="place_story_source">설명·사진 제공: 한국관광공사</string>
+    <string name="itinerary_restaurant_search_title">일정 주변 맛집 찾기</string>
+    <string name="itinerary_restaurant_search_body">내 일정의 %1$d개 장소를 기준으로 각각 %2$d m 반경의 식당을 찾아 지도에 한 번에 표시합니다. 현재 위치는 검색에 사용하거나 서버로 보내지 않습니다.</string>
+    <string name="itinerary_restaurant_search_empty">먼저 내 일정에 장소를 하나 이상 추가해 주세요.</string>
+    <string name="itinerary_restaurant_search_start">찾기 시작</string>
+    <string name="loading_itinerary_restaurants">%1$d/%2$d · %3$s 주변 식당을 불러오는 중…</string>
+    <string name="itinerary_restaurant_list_title">일정 주변 식당</string>
+    <string name="itinerary_restaurant_result_summary">일정 %1$d곳 · 반경 %2$d m · 식당 %3$d곳</string>
+    <string name="restaurant_near_schedule_stop">%1$s 일정 지점 주변</string>
+    <string name="settings_radius_hint">내 일정의 각 장소마다 적용됩니다. 100m 단위로 최대 2km까지 설정할 수 있어요.</string>
+    <string name="app_version">앱 버전 %1$s</string>
 </resources>

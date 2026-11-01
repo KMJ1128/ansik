@@ -105,7 +105,7 @@
 
     <string name="my_schedule_short">我的日程</string>
     <string name="restaurant_list_title">附近的餐厅</string>
-    <string name="restaurant_list_desc">距地图中心%1$s以内</string>
+    <string name="restaurant_list_desc">距所选地点%1$s以内</string>
     <string name="search_radius">搜索半径</string>
     <string name="no_restaurants_found">在这附近没有找到餐厅信息。</string>
     <string name="restaurant_main_menu">招牌菜</string>
@@ -134,7 +134,7 @@
     <string name="restaurant_detail_title">餐厅详细信息</string>
     <string name="close">关闭</string>
     <string name="my_location">我的位置</string>
-    <string name="find_restaurants_from_my_location">从地图中心查找</string>
+    <string name="find_restaurants_from_my_location">查找行程周边餐厅</string>
     <string name="getting_current_location">正在获取当前位置。</string>
     <string name="loading_restaurant_details">正在核对餐厅信息和菜单...</string>
     <string name="loading_menu_details">正在准备菜品说明...</string>
@@ -251,4 +251,14 @@
     <string name="place_story_close">关闭</string>
     <string name="place_story_original">此故事仅提供韩语原文。</string>
     <string name="place_story_source">介绍及照片：韩国旅游发展局</string>
+    <string name="itinerary_restaurant_search_title">查找行程周边餐厅</string>
+    <string name="itinerary_restaurant_search_body">以行程中的%1$d个地点为中心，分别查找半径%2$d m内的餐厅，并统一显示在地图上。不会使用您的当前位置进行搜索，也不会将其发送至服务器。</string>
+    <string name="itinerary_restaurant_search_empty">请先在行程中添加至少一个地点。</string>
+    <string name="itinerary_restaurant_search_start">开始查找</string>
+    <string name="loading_itinerary_restaurants">%1$d/%2$d · 正在加载%3$s周边餐厅…</string>
+    <string name="itinerary_restaurant_list_title">行程周边餐厅</string>
+    <string name="itinerary_restaurant_result_summary">%1$d个行程点 · 半径%2$d m · %3$d家餐厅</string>
+    <string name="restaurant_near_schedule_stop">行程地点%1$s周边</string>
+    <string name="settings_radius_hint">适用于行程中的每个地点。可按100 m为单位设置，最大2 km。</string>
+    <string name="app_version">应用版本 %1$s</string>
 </resources>

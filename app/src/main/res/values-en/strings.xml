@@ -110,7 +110,7 @@
 
     <string name="my_schedule_short">My Plan</string>
     <string name="restaurant_list_title">Nearby Restaurants</string>
-    <string name="restaurant_list_desc">Within %1$s of the map center</string>
+    <string name="restaurant_list_desc">Within %1$s of the selected place</string>
     <string name="search_radius">Search Radius</string>
     <string name="no_restaurants_found">We couldn’t find restaurant information near here.</string>
     <string name="restaurant_main_menu">Main Menu</string>
@@ -140,7 +140,7 @@
     <string name="restaurant_detail_title">Restaurant Details</string>
     <string name="close">Close</string>
     <string name="my_location">My location</string>
-    <string name="find_restaurants_from_my_location">Search from map center</string>
+    <string name="find_restaurants_from_my_location">Find food near my itinerary</string>
     <string name="getting_current_location">Getting your current location.</string>
     <string name="loading_restaurant_details">Checking restaurant details and menus...</string>
     <string name="loading_menu_details">Preparing the food guide...</string>
@@ -258,4 +258,14 @@
     <string name="place_story_close">Close</string>
     <string name="place_story_original">This story is available in Korean.</string>
     <string name="place_story_source">Description and photos: Korea Tourism Organization</string>
+    <string name="itinerary_restaurant_search_title">Find food near my itinerary</string>
+    <string name="itinerary_restaurant_search_body">Find restaurants within %2$d m of each of the %1$d places in your itinerary and show them together on the map. Your current location is not used for this search or sent to the server.</string>
+    <string name="itinerary_restaurant_search_empty">Add at least one place to your itinerary first.</string>
+    <string name="itinerary_restaurant_search_start">Start search</string>
+    <string name="loading_itinerary_restaurants">%1$d/%2$d · Loading restaurants near %3$s…</string>
+    <string name="itinerary_restaurant_list_title">Restaurants near your itinerary</string>
+    <string name="itinerary_restaurant_result_summary">%1$d stops · %2$d m radius · %3$d restaurants</string>
+    <string name="restaurant_near_schedule_stop">Near itinerary stop: %1$s</string>
+    <string name="settings_radius_hint">Applied to every place in your itinerary. Set in 100 m steps, up to 2 km.</string>
+    <string name="app_version">App version %1$s</string>
 </resources>

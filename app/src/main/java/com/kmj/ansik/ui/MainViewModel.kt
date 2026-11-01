@@ -14,6 +14,7 @@ import com.naver.maps.geometry.LatLng
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.UUID
@@ -129,6 +130,20 @@ class MainViewModel(
     var restaurantSearchCenter = mutableStateOf<LatLng?>(null)
         private set
 
+    val restaurantSearchCenters = mutableStateListOf<LatLng>()
+
+    var isItineraryRestaurantSearch = mutableStateOf(false)
+        private set
+
+    var restaurantSearchProgress = mutableIntStateOf(0)
+        private set
+
+    var restaurantSearchTotal = mutableIntStateOf(0)
+        private set
+
+    var restaurantSearchPlaceName = mutableStateOf("")
+        private set
+
     var isFetchingRestaurants = mutableStateOf(false)
         private set
 
@@ -153,6 +168,7 @@ class MainViewModel(
     private var mapSelectionRequestId = 0L
     private var menuDetailJob: Job? = null
     private var restaurantDetailJob: Job? = null
+    private var restaurantSearchJob: Job? = null
     private var loadingRestaurantId: String? = null
 
     fun searchPlacesRealtime(query: String) {
@@ -284,9 +300,16 @@ class MainViewModel(
         restaurantSearchFailed.value = false
         isFetchingRestaurants.value = true
         clearSelectedPlace()
-        viewModelScope.launch {
+        nearbyRestaurants.clear()
+        restaurantSearchJob = viewModelScope.launch {
+            isItineraryRestaurantSearch.value = false
             restaurantSearchCenter.value = LatLng(lat, lng)
+            restaurantSearchCenters.clear()
+            restaurantSearchCenters.add(LatLng(lat, lng))
             restaurantSearchRadius.intValue = searchRadius.intValue
+            restaurantSearchProgress.intValue = 1
+            restaurantSearchTotal.intValue = 1
+            restaurantSearchPlaceName.value = ""
             isFetchingRestaurants.value = true
             hasSearchedRestaurants.value = false
             clearRestaurantDetail()
@@ -305,6 +328,8 @@ class MainViewModel(
 
                 clearSelectedPlace()
                 clearSearch()
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: retrofit2.HttpException) {
                 restaurantSearchFailed.value = true
                 hasSearchedRestaurants.value = true
@@ -315,8 +340,112 @@ class MainViewModel(
                 Log.e("TourAPI", "주변 식당 검색 실패", e)
             } finally {
                 isFetchingRestaurants.value = false
+                restaurantSearchPlaceName.value = ""
+                restaurantSearchJob = null
             }
         }
+    }
+
+    fun searchRestaurantsForItinerary() {
+        if (isFetchingRestaurants.value) return
+
+        val stops = travelRoute
+            .filter { it.latitude != 0.0 && it.longitude != 0.0 }
+            .distinctBy {
+                val latKey = (it.latitude * 100_000).toLong()
+                val lngKey = (it.longitude * 100_000).toLong()
+                "$latKey:$lngKey"
+            }
+
+        if (stops.isEmpty()) {
+            restaurantSearchFailed.value = false
+            hasSearchedRestaurants.value = false
+            return
+        }
+
+        restaurantSearchFailed.value = false
+        isFetchingRestaurants.value = true
+        clearSelectedPlace()
+        nearbyRestaurants.clear()
+        restaurantSearchJob = viewModelScope.launch {
+            isItineraryRestaurantSearch.value = true
+            restaurantSearchRadius.intValue = searchRadius.intValue
+            restaurantSearchCenter.value = null
+            restaurantSearchCenters.clear()
+            restaurantSearchCenters.addAll(stops.map { LatLng(it.latitude, it.longitude) })
+            restaurantSearchProgress.intValue = 0
+            restaurantSearchTotal.intValue = stops.size
+            hasSearchedRestaurants.value = false
+            clearRestaurantDetail()
+
+            val mergedRestaurants = linkedMapOf<String, RestaurantSummary>()
+            var successfulRequests = 0
+
+            try {
+                stops.forEachIndexed { index, stop ->
+                    restaurantSearchProgress.intValue = index + 1
+                    restaurantSearchPlaceName.value = stop.name
+
+                    runCatching {
+                        restaurantRepository.getNearbyRestaurants(
+                            longitude = stop.longitude,
+                            latitude = stop.latitude,
+                            radius = restaurantSearchRadius.intValue,
+                            language = currentLanguageTag()
+                        )
+                    }.onSuccess { restaurants ->
+                        successfulRequests += 1
+                        restaurants.forEach { restaurant ->
+                            val candidate = restaurant.copy(searchOriginName = stop.name)
+                            val key = restaurantMergeKey(candidate)
+                            val existing = mergedRestaurants[key]
+                            if (existing == null || candidate.distanceMeters < existing.distanceMeters) {
+                                mergedRestaurants[key] = candidate
+                            }
+                        }
+                    }.onFailure { error ->
+                        if (error is CancellationException) throw error
+                        Log.e("TourAPI", "${stop.name} 일정 주변 식당 검색 실패", error)
+                    }
+                }
+
+                nearbyRestaurants.clear()
+                nearbyRestaurants.addAll(
+                    mergedRestaurants.values.sortedWith(
+                        compareBy<RestaurantSummary> { it.distanceMeters }
+                            .thenBy { it.title }
+                    )
+                )
+                restaurantSearchFailed.value = successfulRequests == 0
+                hasSearchedRestaurants.value = true
+                clearSelectedPlace()
+                clearSearch()
+            } finally {
+                isFetchingRestaurants.value = false
+                restaurantSearchPlaceName.value = ""
+                restaurantSearchJob = null
+            }
+        }
+    }
+
+    fun retryRestaurantSearch() {
+        if (isItineraryRestaurantSearch.value) {
+            searchRestaurantsForItinerary()
+        } else {
+            restaurantSearchCenter.value?.let {
+                searchNearbyRestaurants(it.latitude, it.longitude)
+            }
+        }
+    }
+
+    private fun restaurantMergeKey(restaurant: RestaurantSummary): String {
+        val title = restaurant.title.trim().lowercase()
+        val address = restaurant.address.filterNot(Char::isWhitespace).lowercase()
+        if (title.isNotBlank() || address.isNotBlank()) return "$title|$address"
+
+        val latKey = (restaurant.latitude * 100_000).toLong()
+        val lngKey = (restaurant.longitude * 100_000).toLong()
+        return "$latKey:$lngKey"
     }
 
     fun updateCurrentLocation(latitude: Double, longitude: Double) {
@@ -324,10 +453,19 @@ class MainViewModel(
     }
 
     fun clearNearbyRestaurants() {
+        restaurantSearchJob?.cancel()
+        restaurantSearchJob = null
         activeRestaurantPin.value = null
         nearbyRestaurants.clear()
         hasSearchedRestaurants.value = false
+        restaurantSearchFailed.value = false
         restaurantSearchCenter.value = null
+        restaurantSearchCenters.clear()
+        isFetchingRestaurants.value = false
+        isItineraryRestaurantSearch.value = false
+        restaurantSearchProgress.intValue = 0
+        restaurantSearchTotal.intValue = 0
+        restaurantSearchPlaceName.value = ""
     }
 
     fun fetchRestaurantDetail(restaurant: RestaurantSummary) {

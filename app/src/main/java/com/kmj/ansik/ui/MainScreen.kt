@@ -137,6 +137,7 @@ fun MainScreen(
     var viewerImages by remember { mutableStateOf<List<String>?>(null) }
     var showSaveMyCourseDialog by remember { mutableStateOf(false) }
     var showMealCheck by remember { mutableStateOf(false) }
+    var showItineraryRestaurantDialog by remember { mutableStateOf(false) }
     var myCourseTitle by remember { mutableStateOf("") }
 
     LaunchedEffect(viewModel.appliedCourseVersion.intValue) {
@@ -163,6 +164,56 @@ fun MainScreen(
         showDetailPopup = showDetailPopup,
         onDismissDetailPopup = { showDetailPopup = false }
     )
+
+    if (showItineraryRestaurantDialog) {
+        val searchableStopCount = viewModel.travelRoute
+            .filter { it.latitude != 0.0 && it.longitude != 0.0 }
+            .distinctBy {
+                Pair(
+                    (it.latitude * 100_000).toLong(),
+                    (it.longitude * 100_000).toLong()
+                )
+            }
+            .size
+        AlertDialog(
+            onDismissRequest = { showItineraryRestaurantDialog = false },
+            title = {
+                Text(
+                    text = stringResource(R.string.itinerary_restaurant_search_title),
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Text(
+                    text = if (searchableStopCount > 0) {
+                        stringResource(
+                            R.string.itinerary_restaurant_search_body,
+                            searchableStopCount,
+                            viewModel.searchRadius.intValue
+                        )
+                    } else {
+                        stringResource(R.string.itinerary_restaurant_search_empty)
+                    }
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    enabled = searchableStopCount > 0,
+                    onClick = {
+                        showItineraryRestaurantDialog = false
+                        viewModel.searchRestaurantsForItinerary()
+                    }
+                ) {
+                    Text(stringResource(R.string.itinerary_restaurant_search_start))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showItineraryRestaurantDialog = false }) {
+                    Text(stringResource(R.string.cancel))
+                }
+            }
+        )
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         NaverMapContent(
@@ -285,17 +336,26 @@ fun MainScreen(
 
             FloatingActionButton(
                 onClick = {
-                    val center = cameraPositionState.position.target
-                    viewModel.searchNearbyRestaurants(center.latitude, center.longitude)
+                    if (!viewModel.isFetchingRestaurants.value) {
+                        showItineraryRestaurantDialog = true
+                    }
                 },
                 modifier = Modifier.size(50.dp),
                 containerColor = AppColors.Success
             ) {
-                Icon(
-                    imageVector = Icons.Default.Restaurant,
-                    contentDescription = stringResource(R.string.find_restaurants_from_my_location),
-                    tint = Color.White
-                )
+                if (viewModel.isFetchingRestaurants.value) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(23.dp),
+                        color = Color.White,
+                        strokeWidth = 3.dp
+                    )
+                } else {
+                    Icon(
+                        imageVector = Icons.Default.Restaurant,
+                        contentDescription = stringResource(R.string.itinerary_restaurant_search_title),
+                        tint = Color.White
+                    )
+                }
             }
         }
     }

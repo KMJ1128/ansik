@@ -84,7 +84,8 @@ data class RestaurantSummary(
     val koreanFallback: Boolean = false,
     val kakaoPlaceId: String? = null,
     val sources: List<String> = emptyList(),
-    val distanceMeters: Int = 0
+    val distanceMeters: Int = 0,
+    val searchOriginName: String? = null
 ) {
     val hasTourData: Boolean
         get() = !tourContentId.isNullOrBlank()

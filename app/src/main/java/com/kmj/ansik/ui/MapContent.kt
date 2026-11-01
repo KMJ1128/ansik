@@ -67,7 +67,7 @@ internal fun NaverMapContent(
             onHighlightRestaurant(null)
         }
     ) {
-        viewModel.restaurantSearchCenter.value?.let { searchCenter ->
+        viewModel.restaurantSearchCenters.forEach { searchCenter ->
             CircleOverlay(
                 center = searchCenter,
                 radius = viewModel.restaurantSearchRadius.intValue.toDouble(),

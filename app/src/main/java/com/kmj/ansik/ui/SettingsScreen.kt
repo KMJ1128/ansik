@@ -18,8 +18,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.kmj.ansik.BuildConfig
 import com.kmj.ansik.R
 import com.kmj.ansik.auth.AuthUser
+import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -130,6 +132,44 @@ fun SettingsScreen(
             }
 
             Spacer(Modifier.height(24.dp))
+            Text(stringResource(R.string.settings_search), fontWeight = FontWeight.Bold)
+            ListItem(
+                headlineContent = {
+                    Text(stringResource(R.string.radius_settings_title), fontSize = 14.sp)
+                },
+                supportingContent = {
+                    Column {
+                        Text(
+                            stringResource(
+                                R.string.settings_radius_value,
+                                viewModel.searchRadius.intValue
+                            )
+                        )
+                        Text(
+                            stringResource(R.string.settings_radius_hint),
+                            fontSize = 12.sp,
+                            lineHeight = 17.sp
+                        )
+                    }
+                }
+            )
+            Slider(
+                value = viewModel.searchRadius.intValue.toFloat(),
+                onValueChange = { rawValue ->
+                    viewModel.updateSearchRadius(
+                        ((rawValue / 100f).roundToInt() * 100).coerceIn(100, 2000)
+                    )
+                },
+                valueRange = 100f..2000f,
+                steps = 18,
+                colors = SliderDefaults.colors(
+                    thumbColor = AppColors.Success,
+                    activeTrackColor = AppColors.Success,
+                    inactiveTrackColor = AppColors.SuccessSoft
+                )
+            )
+
+            Spacer(Modifier.height(24.dp))
             Text(stringResource(R.string.settings_menu), fontWeight = FontWeight.Bold)
             ListItem(
                 headlineContent = { Text(stringResource(R.string.settings_daily_stops), fontSize = 14.sp) },
@@ -179,6 +219,14 @@ fun SettingsScreen(
                     colors = ListItemDefaults.colors(containerColor = AppColors.Surface)
                 )
             }
+
+            Spacer(Modifier.height(20.dp))
+            Text(
+                text = stringResource(R.string.app_version, BuildConfig.VERSION_NAME),
+                modifier = Modifier.fillMaxWidth(),
+                color = AppColors.TextSecondary,
+                fontSize = 12.sp
+            )
         }
     }
 }
